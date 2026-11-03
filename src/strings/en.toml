@@ -38,6 +38,8 @@ rest = "criptura"
 name = "Scriptura"
 href = "https://andresmessina-sdg.github.io/scriptura/"
 kind = "Bible study app for Linux"
+plate = "scriptura"
+plate_alt = "Scriptura showing John 1 in the King James Version beside the Greek interlinear, with the meaning and grammar under every word."
 what = "Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse."
 facts = ["English · Español · Русский", "Free · Works offline"]
 links = [
@@ -52,6 +54,8 @@ rest = " History of the Christian Church"
 name = "A History of the Christian Church"
 href = "https://andresmessina-sdg.github.io/church-history/"
 kind = "Website"
+plate = "church-history"
+plate_alt = "The river of church history: one stream from Pentecost dividing into the Church of the East, the Orthodox churches and the Latin West, and the Reformation’s branches beyond."
 what = "The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers."
 facts = ["English", "From Pentecost to today"]
 links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
@@ -63,6 +67,8 @@ rest = "evelation: The Illuminated Codex"
 name = "Revelation: The Illuminated Codex"
 href = "https://andresmessina-sdg.github.io/revelation-explainer/"
 kind = "A guide to the last book"
+plate = "revelation"
+plate_alt = "Question 20 of the guide, “What is the first resurrection?”, above a medieval illumination of an angel showing John the New Jerusalem."
 what = "A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture."
 facts = ["English · Español · Русский", "7 visions · 22 questions"]
 links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io/revelation-explainer/" }]
@@ -74,6 +80,8 @@ rest = "he Pilgrim’s Road"
 name = "The Pilgrim’s Road"
 href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
 kind = "Classroom game"
+plate = "pilgrims-road"
+plate_alt = "The Pilgrim’s Road map: a golden road winding past the medallion stations under a night sky, starting at Bethlehem."
 what = "Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles."
 facts = ["English", "11 stations · 33 stars"]
 links = [{ label = "Begin the journey", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]

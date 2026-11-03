@@ -38,6 +38,8 @@ rest = "criptura"
 name = "Scriptura"
 href = "https://andresmessina-sdg.github.io/scriptura/es/"
 kind = "Estudio bíblico para Linux"
+plate = "scriptura"
+plate_alt = "Scriptura con Juan 1 en la versión King James junto al interlineal griego, con el significado y la gramática bajo cada palabra."
 what = "Lee dos traducciones lado a lado, con el griego y el hebreo bajo cada palabra y cómo la iglesia leyó cada versículo."
 facts = ["English · Español · Русский", "Gratis · Funciona sin conexión"]
 links = [
@@ -53,6 +55,8 @@ rest = " History of the Christian Church"
 name = "A History of the Christian Church"
 href = "https://andresmessina-sdg.github.io/church-history/"
 kind = "Sitio web, en inglés"
+plate = "church-history"
+plate_alt = "El río de la historia de la iglesia: una sola corriente desde Pentecostés que se divide en la Iglesia del Oriente, las iglesias ortodoxas y el Occidente latino, y más allá las ramas de la Reforma."
 what = "La iglesia desde Pentecostés hasta hoy, dibujada como un solo río y contada con las palabras de sus propios testigos: las Escrituras, los padres, los credos y los reformadores."
 facts = ["English", "Desde Pentecostés hasta hoy"]
 links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
@@ -64,6 +68,8 @@ rest = "pocalipsis: El Códice Iluminado"
 name = "Apocalipsis: El Códice Iluminado"
 href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es"
 kind = "Una guía del último libro"
+plate = "revelation"
+plate_alt = "La pregunta 20 de la guía, «¿Qué es la primera resurrección?», sobre una iluminación medieval de un ángel que muestra a Juan la Nueva Jerusalén."
 what = "Una guía clara y llena de esperanza al libro de Apocalipsis: siete visiones de una misma era y veintidós de sus preguntas más malentendidas, leídas a la luz de toda la Escritura."
 facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
 links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]
@@ -76,6 +82,8 @@ rest = "he Pilgrim’s Road"
 name = "The Pilgrim’s Road"
 href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
 kind = "Juego para el aula, en inglés"
+plate = "pilgrims-road"
+plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las estaciones bajo un cielo nocturno, desde Belén."
 what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
 facts = ["English", "11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]

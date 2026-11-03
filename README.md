@@ -20,6 +20,7 @@ signed his scores: *J.J.* (*Jesu, juva*, "Jesus, help") at the head and
 | `src/initial.svg`, `src/tail.svg` | The gilded initial A and the ivy that trails from it. |
 | `assets/site.css`, `assets/site.js` | Styles, and the one glint of light across the gold. |
 | `src/score-open.svg`, `src/score-close.svg` | The first and last lines of Bach's *Ein feste Burg ist unser Gott* (BWV 302, soprano), engraved by `tools/engrave.py` with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
+| `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20) and The Pilgrim's Road were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. |
 | `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |

@@ -60,6 +60,7 @@ def works_html(t: dict) -> str:
         items.append(f"""<li class="work {colour}">
   <h3{title_lang}><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h3>
   <p class="kind">{esc(w["kind"])}</p>
+  <a class="plate" href="{esc(w["href"])}"><img src="/assets/works/{w["plate"]}-1200.webp" srcset="/assets/works/{w["plate"]}-640.webp 640w, /assets/works/{w["plate"]}-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="{esc(w["plate_alt"])}" loading="lazy" decoding="async"></a>
   <p class="what">{esc(w["what"])}</p>
   <p class="facts">{facts}</p>
   <p class="go">
