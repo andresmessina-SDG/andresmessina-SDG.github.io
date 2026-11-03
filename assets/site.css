@@ -103,17 +103,22 @@ h1 {
 .verse p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--vermilion); }
 .verse cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
 
-/* ---------- Staves ---------- */
-.staff {
-  display: block; height: 17px; border: 0; margin: 0; position: relative;
-  background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 4px) no-repeat;
-  background-size: 100% 17px;
+/* ---------- Staves: five hairlines a staff space (5px) apart ---------- */
+.staff, .score {
+  display: block; height: 21px; border: 0; margin: 0; position: relative;
+  background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 5px) no-repeat;
+  background-size: 100% 21px;
 }
-.staff.open::before { content: ""; position: absolute; left: 0; top: 0; width: 1px; height: 17px; background: var(--rule); }
-.staff.final::after {
-  content: ""; position: absolute; right: 0; top: 0; width: 8px; height: 17px;
+.staff.open::before, .score-open::before { content: ""; position: absolute; left: 0; top: 0; width: 1px; height: 21px; background: var(--rule); }
+.staff.final::after, .score-close::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 8px; height: 21px;
   background: linear-gradient(to right, var(--ink) 0 1px, transparent 1px 3.5px, var(--ink) 3.5px 8px);
 }
+/* Bach's notes, engraved by tools/engrave.py, laid on the first and last staves */
+.score { margin-block: 18px 26px; }
+.score-notes { position: absolute; top: -16px; left: 0; overflow: visible; }
+.score-close .score-notes { left: auto; right: 9px; }
+.score-words { font-family: var(--text); font-style: italic; font-size: 11.5px; }
 
 .label { font-weight: 400; line-height: 1.3; margin: 72px 0 16px; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
 .label::before { content: "¶ "; content: "¶ " / ""; }

@@ -35,12 +35,16 @@
     </blockquote>
 
     <h2 class="label" id="works">{{works_label}}</h2>
-    <hr class="staff open" aria-hidden="true">
+    <div class="score score-open">
+{{{score_open}}}
+    </div>
 
     <ul class="works">
 {{{works}}}
     </ul>
-    <hr class="staff final" aria-hidden="true">
+    <div class="score score-close">
+{{{score_close}}}
+    </div>
 
     <div class="signature">
       <p class="sdg" lang="la">S.D.G.</p>
@@ -50,7 +54,7 @@
 
   <footer class="colophon">
     <p class="promise">{{promise}}</p>
-    <p class="bach">{{bach}}</p>
+    <p class="bach">{{{bach_html}}}</p>
     <nav class="foot-links">
       <a href="https://ko-fi.com/andresmessina">{{support}}</a>
       <a href="https://github.com/andresmessina-SDG">{{source}}</a>

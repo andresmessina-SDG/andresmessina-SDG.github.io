@@ -157,6 +157,8 @@ def main() -> None:
     notfound = (SRC / "404.html").read_text(encoding="utf-8")
     initial = indent((SRC / "initial.svg").read_text(encoding="utf-8").rstrip(), 8)
     tail = indent((SRC / "tail.svg").read_text(encoding="utf-8").rstrip(), 8)
+    score_open = indent((SRC / "score-open.svg").read_text(encoding="utf-8").rstrip(), 6)
+    score_close = indent((SRC / "score-close.svg").read_text(encoding="utf-8").rstrip(), 6)
     v = version()
 
     for lang, t in strings.items():
@@ -165,6 +167,8 @@ def main() -> None:
                   "page_title": t["title"], "v": v,
                   "head_links": head_links(t, url, strings),
                   "langs": langs_nav(t), "initial": initial, "tail": tail,
+                  "score_open": score_open, "score_close": score_close,
+                  "bach_html": re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["bach"])),
                   "works": works_html(t)}
         out = ROOT / t["path"] / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)

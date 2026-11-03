@@ -19,6 +19,7 @@ signed his scores: *J.J.* (*Jesu, juva*, "Jesus, help") at the head and
 | `src/head.html`, `src/page.html`, `src/404.html` | The page templates. |
 | `src/initial.svg`, `src/tail.svg` | The gilded initial A and the ivy that trails from it. |
 | `assets/site.css`, `assets/site.js` | Styles, and the one glint of light across the gold. |
+| `src/score-open.svg`, `src/score-close.svg` | The first and last lines of Bach's *Ein feste Burg ist unser Gott* (BWV 302, soprano), engraved by `tools/engrave.py` with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
@@ -37,6 +38,12 @@ Playwright and Chromium, and Pillow):
 
 ```bash
 node tools/render-images.js && python3 tools/make-favicon.py
+```
+
+To re-engrave the music (needs fontTools; Bravura is downloaded on first run):
+
+```bash
+python3 tools/engrave.py && python3 tools/build.py
 ```
 
 Commit what they write. GitHub Pages serves the repository as it is.
