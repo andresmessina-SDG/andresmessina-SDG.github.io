@@ -96,7 +96,11 @@ def structured_data(t: dict, url: str) -> str:
         works.append(item)
     graph = [
         {"@type": "Person", "@id": me, "name": "Andres Messina", "url": BASE,
-         "sameAs": ["https://github.com/andresmessina-SDG", "https://ko-fi.com/andresmessina"]},
+         "image": BASE + "assets/portrait.jpg", "description": t["lede"],
+         "jobTitle": t["cred_title"], "knowsLanguage": ["es", "en"],
+         "knowsAbout": [s.strip() for s in t["cred_fields"].split("·")],
+         "sameAs": ["https://www.linkedin.com/in/andresmessina/", "https://github.com/andresmessina-SDG",
+                    "https://ko-fi.com/andresmessina"]},
         {"@type": "WebPage", "@id": url, "url": url, "name": t["title"], "description": t["description"],
          "inLanguage": t["lang"], "author": {"@id": me}, "about": {"@id": me},
          "mainEntity": {"@type": "ItemList", "itemListElement": [
