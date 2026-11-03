@@ -30,7 +30,7 @@
   --hero-ini: 136px;
   --hero-gap: 18px;
   --ini-col: 64px;
-  --ini-gap: 14px;
+  --ini-gap: 8px;
 }
 
 html { -webkit-text-size-adjust: 100%; background: var(--vellum); }
@@ -68,8 +68,8 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .skip:focus { left: max(16px, env(safe-area-inset-left, 0px)); }
 
 /* ---------- The opening: gilded initial ---------- */
-.opening { position: relative; margin-top: clamp(48px, 9vw, 96px); padding-left: calc(var(--hero-ini) + var(--hero-gap)); min-height: var(--hero-ini); }
-.initial { position: absolute; left: 0; top: 0; width: var(--hero-ini); height: var(--hero-ini); }
+.opening { position: relative; margin-top: clamp(48px, 9vw, 96px); padding-left: calc(var(--hero-ini) + var(--hero-gap)); min-height: calc(var(--hero-ini) + 12px); }
+.initial { position: absolute; left: 0; top: 12px; width: var(--hero-ini); height: var(--hero-ini); }
 .initial svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 0.5px rgba(80, 55, 10, .25)); }
 .initial .tail { display: none; position: absolute; left: 10px; top: calc(100% - 2px); width: 40px; height: 120px; }
 h1 {
@@ -77,12 +77,12 @@ h1 {
   font-weight: 400; font-size: clamp(2.6rem, 8.2vw, 4.75rem); line-height: 0.98; letter-spacing: -0.012em;
   text-wrap: balance;
 }
-.subtitle { text-wrap: balance; margin: 14px 0 0; font-family: var(--rubric); font-size: 1.0625rem; letter-spacing: 0.06em; color: var(--vermilion); }
+.subtitle { text-wrap: balance; line-height: 1.3; margin: 14px 0 0; font-family: var(--rubric); font-size: 1.0625rem; letter-spacing: 0.06em; color: var(--vermilion); }
 
 .lede { margin: 44px 0 0; font-size: 1.3125rem; line-height: 1.55; text-wrap: pretty; }
 .verse { margin: 30px 0 0; padding: 0; }
 .verse p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.125rem; text-wrap: pretty; }
-.verse p::before { content: "¶ "; font-style: normal; color: var(--vermilion); }
+.verse p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--vermilion); }
 .verse cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
 
 /* ---------- Staves ---------- */
@@ -98,7 +98,7 @@ h1 {
 }
 
 .label { font-weight: 400; line-height: 1.3; margin: 72px 0 16px; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
-.label::before { content: "¶ "; }
+.label::before { content: "¶ "; content: "¶ " / ""; }
 
 /* ---------- The works ---------- */
 .works { list-style: none; margin: 0; padding: 0; }
@@ -106,7 +106,7 @@ h1 {
 .work { position: relative; padding: 34px 0 36px calc(var(--ini-col) + var(--ini-gap)); }
 /* pen-flourishing that runs down the margin from each versal and fades */
 .work::before {
-  content: ""; position: absolute; top: 112px; bottom: 30px;
+  content: ""; position: absolute; top: calc(34px + 3.68rem + 24px); bottom: 30px;
   left: calc(var(--ini-col) - 27px); width: 28px;
   background-repeat: repeat-y; background-position: center top;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
@@ -116,9 +116,9 @@ h1 {
 .work.blue::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%23B0361F' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%23B0361F' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%23B0361F' stroke='none'/%3E%3C/svg%3E"); }
 .work.red::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%2323407A' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%2323407A' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%2323407A' stroke='none'/%3E%3C/svg%3E"); }
 
-.work h2 { position: relative; margin: 0; font-weight: 500; font-size: 1.875rem; line-height: 1.12; letter-spacing: -0.005em; text-wrap: balance; }
-.work h2 a { text-decoration: none; background-image: linear-gradient(var(--gilt), var(--gilt)); background-size: 0 1px; background-repeat: no-repeat; background-position: 0 96%; transition: background-size .35s ease; }
-.work h2 a:hover { background-size: 100% 1px; }
+.work h3 { position: relative; margin: 0; font-weight: 500; font-size: 1.875rem; line-height: 1.12; letter-spacing: -0.005em; text-wrap: balance; }
+.work h3 a { text-decoration: none; background-image: linear-gradient(var(--gilt), var(--gilt)); background-size: 0 1px; background-repeat: no-repeat; background-position: 0 96%; transition: background-size .35s ease; }
+.work h3 a:hover { background-size: 100% 1px; }
 .versal {
   position: absolute; top: -0.06em; right: calc(100% + var(--ini-gap));
   width: var(--ini-col); text-align: right;
@@ -137,7 +137,7 @@ h1 {
 .facts { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 2px 20px; font-size: 0.95rem; color: var(--muted); }
 .go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; }
 .go a { text-decoration: none; color: var(--ink); transition: color .2s ease; }
-.go a::after { content: "\00a0›"; color: var(--gilt); }
+.go a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 .go a:hover { color: var(--vermilion); }
 
 /* ---------- The end of the score ---------- */
@@ -146,7 +146,6 @@ h1 {
   margin: 0; font-size: 2.75rem; line-height: 1; font-weight: 600; letter-spacing: 0.14em; margin-right: -0.14em;
   background: var(--gold-leaf);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0.5px 0 rgba(90, 60, 10, .35));
 }
 .sdg-gloss { margin: 8px 0 0; font-style: italic; color: var(--muted); }
 .colophon { margin-top: 56px; display: grid; gap: 12px; }
@@ -164,13 +163,13 @@ h1 {
 .nf-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 6px; }
 .nf-list a { text-decoration: none; font-size: 1.25rem; }
 .nf-list a:hover { color: var(--vermilion); }
-.nf-list a::after { content: "\00a0›"; color: var(--gilt); }
+.nf-list a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 
 /* ---------- Wide: the initials hang in the margin ---------- */
 @media (min-width: 1000px) {
   :root { --hero-ini: 152px; --hero-gap: 22px; --ini-col: 72px; --ini-gap: 9px; }
   .opening { padding-left: 0; min-height: 0; }
-  .initial { left: auto; right: calc(100% + var(--hero-gap)); top: -4px; }
+  .initial { left: auto; right: calc(100% + var(--hero-gap)); top: 14px; }
   .initial .tail { display: block; }
   .work { padding-left: 0; }
   .work::before { left: calc(-1 * var(--ini-gap) - 27px); }
@@ -183,11 +182,12 @@ h1 {
   .subtitle { font-size: 0.95rem; margin-top: 10px; }
   .lede { font-size: 1.1875rem; margin-top: 40px; }
   .work { padding-top: 28px; padding-bottom: 30px; }
-  .work::before { top: 86px; }
-  .work h2 { font-size: 1.5625rem; }
+  .work::before { top: calc(28px + 2.72rem + 24px); }
+  .work h3 { font-size: 1.5625rem; }
   .versal { font-size: 3.4rem; }
   .label { margin-top: 56px; }
   .sdg { font-size: 2.25rem; }
 }
+.work h3 a:focus-visible { outline-offset: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 

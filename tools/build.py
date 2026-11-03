@@ -55,9 +55,10 @@ def works_html(t: dict) -> str:
     for i, w in enumerate(t["works"]):
         colour = "blue" if i % 2 == 0 else "red"
         facts = "".join(f"<span>{esc(f)}</span>" for f in w["facts"])
+        title_lang = f' lang="{w["title_lang"]}"' if "title_lang" in w else ""
         links = "\n".join(f'    <a href="{esc(l["href"])}">{esc(l["label"])}</a>' for l in w["links"])
         items.append(f"""<li class="work {colour}">
-  <h2><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h2>
+  <h3{title_lang}><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h3>
   <p class="kind">{esc(w["kind"])}</p>
   <p class="what">{esc(w["what"])}</p>
   <p class="facts">{facts}</p>
@@ -75,7 +76,7 @@ def langs_nav(t: dict) -> str:
         href = "/" if lang == "en" else f"/{lang}/"
         current = ' aria-current="page"' if lang == t["lang"] else ""
         parts.append(f'<a href="{href}" hreflang="{lang}" lang="{lang}"{current}>{NAMES[lang]}</a>')
-    return f'<nav class="langs" aria-label="{esc(t["langs_label"])}">' + "<span>·</span>".join(parts) + "</nav>"
+    return f'<nav class="langs" aria-label="{esc(t["langs_label"])}">' + '<span aria-hidden="true">·</span>'.join(parts) + "</nav>"
 
 
 def structured_data(t: dict, url: str) -> str:
@@ -169,7 +170,7 @@ def main() -> None:
     # 404: English first, Spanish beneath. GitHub Pages also serves it for
     # missing pages in project sites that have no 404 of their own.
     en, es = strings["en"], strings["es"]
-    nf_works = indent("\n".join(f'<li><a href="{esc(w["href"])}">{esc(w["name"])}</a></li>' for w in en["works"]), 6)
+    nf_works = indent("\n".join(f'<li><a href="{esc(w["href"])}" lang="en">{esc(w["name"])}</a></li>' for w in en["works"]), 6)
     values = {**{k: v_ for k, v_ in en.items() if isinstance(v_, str)},
               "page_title": f'{en["nf_title"]} · Andres Messina', "v": v,
               "description": en["nf_p"],
