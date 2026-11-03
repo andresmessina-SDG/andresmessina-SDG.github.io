@@ -1,0 +1,57 @@
+<body>
+<a class="skip" href="#works">{{skip}}</a>
+<div class="leaf">
+
+  <header class="head">
+    <p class="jj">J.J.<span>{{jj_gloss}}</span></p>
+    {{{langs}}}
+  </header>
+
+  <main>
+    <section class="opening">
+      <div class="initial" aria-hidden="true">
+{{{initial}}}
+{{{tail}}}
+      </div>
+      <h1><span class="sr">A</span>ndres Messina</h1>
+      <p class="subtitle">{{subtitle}}</p>
+    </section>
+
+    <p class="lede">{{lede}}</p>
+
+    <blockquote class="verse">
+      <p>{{verse}}</p>
+      <cite>{{verse_ref}}</cite>
+    </blockquote>
+
+    <h2 class="label" id="works">{{works_label}}</h2>
+    <hr class="staff open" aria-hidden="true">
+
+    <ul class="works">
+{{{works}}}
+    </ul>
+    <hr class="staff final" aria-hidden="true">
+
+    <div class="signature">
+      <p class="sdg" lang="la">S.D.G.</p>
+      <p class="sdg-gloss">{{sdg_gloss}}</p>
+    </div>
+  </main>
+
+  <footer class="colophon">
+    <p class="promise">{{promise}}</p>
+    <p class="bach">{{bach}}</p>
+    <nav class="foot-links">
+      <a href="https://ko-fi.com/andresmessina">{{support}}</a>
+      <a href="https://github.com/andresmessina-SDG">{{source}}</a>
+    </nav>
+    <svg class="fleuron" viewBox="0 0 34 20" aria-hidden="true">
+      <path d="M2 14 C 2 8, 8 6, 11 10 C 13 13, 9 15, 8 12.5" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      <path d="M11 10 C 14 10, 16 10, 18 10" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      <path d="M33 10 C 28 9, 26 3, 21 3.5 C 17 4, 16 8, 18 10 C 16 12, 17 16, 21 16.5 C 26 17, 28 11, 33 10z" fill="currentColor"/>
+    </svg>
+  </footer>
+</div>
+<script src="/assets/site.js?v={{v}}" defer></script>
+</body>
+</html>

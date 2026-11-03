@@ -1,0 +1,7 @@
+# This file governs the whole of andresmessina-sdg.github.io, including each
+# project site beneath it, so it lists every sitemap on the host.
+User-agent: *
+Allow: /
+
+Sitemap: https://andresmessina-sdg.github.io/sitemap.xml
+Sitemap: https://andresmessina-sdg.github.io/church-history/sitemap.xml

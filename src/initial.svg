@@ -1,0 +1,47 @@
+<svg viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C5B19"/><stop offset=".25" stop-color="#C49A3C"/>
+      <stop offset=".42" stop-color="#F0DA94"/><stop offset=".58" stop-color="#C9A045"/>
+      <stop offset=".75" stop-color="#E9CF85"/><stop offset="1" stop-color="#8A661E"/>
+    </linearGradient>
+    <linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="-60" y1="0" x2="0" y2="60">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      <animateTransform id="sweep" attributeName="gradientTransform" type="translate" from="0 0" to="200 0" dur="2.8s" begin="indefinite" fill="freeze"/>
+    </linearGradient>
+    <radialGradient id="ground" cx=".45" cy=".4" r=".75">
+      <stop offset="0" stop-color="#2E5296"/><stop offset="1" stop-color="#1B3264"/>
+    </radialGradient>
+    <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse">
+      <g fill="#F7F2E6" opacity=".55"><circle cx="6" cy="4.6" r=".62"/><circle cx="4.9" cy="6.5" r=".62"/><circle cx="7.1" cy="6.5" r=".62"/></g>
+    </pattern>
+    <clipPath id="inner"><rect x="8" y="8" width="104" height="104"/></clipPath>
+  </defs>
+  <!-- gilt frame -->
+  <rect x="1.5" y="1.5" width="117" height="117" fill="url(#gold)"/>
+  <rect x="5" y="5" width="110" height="110" fill="#8A661E"/>
+  <rect x="6" y="6" width="108" height="108" fill="url(#ground)"/>
+  <!-- white dot triads on the ground -->
+  <rect x="6" y="6" width="108" height="108" fill="url(#dots)"/>
+  <!-- white vine scrolls -->
+  <g clip-path="url(#inner)" fill="none" stroke="#F7F2E6" stroke-width="1.05" stroke-linecap="round" opacity=".8">
+    <path d="M10 108 C 14 86, 34 92, 30 74 C 27 62, 14 66, 17 75 C 19 81, 26 78, 24 73"/>
+    <path d="M110 12 C 106 34, 86 28, 90 46 C 93 58, 106 54, 103 45 C 101 39, 94 42, 96 47"/>
+    <path d="M30 74 C 36 70, 38 62, 34 56"/>
+    <path d="M90 46 C 84 50, 82 58, 86 64"/>
+    <path d="M14 14 c 8 0 12 4 12 12 M106 106 c -8 0 -12 -4 -12 -12" opacity=".6"/>
+  </g>
+  <g fill="#F7F2E6" opacity=".8">
+    <circle cx="34" cy="55" r="1.4"/><circle cx="86" cy="65" r="1.4"/>
+  </g>
+  <!-- the gilded letter -->
+  <text x="60" y="97" text-anchor="middle" font-family="EB Garamond, Georgia, serif" font-weight="600" font-size="100"
+        fill="url(#gold)" stroke="#5E440F" stroke-width=".7" paint-order="stroke">A</text>
+  <text x="60" y="97" text-anchor="middle" font-family="EB Garamond, Georgia, serif" font-weight="600" font-size="100"
+        fill="url(#sheen)">A</text>
+  <!-- corner bezants -->
+  <g fill="url(#gold)" stroke="#6E4F12" stroke-width=".4">
+    <circle cx="1.5" cy="1.5" r="3.4"/><circle cx="118.5" cy="1.5" r="3.4"/>
+    <circle cx="1.5" cy="118.5" r="3.4"/><circle cx="118.5" cy="118.5" r="3.4"/>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+# La página en español, construida en /es/index.html. Las mismas claves que en.toml.
+
+lang = "es"
+locale = "es_ES"
+path = "es/"
+title = "Andres Messina"
+description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Apocalipsis: El Códice Iluminado y The Pilgrim’s Road."
+og_alt = "Una A dorada sobre fondo azul, junto al nombre Andres Messina y sus cuatro obras."
+
+skip = "Saltar a las obras"
+jj_gloss = "Jesu, juva · Jesús, ayúdame"
+langs_label = "Idioma"
+subtitle = "Obras sobre las Escrituras y la iglesia"
+lede = "Hago cosas para leer las Escrituras y conocer la historia de la iglesia: una aplicación para Linux, dos sitios web y un juego para el aula."
+verse = "Si, pues, coméis o bebéis, o hacéis otra cosa, hacedlo todo para la gloria de Dios."
+verse_ref = "1 Corintios 10:31"
+works_label = "Las obras"
+sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
+promise = "Las cuatro son gratuitas. Ninguna pide una cuenta y ninguna te rastrea."
+bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Esta página toma prestada su costumbre."
+support = "Apoyar el trabajo"
+source = "Código en GitHub"
+
+nf_title = "Página no encontrada"
+nf_h = "Esta página no está aquí"
+nf_p = "Puede que la dirección esté mal escrita o que la página se haya movido. Cada una de las obras sigue aquí:"
+nf_home = "Volver a la página principal"
+
+[[works]]
+id = "scriptura"
+versal = "S"
+rest = "criptura"
+name = "Scriptura"
+href = "https://andresmessina-sdg.github.io/scriptura/es/"
+kind = "Estudio bíblico para Linux"
+what = "Lee dos traducciones lado a lado, con el griego y el hebreo bajo cada palabra y cómo la iglesia leyó cada versículo."
+facts = ["English · Español · Русский", "Gratis · Funciona sin conexión"]
+links = [
+  { label = "Visitar", href = "https://andresmessina-sdg.github.io/scriptura/es/" },
+  { label = "Instalar", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
+]
+
+[[works]]
+id = "church-history"
+versal = "A"
+rest = " History of the Christian Church"
+name = "A History of the Christian Church"
+href = "https://andresmessina-sdg.github.io/church-history/"
+kind = "Sitio web, en inglés"
+what = "La iglesia desde Pentecostés hasta hoy, dibujada como un solo río y contada con las palabras de sus propios testigos: las Escrituras, los padres, los credos y los reformadores."
+facts = ["English", "Desde Pentecostés hasta hoy"]
+links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
+
+[[works]]
+id = "revelation"
+versal = "A"
+rest = "pocalipsis: El Códice Iluminado"
+name = "Apocalipsis: El Códice Iluminado"
+href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es"
+kind = "Una guía del último libro"
+what = "Una guía clara y llena de esperanza al libro de Apocalipsis: siete visiones de una misma era y veintidós de sus preguntas más malentendidas, leídas a la luz de toda la Escritura."
+facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
+links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]
+
+[[works]]
+id = "pilgrims-road"
+versal = "T"
+rest = "he Pilgrim’s Road"
+name = "The Pilgrim’s Road"
+href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
+kind = "Juego para el aula, en inglés"
+what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
+facts = ["English", "11 estaciones · 33 estrellas"]
+links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
