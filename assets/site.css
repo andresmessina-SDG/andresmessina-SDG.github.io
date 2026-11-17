@@ -395,8 +395,13 @@ html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50
          head down; on a wide page, so that no line runs past 31 units, the width to spare goes one
          part to the gutter and two to the outer margin
    ===================================================================================================== */
-html.bound, html.bound body { height: 100%; overflow: hidden; }
-html.bound body { padding: 0; background: #3B2516 url("/assets/book/oak.webp") center / 900px 900px; }
+html.bound, html.bound body, html.binding, html.binding body { height: 100%; overflow: hidden; }
+html.bound body, html.binding body { padding: 0; background: #3B2516 url("/assets/book/oak.webp") center / 900px 900px; }
+/* while the book is being bound (see the script at the head of src/page.html) only the desk shows;
+   then the book and its lamp come up together, never the page unbound */
+html.binding body > * { visibility: hidden; opacity: 0; }
+html.bound body > * { transition: opacity .35s ease; }
+@media (prefers-reduced-motion: reduce) { html.bound body > * { transition: none; } }
 html.bound .leaf { max-width: none; padding: 0; }
 /* the controls, in a narrow band of desk above the book */
 html.bound .head {

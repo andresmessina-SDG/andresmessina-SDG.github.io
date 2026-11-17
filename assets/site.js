@@ -784,6 +784,12 @@
     // the type's own metrics decide what a page holds, so the contents are fitted again once it has come
     if (document.fonts) document.fonts.ready.then(() => { if (book) fitWithin(); });
   }
+  // the page was kept from sight while the book was bound (see the script at the head of src/page.html):
+  // show it, once its type has come, so that the book does not reflow before the reader's eyes, or after
+  // a moment at most
+  const shown = () => root.classList.remove('binding');
+  if (book && document.fonts && document.fonts.status !== 'loaded') Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 600))]).then(shown);
+  else shown();
 
   // ---------------------------------------------------------------------------------------------
   // Light. The gold catches a light that follows the pointer: the burnished gold of the opening
