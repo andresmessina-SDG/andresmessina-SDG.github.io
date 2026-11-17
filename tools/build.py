@@ -23,6 +23,7 @@ EXTRA_SITEMAP = [
     "scriptura/", "scriptura/es/", "scriptura/ru/",
     "revelation-explainer/",
     "the-pilgrims-road/",
+    "Worldviews-in-Motion/",
 ]
 
 
@@ -89,6 +90,7 @@ def structured_data(t: dict, url: str) -> str:
         "church-history": {"@type": "WebSite"},
         "revelation": {"@type": "WebSite"},
         "pilgrims-road": {"@type": "LearningResource", "learningResourceType": "game"},
+        "worldviews": {"@type": "WebSite"},
     }
     works = []
     for w in t["works"]:

@@ -4,8 +4,8 @@ lang = "es"
 locale = "es_ES"
 path = "es/"
 title = "Andres Messina"
-description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Apocalipsis: El Códice Iluminado y The Pilgrim’s Road."
-og_alt = "Una A dorada sobre fondo azul, junto al nombre Andres Messina y sus cuatro obras."
+description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Apocalipsis: El Códice Iluminado, The Pilgrim’s Road y Worldviews in Motion."
+og_alt = "Una A dorada sobre fondo azul, junto al nombre Andres Messina y sus cinco obras."
 
 skip = "Saltar a las obras"
 jj_gloss = "Jesu, juva · Jesús, ayúdame"
@@ -21,7 +21,7 @@ verse = "Si, pues, coméis o bebéis, o hacéis otra cosa, hacedlo todo para la 
 verse_ref = "1 Corintios 10:31"
 works_label = "Las obras"
 sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
-promise = "Las cuatro son gratuitas. Ninguna pide una cuenta ni te rastrea, y ninguna carga nada de otro sitio salvo que reproduzcas un video."
+promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
 bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Esta página toma prestada su costumbre, y sus pentagramas llevan la primera y la última línea de su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302."
 support = "Apoyar el trabajo"
 source = "Código en GitHub"
@@ -87,3 +87,17 @@ plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las 
 what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
 facts = ["English", "11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
+
+[[works]]
+id = "worldviews"
+title_lang = "en"
+versal = "W"
+rest = "orldviews in Motion"
+name = "Worldviews in Motion"
+href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
+kind = "Acuarela animada, en inglés"
+plate = "worldviews"
+plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mundo, unido a él por una cruz roja sobre la que se carga el pecado del hombre, sobre una línea de la historia desde la Creación hasta la Nueva Creación."
+what = "Las principales cosmovisiones del mundo, cada una pintada como una acuarela que responde a cuatro preguntas: de dónde venimos, qué salió mal, qué lo arregla y cómo termina todo. Una pregunta lleva de cada una a la siguiente, comenzando y terminando con el teísmo cristiano."
+facts = ["English", "22 cosmovisiones · 4 actos"]
+links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
