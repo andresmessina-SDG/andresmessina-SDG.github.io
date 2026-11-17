@@ -4,7 +4,7 @@ lang = "es"
 locale = "es_ES"
 path = "es/"
 title = "Andres Messina"
-description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Apocalipsis: El Códice Iluminado, The Pilgrim’s Road y Worldviews in Motion."
+description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Worldviews in Motion, Apocalipsis: El Códice Iluminado y The Pilgrim’s Road."
 og_alt = "Una A dorada sobre fondo azul, junto al nombre Andres Messina y sus cinco obras."
 
 skip = "Saltar a las obras"
@@ -62,6 +62,20 @@ facts = ["English", "Desde Pentecostés hasta hoy"]
 links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
+id = "worldviews"
+title_lang = "en"
+versal = "W"
+rest = "orldviews in Motion"
+name = "Worldviews in Motion"
+href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
+kind = "Acuarela animada, en inglés"
+plate = "worldviews"
+plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mundo, unido a él por una cruz roja sobre la que se carga el pecado del hombre, sobre una línea de la historia desde la Creación hasta la Nueva Creación."
+what = "Las principales cosmovisiones del mundo, cada una pintada como una acuarela que responde a cuatro preguntas: de dónde venimos, qué salió mal, qué lo arregla y cómo termina todo. Una pregunta lleva de cada una a la siguiente, comenzando y terminando con el teísmo cristiano."
+facts = ["English", "22 cosmovisiones · 4 actos"]
+links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
+
+[[works]]
 id = "revelation"
 versal = "A"
 rest = "pocalipsis: El Códice Iluminado"
@@ -87,17 +101,3 @@ plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las 
 what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
 facts = ["English", "11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
-
-[[works]]
-id = "worldviews"
-title_lang = "en"
-versal = "W"
-rest = "orldviews in Motion"
-name = "Worldviews in Motion"
-href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
-kind = "Acuarela animada, en inglés"
-plate = "worldviews"
-plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mundo, unido a él por una cruz roja sobre la que se carga el pecado del hombre, sobre una línea de la historia desde la Creación hasta la Nueva Creación."
-what = "Las principales cosmovisiones del mundo, cada una pintada como una acuarela que responde a cuatro preguntas: de dónde venimos, qué salió mal, qué lo arregla y cómo termina todo. Una pregunta lleva de cada una a la siguiente, comenzando y terminando con el teísmo cristiano."
-facts = ["English", "22 cosmovisiones · 4 actos"]
-links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]

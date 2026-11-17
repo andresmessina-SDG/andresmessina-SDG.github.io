@@ -19,8 +19,8 @@ const pages = {};
 
 const og = (lang) => {
   const t = lang === 'es'
-    ? { sub: 'Obras sobre las Escrituras y la iglesia', works: ['Scriptura', 'A History of the Christian Church', 'Apocalipsis: El Códice Iluminado', 'The Pilgrim’s Road', 'Worldviews in Motion'] }
-    : { sub: 'Works on Scripture and the church', works: ['Scriptura', 'A History of the Christian Church', 'Revelation: The Illuminated Codex', 'The Pilgrim’s Road', 'Worldviews in Motion'] };
+    ? { sub: 'Obras sobre las Escrituras y la iglesia', works: ['Scriptura', 'A History of the Christian Church', 'Worldviews in Motion', 'Apocalipsis: El Códice Iluminado', 'The Pilgrim’s Road'] }
+    : { sub: 'Works on Scripture and the church', works: ['Scriptura', 'A History of the Christian Church', 'Worldviews in Motion', 'Revelation: The Illuminated Codex', 'The Pilgrim’s Road'] };
   return `<!doctype html><html lang="${lang}"><meta charset="utf-8"><style>${fontFaces}
   html,body{margin:0}
   body{width:1200px;height:630px;box-sizing:border-box;padding:0 92px;display:grid;grid-template-columns:272px 1fr;gap:60px;align-items:center;
@@ -39,7 +39,7 @@ const og = (lang) => {
   </style><body>
   <div class="ini">${initial}</div>
   <div><p class="jj">J.J.</p><h1>Andres Messina</h1><p class="sub">${t.sub}</p><div class="staff"></div>
-  <p class="works">${t.works[0]}<b>·</b>${t.works[1]}<br>${t.works[2]}<br>${t.works[3]}<b>·</b>${t.works[4]}</p><p class="sdg">S.D.G.</p></div>
+  <p class="works">${t.works[0]}<b>·</b>${t.works[1]}<br>${t.works[2]}<b>·</b>${t.works[3]}<br>${t.works[4]}</p><p class="sdg">S.D.G.</p></div>
   </body></html>`;
 };
 

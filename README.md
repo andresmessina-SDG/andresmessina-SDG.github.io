@@ -1,9 +1,8 @@
 # andresmessina-sdg.github.io
 
 The home page of Andres Messina's works on Scripture and the church:
-Scriptura, A History of the Christian Church, Revelation: The
-Illuminated Codex, The Pilgrim's Road
-and Worldviews in Motion.
+Scriptura, A History of the Christian Church, Worldviews in Motion,
+Revelation: The Illuminated Codex and The Pilgrim's Road.
 
 Live at <https://andresmessina-sdg.github.io/>, in English and at
 [`/es/`](https://andresmessina-sdg.github.io/es/) in Spanish.

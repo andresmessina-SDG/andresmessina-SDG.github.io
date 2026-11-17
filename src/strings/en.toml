@@ -4,7 +4,7 @@ lang = "en"
 locale = "en_US"
 path = ""
 title = "Andres Messina"
-description = "Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, A History of the Christian Church, Revelation: The Illuminated Codex, The Pilgrim’s Road and Worldviews in Motion."
+description = "Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, A History of the Christian Church, Worldviews in Motion, Revelation: The Illuminated Codex and The Pilgrim’s Road."
 og_alt = "A gilded initial A on a blue ground, beside the name Andres Messina and his five works."
 
 skip = "Skip to the works"
@@ -61,6 +61,19 @@ facts = ["English", "From Pentecost to today"]
 links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
+id = "worldviews"
+versal = "W"
+rest = "orldviews in Motion"
+name = "Worldviews in Motion"
+href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
+kind = "Animated watercolor"
+plate = "worldviews"
+plate_alt = "Christian theism painted in watercolor: the triune God above the world, joined to it by a red cross on which man’s sin is laid, over a line of history from Creation to New Creation."
+what = "The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism."
+facts = ["English", "22 worldviews · 4 acts"]
+links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
+
+[[works]]
 id = "revelation"
 versal = "R"
 rest = "evelation: The Illuminated Codex"
@@ -85,16 +98,3 @@ plate_alt = "The Pilgrim’s Road map: a golden road winding past the medallion 
 what = "Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles."
 facts = ["English", "11 stations · 33 stars"]
 links = [{ label = "Begin the journey", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
-
-[[works]]
-id = "worldviews"
-versal = "W"
-rest = "orldviews in Motion"
-name = "Worldviews in Motion"
-href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
-kind = "Animated watercolor"
-plate = "worldviews"
-plate_alt = "Christian theism painted in watercolor: the triune God above the world, joined to it by a red cross on which man’s sin is laid, over a line of history from Creation to New Creation."
-what = "The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism."
-facts = ["English", "22 worldviews · 4 acts"]
-links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
