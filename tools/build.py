@@ -57,11 +57,12 @@ def works_html(t: dict) -> str:
         colour = "blue" if i % 2 == 0 else "red"
         facts = "".join(f"<span>{esc(f)}</span>" for f in w["facts"])
         title_lang = f' lang="{w["title_lang"]}"' if "title_lang" in w else ""
+        clip = f' data-clip="/assets/works/{w["clip"]}.mp4"' if "clip" in w else ""
         links = "\n".join(f'    <a href="{esc(l["href"])}">{esc(l["label"])}</a>' for l in w["links"])
         items.append(f"""<li class="work {colour}">
   <h3{title_lang}><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h3>
   <p class="kind">{esc(w["kind"])}</p>
-  <a class="plate" href="{esc(w["href"])}"><img src="/assets/works/{w["plate"]}-1200.webp" srcset="/assets/works/{w["plate"]}-640.webp 640w, /assets/works/{w["plate"]}-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="{esc(w["plate_alt"])}" loading="lazy" decoding="async"></a>
+  <a class="plate" href="{esc(w["href"])}"{clip}><img src="/assets/works/{w["plate"]}-1200.webp" srcset="/assets/works/{w["plate"]}-640.webp 640w, /assets/works/{w["plate"]}-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="{esc(w["plate_alt"])}" loading="lazy" decoding="async"></a>
   <p class="what">{esc(w["what"])}</p>
   <p class="facts">{facts}</p>
   <p class="go">
@@ -70,6 +71,24 @@ def works_html(t: dict) -> str:
 </li>""")
     sep = '\n<li class="sep" aria-hidden="true"><hr class="staff"></li>\n'
     return indent(sep.join(items), 6)
+
+
+def lord(text: str) -> str:
+    """The KJV's LORD, set as it is printed: a capital and small capitals."""
+    return esc(text).replace("LORD", '<span class="lord">Lord</span>')
+
+
+def verse_js(verses: list, lang: str) -> str:
+    """Pick the day's verse in the reader's browser, by their own calendar, before the line is painted.
+    Day 0 is 1 January 2026; the days go round the list in order."""
+    data = json.dumps([[v[lang], v[f"{lang}_ref"]] for v in verses], ensure_ascii=False, separators=(",", ":"))
+    data = data.replace("</", "<\\/")
+    return ("(()=>{const v=" + data + ";"
+            "const d=new Date(),n=Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(2026,0,1))/864e5),"
+            "[t,r]=v[((n%v.length)+v.length)%v.length],q=document.currentScript.previousElementSibling,p=q.querySelector('p');"
+            "p.textContent='';t.split('LORD').forEach((s,i)=>{if(i){const l=document.createElement('span');"
+            "l.className='lord';l.textContent='Lord';p.append(l)}p.append(s)});"
+            "q.querySelector('cite').textContent=r})()")
 
 
 def langs_nav(t: dict) -> str:
@@ -155,6 +174,8 @@ def version() -> str:
 
 def main() -> None:
     strings = {lang: tomllib.loads((SRC / "strings" / f"{lang}.toml").read_text(encoding="utf-8")) for lang in LANGS}
+    verses = tomllib.loads((SRC / "verses.toml").read_text(encoding="utf-8"))["verses"]
+    evening = (SRC / "evening.js").read_text(encoding="utf-8").strip()
     head = (SRC / "head.html").read_text(encoding="utf-8")
     page = (SRC / "page.html").read_text(encoding="utf-8")
     notfound = (SRC / "404.html").read_text(encoding="utf-8")
@@ -174,7 +195,9 @@ def main() -> None:
                   "head_links": head_links(t, url, strings),
                   "langs": langs_nav(t), "initial": initial, "tail": tail,
                   "score_open": score_open, "score_close": score_close,
-                  "motif": motif, "sdg": sdg, "seal": seal,
+                  "motif": motif, "sdg": sdg, "seal": seal, "evening": evening,
+                  "verse_html": lord(verses[0][lang]), "verse_ref": verses[0][f"{lang}_ref"],
+                  "verse_js": verse_js(verses, lang),
                   "bach_html": re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["bach"])),
                   "works": works_html(t)}
         out = ROOT / t["path"] / "index.html"
@@ -190,7 +213,7 @@ def main() -> None:
               "page_title": f'{en["nf_title"]} · Andres Messina', "v": v,
               "description": en["nf_p"],
               "head_links": '<meta name="robots" content="noindex">',
-              "nf_works": nf_works, "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
+              "nf_works": nf_works, "evening": evening, "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
               "es_nf_h": es["nf_h"], "es_nf_p": es["nf_p"], "es_nf_home": es["nf_home"]}
     (ROOT / "404.html").write_text(render(head, values) + render(notfound, values), encoding="utf-8")
     print("wrote 404.html")

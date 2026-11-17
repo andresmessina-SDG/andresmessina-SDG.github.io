@@ -31,7 +31,74 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://andresmessina-sdg.github.io/#me","name":"Andres Messina","url":"https://andresmessina-sdg.github.io/","image":"https://andresmessina-sdg.github.io/assets/portrait.jpg","description":"I am a Christian who loves to learn and build to the glory of God. I work hard to curate an edifying and aesthetically excellent experience that helps others learn about Scripture, Christianity and the history of the church.","jobTitle":"Humanities & Social Science Expert","knowsLanguage":["es","en"],"knowsAbout":["Theology","Philosophy","Economics","International Law"],"sameAs":["https://www.linkedin.com/in/andresmessina/","https://github.com/andresmessina-SDG","https://ko-fi.com/andresmessina"]},{"@type":"WebPage","@id":"https://andresmessina-sdg.github.io/","url":"https://andresmessina-sdg.github.io/","name":"Andres Messina","description":"Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, A History of the Christian Church, Worldviews in Motion, Revelation: The Illuminated Codex and The Pilgrim’s Road.","inLanguage":"en","author":{"@id":"https://andresmessina-sdg.github.io/#me"},"about":{"@id":"https://andresmessina-sdg.github.io/#me"},"mainEntity":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"SoftwareApplication","operatingSystem":"Linux","applicationCategory":"ReferenceApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"name":"Scriptura","url":"https://andresmessina-sdg.github.io/scriptura/","description":"Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":2,"item":{"@type":"WebSite","name":"A History of the Christian Church","url":"https://andresmessina-sdg.github.io/church-history/","description":"The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":3,"item":{"@type":"WebSite","name":"Worldviews in Motion","url":"https://andresmessina-sdg.github.io/Worldviews-in-Motion/","description":"The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":4,"item":{"@type":"WebSite","name":"Revelation: The Illuminated Codex","url":"https://andresmessina-sdg.github.io/revelation-explainer/","description":"A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":5,"item":{"@type":"LearningResource","learningResourceType":"game","name":"The Pilgrim’s Road","url":"https://andresmessina-sdg.github.io/the-pilgrims-road/","description":"Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}}]}}]}</script>
 <link rel="preload" href="/assets/fonts/eb-garamond-roman-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/im-fell-english-sc-roman-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=56511f728c">
+<link rel="stylesheet" href="/assets/site.css?v=8626a0a329">
+<script>// Evening light: after sunset where the reader is, the vellum warms as if read by a candle.
+// Where is guessed from the browser's time zone alone (nothing is asked, sent or kept): a
+// city for the zones most readers come from, else a longitude from the zone's offset.
+// Sets --dusk on the page, from 0 by day to 1 by night, and looks again every five minutes.
+// ?evening (or ?evening=0.5) on the address shows it at any hour.
+(() => {
+  const P = {
+    'America/New_York': [40.7, -74], 'America/Chicago': [41.9, -87.6], 'America/Denver': [39.7, -105],
+    'America/Phoenix': [33.4, -112], 'America/Los_Angeles': [34, -118.2], 'America/Anchorage': [61.2, -149.9],
+    'Pacific/Honolulu': [21.3, -157.9], 'America/Toronto': [43.7, -79.4], 'America/Vancouver': [49.3, -123.1],
+    'America/Mexico_City': [19.4, -99.1], 'America/Guatemala': [14.6, -90.5], 'America/El_Salvador': [13.7, -89.2],
+    'America/Tegucigalpa': [14.1, -87.2], 'America/Managua': [12.1, -86.3], 'America/Costa_Rica': [9.9, -84.1],
+    'America/Panama': [9, -79.5], 'America/Havana': [23.1, -82.4], 'America/Santo_Domingo': [18.5, -69.9],
+    'America/Puerto_Rico': [18.4, -66.1], 'America/Bogota': [4.6, -74.1], 'America/Caracas': [10.5, -66.9],
+    'America/Guayaquil': [-2.2, -79.9], 'America/Lima': [-12, -77], 'America/La_Paz': [-16.5, -68.1],
+    'America/Santiago': [-33.4, -70.6], 'America/Asuncion': [-25.3, -57.6], 'America/Montevideo': [-34.9, -56.2],
+    'America/Argentina/Buenos_Aires': [-34.6, -58.4], 'America/Buenos_Aires': [-34.6, -58.4],
+    'America/Argentina/Cordoba': [-31.4, -64.2], 'America/Argentina/Mendoza': [-32.9, -68.8],
+    'America/Sao_Paulo': [-23.5, -46.6], 'Europe/Madrid': [40.4, -3.7], 'Atlantic/Canary': [28.1, -15.4],
+    'Europe/Lisbon': [38.7, -9.1], 'Europe/London': [51.5, -0.1], 'Europe/Dublin': [53.3, -6.3],
+    'Europe/Paris': [48.9, 2.35], 'Europe/Amsterdam': [52.4, 4.9], 'Europe/Brussels': [50.8, 4.4],
+    'Europe/Berlin': [52.5, 13.4], 'Europe/Zurich': [47.4, 8.5], 'Europe/Rome': [41.9, 12.5],
+    'Europe/Stockholm': [59.3, 18.1], 'Europe/Warsaw': [52.2, 21], 'Europe/Kyiv': [50.5, 30.5],
+    'Europe/Moscow': [55.8, 37.6], 'Africa/Johannesburg': [-26.2, 28], 'Africa/Lagos': [6.5, 3.4],
+    'Africa/Nairobi': [-1.3, 36.8], 'Asia/Seoul': [37.6, 127], 'Asia/Tokyo': [35.7, 139.7],
+    'Asia/Shanghai': [31.2, 121.5], 'Asia/Singapore': [1.3, 103.8], 'Asia/Manila': [14.6, 121],
+    'Asia/Kolkata': [22.6, 88.4], 'Australia/Sydney': [-33.9, 151.2], 'Australia/Melbourne': [-37.8, 145],
+    'Australia/Brisbane': [-27.5, 153], 'Australia/Perth': [-32, 115.9], 'Pacific/Auckland': [-36.8, 174.8],
+  };
+  const root = document.documentElement;
+  const ask = new URLSearchParams(location.search).get('evening');
+  const rad = Math.PI / 180;
+  const clamp = (x) => Math.min(1, Math.max(0, x));
+  let zone = '';
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+  const now0 = new Date();
+  const off = (m) => -new Date(now0.getFullYear(), m, 1).getTimezoneOffset();
+  const [lat, lon] = P[zone] || [
+    /^(Australia|Antarctica)\/|^Pacific\/(Auckland|Chatham|Fiji|Tongatapu|Noumea)|^America\/(Argentina|Santiago|Punta_Arenas|Montevideo|Asuncion|Sao_Paulo|La_Paz|Lima)|^Africa\/(Johannesburg|Maputo|Harare|Lusaka|Windhoek|Gaborone)|^Indian\/(Mauritius|Reunion|Antananarivo)|^Atlantic\/Stanley/.test(zone) ? -30 : 40,
+    Math.min(off(0), off(6)) / 4,   // standard time: an hour of offset for each 15 degrees
+  ];
+
+  function level(now) {
+    if (ask !== null) return ask === '' ? 1 : clamp(Number(ask) || 0);
+    const day0 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const n = (day0 - Date.UTC(now.getFullYear(), 0, 1)) / 864e5 + 1;
+    const decl = 23.44 * Math.sin(2 * Math.PI * (284 + n) / 365) * rad;
+    const B = 2 * Math.PI * (n - 81) / 364;
+    const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);   // minutes
+    const cosH = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(decl)) / (Math.cos(lat * rad) * Math.cos(decl));
+    if (cosH > 1) return 1;     // the sun does not rise today
+    if (cosH < -1) return 0;    // nor set
+    const noon = day0 + (720 - 4 * lon - eot) * 6e4;
+    const half = Math.acos(cosH) / rad * 4 * 6e4;
+    const mins = (t) => (now - t) / 6e4;
+    // the light warms from half an hour before sunset and is full forty minutes after;
+    // it cools from forty minutes before sunrise and is gone twenty minutes after
+    return Math.max(clamp((mins(noon + half) + 30) / 70), clamp((20 - mins(noon - half)) / 60));
+  }
+  const set = () => {
+    const v = level(new Date());
+    root.style.setProperty('--dusk', v.toFixed(3));
+    root.classList.toggle('evening', v > 0);
+  };
+  set();
+  setInterval(set, 5 * 6e4);
+})();</script>
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/assets/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -133,6 +200,7 @@
       <p>Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God.</p>
       <cite>1 Corinthians 10:31</cite>
     </blockquote>
+    <script>(()=>{const v=[["Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God.","1 Corinthians 10:31"],["God is our refuge and strength, a very present help in trouble.","Psalm 46:1"],["And whatsoever ye do, do it heartily, as to the Lord, and not unto men; knowing that of the Lord ye shall receive the reward of the inheritance: for ye serve the Lord Christ.","Colossians 3:23–24"],["Thy word is a lamp unto my feet, and a light unto my path.","Psalm 119:105"],["For of him, and through him, and to him, are all things: to whom be glory for ever. Amen.","Romans 11:36"],["One generation shall praise thy works to another, and shall declare thy mighty acts.","Psalm 145:4"],["The grass withereth, the flower fadeth: but the word of our God shall stand for ever.","Isaiah 40:8"],["But now they desire a better country, that is, an heavenly: wherefore God is not ashamed to be called their God: for he hath prepared for them a city.","Hebrews 11:16"],["The heavens declare the glory of God; and the firmament sheweth his handywork.","Psalm 19:1"],["The fear of the LORD is the beginning of wisdom: and the knowledge of the holy is understanding.","Proverbs 9:10"],["And the Word was made flesh, and dwelt among us, (and we beheld his glory, the glory as of the only begotten of the Father,) full of grace and truth.","John 1:14"],["There is a river, the streams whereof shall make glad the city of God, the holy place of the tabernacles of the most High.","Psalm 46:4"],["Beware lest any man spoil you through philosophy and vain deceit, after the tradition of men, after the rudiments of the world, and not after Christ.","Colossians 2:8"],["And let the beauty of the LORD our God be upon us: and establish thou the work of our hands upon us; yea, the work of our hands establish thou it.","Psalm 90:17"],["For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: not of works, lest any man should boast.","Ephesians 2:8–9"],["One thing have I desired of the LORD, that will I seek after; that I may dwell in the house of the LORD all the days of my life, to behold the beauty of the LORD, and to enquire in his temple.","Psalm 27:4"],["And he that sat upon the throne said, Behold, I make all things new. And he said unto me, Write: for these words are true and faithful.","Revelation 21:5"],["In the beginning God created the heaven and the earth.","Genesis 1:1"],["Blessed is the man whose strength is in thee; in whose heart are the ways of them.","Psalm 84:5"],["For I am not ashamed of the gospel of Christ: for it is the power of God unto salvation to every one that believeth; to the Jew first, and also to the Greek.","Romans 1:16"],["We will not hide them from their children, shewing to the generation to come the praises of the LORD, and his strength, and his wonderful works that he hath done.","Psalm 78:4"],["Not unto us, O LORD, not unto us, but unto thy name give glory, for thy mercy, and for thy truth’s sake.","Psalm 115:1"],["O sing unto the LORD a new song: sing unto the LORD, all the earth.","Psalm 96:1"],["Be still, and know that I am God: I will be exalted among the heathen, I will be exalted in the earth.","Psalm 46:10"],["He which testifieth these things saith, Surely I come quickly. Amen. Even so, come, Lord Jesus.","Revelation 22:20"],["Let every thing that hath breath praise the LORD. Praise ye the LORD.","Psalm 150:6"]];const d=new Date(),n=Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(2026,0,1))/864e5),[t,r]=v[((n%v.length)+v.length)%v.length],q=document.currentScript.previousElementSibling,p=q.querySelector('p');p.textContent='';t.split('LORD').forEach((s,i)=>{if(i){const l=document.createElement('span');l.className='lord';l.textContent='Lord';p.append(l)}p.append(s)});q.querySelector('cite').textContent=r})()</script>
 
     <h2 class="label" id="works">The works</h2>
     <div class="score score-open">
@@ -158,7 +226,7 @@
       <li class="work red">
         <h3><a href="https://andresmessina-sdg.github.io/church-history/"><span class="versal">A</span> History of the Christian Church</a></h3>
         <p class="kind">Website</p>
-        <a class="plate" href="https://andresmessina-sdg.github.io/church-history/"><img src="/assets/works/church-history-1200.webp" srcset="/assets/works/church-history-640.webp 640w, /assets/works/church-history-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="The river of church history: one stream from Pentecost dividing into the Church of the East, the Orthodox churches and the Latin West, and the Reformation’s branches beyond." loading="lazy" decoding="async"></a>
+        <a class="plate" href="https://andresmessina-sdg.github.io/church-history/" data-clip="/assets/works/church-history.mp4"><img src="/assets/works/church-history-1200.webp" srcset="/assets/works/church-history-640.webp 640w, /assets/works/church-history-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="The river of church history: one stream from Pentecost dividing into the Church of the East, the Orthodox churches and the Latin West, and the Reformation’s branches beyond." loading="lazy" decoding="async"></a>
         <p class="what">The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers.</p>
         <p class="facts"><span>English</span><span>From Pentecost to today</span></p>
         <p class="go">
@@ -169,7 +237,7 @@
       <li class="work blue">
         <h3><a href="https://andresmessina-sdg.github.io/Worldviews-in-Motion/"><span class="versal">W</span>orldviews in Motion</a></h3>
         <p class="kind">Animated watercolor</p>
-        <a class="plate" href="https://andresmessina-sdg.github.io/Worldviews-in-Motion/"><img src="/assets/works/worldviews-1200.webp" srcset="/assets/works/worldviews-640.webp 640w, /assets/works/worldviews-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="Christian theism painted in watercolor: the triune God above the world, joined to it by a red cross on which man’s sin is laid, over a line of history from Creation to New Creation." loading="lazy" decoding="async"></a>
+        <a class="plate" href="https://andresmessina-sdg.github.io/Worldviews-in-Motion/" data-clip="/assets/works/worldviews.mp4"><img src="/assets/works/worldviews-1200.webp" srcset="/assets/works/worldviews-640.webp 640w, /assets/works/worldviews-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="Christian theism painted in watercolor: the triune God above the world, joined to it by a red cross on which man’s sin is laid, over a line of history from Creation to New Creation." loading="lazy" decoding="async"></a>
         <p class="what">The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism.</p>
         <p class="facts"><span>English</span><span>22 worldviews · 4 acts</span></p>
         <p class="go">
@@ -180,7 +248,7 @@
       <li class="work red">
         <h3><a href="https://andresmessina-sdg.github.io/revelation-explainer/"><span class="versal">R</span>evelation: The Illuminated Codex</a></h3>
         <p class="kind">A guide to the last book</p>
-        <a class="plate" href="https://andresmessina-sdg.github.io/revelation-explainer/"><img src="/assets/works/revelation-1200.webp" srcset="/assets/works/revelation-640.webp 640w, /assets/works/revelation-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="Question 20 of the guide, “What is the first resurrection?”, above a medieval illumination of an angel showing John the New Jerusalem." loading="lazy" decoding="async"></a>
+        <a class="plate" href="https://andresmessina-sdg.github.io/revelation-explainer/" data-clip="/assets/works/revelation.mp4"><img src="/assets/works/revelation-1200.webp" srcset="/assets/works/revelation-640.webp 640w, /assets/works/revelation-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="Question 20 of the guide, “What is the first resurrection?”, above a medieval illumination of an angel showing John the New Jerusalem." loading="lazy" decoding="async"></a>
         <p class="what">A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture.</p>
         <p class="facts"><span>English · Español · Русский</span><span>7 visions · 22 questions</span></p>
         <p class="go">
@@ -191,7 +259,7 @@
       <li class="work blue">
         <h3><a href="https://andresmessina-sdg.github.io/the-pilgrims-road/"><span class="versal">T</span>he Pilgrim’s Road</a></h3>
         <p class="kind">Classroom game</p>
-        <a class="plate" href="https://andresmessina-sdg.github.io/the-pilgrims-road/"><img src="/assets/works/pilgrims-road-1200.webp" srcset="/assets/works/pilgrims-road-640.webp 640w, /assets/works/pilgrims-road-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="The Pilgrim’s Road map: a golden road winding past the medallion stations under a night sky, starting at Bethlehem." loading="lazy" decoding="async"></a>
+        <a class="plate" href="https://andresmessina-sdg.github.io/the-pilgrims-road/" data-clip="/assets/works/pilgrims-road.mp4"><img src="/assets/works/pilgrims-road-1200.webp" srcset="/assets/works/pilgrims-road-640.webp 640w, /assets/works/pilgrims-road-1200.webp 1200w" sizes="(min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="The Pilgrim’s Road map: a golden road winding past the medallion stations under a night sky, starting at Bethlehem." loading="lazy" decoding="async"></a>
         <p class="what">Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles.</p>
         <p class="facts"><span>English</span><span>11 stations · 33 stars</span></p>
         <p class="go">
@@ -279,6 +347,6 @@
     </svg>
   </footer>
 </div>
-<script src="/assets/site.js?v=56511f728c" defer></script>
+<script src="/assets/site.js?v=8626a0a329" defer></script>
 </body>
 </html>

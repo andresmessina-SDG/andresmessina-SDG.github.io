@@ -104,6 +104,7 @@ h1 {
 .verse { margin: 34px 0 0; padding: 0; }
 .verse p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.125rem; text-wrap: pretty; }
 .verse p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--vermilion); }
+.lord { font-variant-caps: small-caps; }
 .verse cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
 
 /* ---------- Staves: five hairlines a staff space (5px) apart ---------- */
@@ -168,6 +169,13 @@ h1 {
   transition: box-shadow .3s ease, transform .3s ease;
 }
 .plate img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid rgba(162, 122, 40, .5); background: var(--vellum-edge); }
+/* a short silent clip of the work, fetched only when a pointer comes near, laid exactly over the picture */
+.plate { position: relative; }
+.plate video {
+  position: absolute; left: 7px; top: 7px; width: calc(100% - 14px); height: auto; aspect-ratio: 16 / 9;
+  opacity: 0; transition: opacity .45s ease; pointer-events: none; background: transparent;
+}
+.plate video.on { opacity: 1; }
 .plate:hover { transform: translateY(-2px); box-shadow: 0 1px 1px rgba(60, 40, 10, .06), 0 20px 34px -20px rgba(60, 40, 10, .55); }
 .plate:focus-visible { outline-offset: 3px; }
 
@@ -249,6 +257,31 @@ h1 {
 }
 .work h3 a:focus-visible { outline-offset: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .plate:hover { transform: none; } }
+
+/* ---------- Evening light ----------
+   After sunset where the reader is (src/evening.js sets --dusk, 0 by day to 1 by night), the leaf warms
+   and its edges fall into shadow, as if read by a candle. It is not a dark mode: the page stays vellum. */
+html::after, html::before {
+  content: ""; position: fixed; inset: 0; z-index: 20; pointer-events: none;
+  opacity: var(--dusk, 0); transition: opacity 2.5s ease;
+}
+html::after {
+  background:
+    radial-gradient(ellipse 115% 95% at 50% 42%, transparent 48%, rgba(66, 34, 8, .32) 100%),
+    linear-gradient(rgba(255, 150, 60, .075), rgba(255, 150, 60, .075));
+}
+html::before { background: radial-gradient(ellipse 70% 50% at 50% 34%, rgba(255, 206, 128, .2), transparent 72%); }
+@media (prefers-reduced-motion: no-preference) {
+  html.evening::before { animation: candle 11s ease-in-out infinite; }
+}
+@keyframes candle {
+  0%, 100% { opacity: var(--dusk, 0); }
+  18% { opacity: calc(var(--dusk, 0) * .8); }
+  31% { opacity: calc(var(--dusk, 0) * .96); }
+  47% { opacity: calc(var(--dusk, 0) * .86); }
+  66% { opacity: calc(var(--dusk, 0) * 1); }
+  83% { opacity: calc(var(--dusk, 0) * .9); }
+}
 
 /* ---------- The leaf turns between English and Spanish ---------- */
 @media (prefers-reduced-motion: no-preference) {

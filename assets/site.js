@@ -35,6 +35,47 @@
     }
   }
 
+  // Moving plates: where a pointer can rest, each plate that has a clip plays it, silent, over
+  // its picture. Nothing is fetched until the pointer comes onto that work, and nothing at all
+  // on touch screens, for readers who ask for stillness, or where the browser asks to save data.
+  const hover = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const thrift = navigator.connection && navigator.connection.saveData;
+  for (const plate of document.querySelectorAll('.plate[data-clip]')) {
+    const work = plate.closest('.work');
+    let video = null, wanted = false;
+    const ready = () => !still.matches && hover.matches && !thrift;
+    const fetchClip = () => {
+      if (video || !ready()) return;
+      video = document.createElement('video');
+      video.muted = true; video.playsInline = true; video.preload = 'auto';
+      video.disablePictureInPicture = true;
+      video.setAttribute('aria-hidden', 'true');
+      video.tabIndex = -1;
+      video.src = plate.dataset.clip;
+      video.addEventListener('playing', () => { if (wanted) video.classList.add('on'); });
+      plate.appendChild(video);
+    };
+    const start = () => {
+      fetchClip();
+      if (!video) return;
+      wanted = true;
+      video.currentTime = 0;
+      const p = video.play();
+      if (p && p.catch) p.catch(() => {});
+    };
+    const stop = () => {
+      if (!video) return;
+      wanted = false;
+      video.classList.remove('on');
+      setTimeout(() => { if (!wanted) video.pause(); }, 500);
+    };
+    work.addEventListener('pointerenter', fetchClip);
+    plate.addEventListener('pointerenter', start);
+    plate.addEventListener('pointerleave', stop);
+    plate.addEventListener('focus', start);
+    plate.addEventListener('blur', stop);
+  }
+
   // When the last pen stroke is down, lift the mask and let the light cross the gold.
   function sign(sig) {
     const strokes = sig.querySelectorAll('.sdg-pen path');

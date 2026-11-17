@@ -17,8 +17,6 @@ cred_title = "Humanities & Social Science Expert"
 cred_fields = "Theology · Philosophy · Economics · International Law"
 cred_degrees = "PPE, magna cum laude · M.A. candidate, UPeace · Native Spanish & English"
 linkedin = "LinkedIn"
-verse = "Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God."
-verse_ref = "1 Corinthians 10:31"
 works_label = "The works"
 sdg_gloss = "Soli Deo Gloria · To God alone be the glory"
 promise = "All five are free. None of them asks for an account or tracks you."
@@ -50,6 +48,7 @@ links = [
 
 [[works]]
 id = "church-history"
+clip = "church-history"
 versal = "A"
 rest = " History of the Christian Church"
 name = "A History of the Christian Church"
@@ -63,6 +62,7 @@ links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.
 
 [[works]]
 id = "worldviews"
+clip = "worldviews"
 versal = "W"
 rest = "orldviews in Motion"
 name = "Worldviews in Motion"
@@ -76,6 +76,7 @@ links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.gith
 
 [[works]]
 id = "revelation"
+clip = "revelation"
 versal = "R"
 rest = "evelation: The Illuminated Codex"
 name = "Revelation: The Illuminated Codex"
@@ -89,6 +90,7 @@ links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io
 
 [[works]]
 id = "pilgrims-road"
+clip = "pilgrims-road"
 versal = "T"
 rest = "he Pilgrim’s Road"
 name = "The Pilgrim’s Road"

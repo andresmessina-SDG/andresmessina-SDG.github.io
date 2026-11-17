@@ -17,8 +17,6 @@ cred_title = "Experto en Humanidades y Ciencias Sociales"
 cred_fields = "Teología · Filosofía · Economía · Derecho Internacional"
 cred_degrees = "PPE (Filosofía, Política y Economía), magna cum laude · Candidato a máster, UPeace · Español e inglés nativos"
 linkedin = "LinkedIn"
-verse = "Si, pues, coméis o bebéis, o hacéis otra cosa, hacedlo todo para la gloria de Dios."
-verse_ref = "1 Corintios 10:31"
 works_label = "Las obras"
 sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
@@ -50,6 +48,7 @@ links = [
 
 [[works]]
 id = "church-history"
+clip = "church-history"
 title_lang = "en"
 versal = "A"
 rest = " History of the Christian Church"
@@ -64,6 +63,7 @@ links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io
 
 [[works]]
 id = "worldviews"
+clip = "worldviews"
 title_lang = "en"
 versal = "W"
 rest = "orldviews in Motion"
@@ -78,6 +78,7 @@ links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.
 
 [[works]]
 id = "revelation"
+clip = "revelation"
 versal = "A"
 rest = "pocalipsis: El Códice Iluminado"
 name = "Apocalipsis: El Códice Iluminado"
@@ -91,6 +92,7 @@ links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.
 
 [[works]]
 id = "pilgrims-road"
+clip = "pilgrims-road"
 title_lang = "en"
 versal = "T"
 rest = "he Pilgrim’s Road"
