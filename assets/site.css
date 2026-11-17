@@ -169,7 +169,7 @@ h1 {
    fifteenth-century Book of Hours (Use of Metz; assets/book/vine.webp), its vellum taken out so that
    it lies on this page as if painted here */
 .work::before {
-  content: ""; position: absolute; top: calc(3.68rem + 20px); left: calc(var(--ini-col) - 36px); width: 38px; aspect-ratio: 170 / 1503;
+  content: ""; position: absolute; top: calc(var(--leaf-head, 0px) + 3.68rem + 20px); left: calc(var(--ini-col) - 36px); width: 38px; aspect-ratio: 170 / 1503;
   background: url("/assets/book/vine.webp") center top / 100% auto no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
           mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
@@ -276,6 +276,41 @@ h1 {
 .nf-list a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 .nf .score-final { margin-top: 56px; }
 
+/* ---------- Leaves: the page read down, a folio to a leaf (site.js), on screens only ----------
+   Each folio is a leaf as tall as the window at the least, held by position: sticky at the height
+   that keeps its foot in view (site.js sets its top); below it, half a window's scrolling in which it
+   holds still before the next leaf rises over it. The leaf itself is a sheet of the parchment drawn
+   from edge to edge of the window behind the folio (::after), casting a shadow from its head as it
+   rises; the shade over it deepens as it is covered. */
+@media screen {
+  html.leaves body { overflow-x: clip; }
+  html.leaves main > .folio {
+    --leaf-head: clamp(48px, 10vw, 76px);
+    position: sticky; top: 0; box-sizing: border-box; min-height: 100vh;
+    margin: 0 0 45vh; padding-top: var(--leaf-head); padding-bottom: clamp(56px, 11vw, 92px);
+  }
+  html.leaves main > .folio:last-child { margin-bottom: 0; }
+  html.leaves main > .folio:focus { outline: none; }
+  html.leaves main > .folio::after {
+    content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw);
+    background: var(--vellum) url("/assets/book/parchment.webp") 0 0 / 720px 720px;
+    box-shadow: 0 -18px 30px -22px rgba(70, 48, 16, .36), 0 -.5px 0 rgba(120, 90, 50, .16);
+  }
+  html.leaves main > .anchor:first-child + .folio { --leaf-head: 0px; padding-top: 0; }
+  html.leaves main > .anchor:first-child + .folio::after { content: none; }
+  html.leaves main > .anchor:first-child + .folio > .leafnum { display: none; }   /* the page's own head heads the first */   /* nothing lies beneath the first: the page's own parchment is its leaf */
+  html.leaves main > .folio > .shade { position: absolute; z-index: 4; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw); background: #2A1C10; opacity: 0; pointer-events: none; }
+  html.leaves main > .folio.deep { opacity: 0; }
+  /* each leaf's number in its head, at the outer corner, as the book numbers its leaves */
+  html.leaves .leafnum {
+    position: absolute; z-index: 2; top: 16px; right: calc(50% - 50vw + max(18px, env(safe-area-inset-right, 0px)));
+    font-family: var(--rubric); font-size: .9rem; letter-spacing: .07em; line-height: 1; color: var(--vermilion);
+  }
+  html.leaves .anchor { height: 0; }
+  html.leaves main > .work { margin-top: 0; }
+  html.leaves .colophon { margin-top: 0; }
+}
+
 /* ---------- Wide: the initials hang in the margin ---------- */
 @media (min-width: 1000px) {
   :root { --hero-ini: 152px; --hero-gap: 22px; --ini-col: 72px; --ini-gap: 9px; }
@@ -295,7 +330,7 @@ h1 {
   .portrait { width: 76px; height: 76px; margin-top: 2px; }
   .kalendar { margin-top: 52px; }
   .work { margin-top: 60px; }
-  .work::before { top: calc(2.72rem + 18px); left: calc(var(--ini-col) - 30px); width: 30px; }
+  .work::before { top: calc(var(--leaf-head, 0px) + 2.72rem + 18px); left: calc(var(--ini-col) - 30px); width: 30px; }
   .work h2 { font-size: 1.5625rem; }
   .versal { font-size: 3.4rem; }
   .sdg { font-size: 2.25rem; }

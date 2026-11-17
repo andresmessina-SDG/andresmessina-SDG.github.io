@@ -263,21 +263,10 @@
   const thumbs = document.querySelector('.thumbs');
   const tabs = thumbs ? [...thumbs.querySelectorAll('.thumb')] : [];
   function markThumb(k) { tabs.forEach((t, i) => (i === k ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current'))); }
-  let folioWatch = null;
   function slimThumbs() {
     if (!thumbs) return;
     root.classList.add('thumbable');
-    thumbs.classList.add('slim');
-    // the tab of the folio in view stands out a little
-    if (folioWatch) folioWatch.disconnect();
-    const folios = [...main.querySelectorAll(':scope > .folio')];
-    const seen = new Set();
-    folioWatch = new IntersectionObserver((entries) => {
-      for (const e of entries) (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
-      const k = folios.findIndex((f) => seen.has(f));
-      if (k >= 0) markThumb(k);
-    }, { rootMargin: '-45% 0px -50% 0px' });
-    folios.forEach((f) => folioWatch.observe(f));
+    thumbs.classList.add('slim');      // the leaves (below) tell it which folio is open
   }
   if (thumbs) {
     thumbs.addEventListener('click', (e) => {
@@ -292,6 +281,100 @@
     window.addEventListener('scroll', () => { if (thumbs.classList.contains('open')) thumbs.classList.remove('open'); }, { passive: true });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') thumbs.classList.remove('open'); });
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // Leaves. Where the page is read down (a phone, a narrow or a short window), each folio is a leaf
+  // laid over the one before, as the eras of the church history are: the reader reads down a leaf,
+  // it holds still at its foot for a moment's scrolling, and the next rises over it, the one beneath
+  // dimming a little as it is covered. Each is held by position: sticky, at the height that keeps its
+  // foot in view (site.css lays the leaves; here each is given that height); its folio number stands
+  // at its head, and the thumb index follows it. Links to a folio go to where its leaf begins.
+  let leaves = null;
+  function leavesOn() {
+    if (leaves || !main || book) return;
+    const folios = [...main.querySelectorAll(':scope > .folio')];
+    if (!folios.length) return;
+    root.classList.add('leaves');
+    const shades = [], made = [];
+    folios.forEach((f, k) => {
+      const anchor = el('div', 'anchor', { 'aria-hidden': 'true' });
+      const shade = el('span', 'shade', { 'aria-hidden': 'true' });
+      const num = el('span', 'leafnum', { 'aria-hidden': 'true' });
+      num.textContent = ROMAN[k];
+      f.before(anchor);
+      f.prepend(shade, num);
+      shades.push(shade);
+      made.push(anchor, shade, num);
+    });
+    let raf = 0, cur = -1;
+    const layout = () => { for (const f of folios) f.style.top = `${Math.min(0, window.innerHeight - f.offsetHeight)}px`; };
+    const look = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const h = window.innerHeight, tops = folios.map((f) => f.getBoundingClientRect().top);
+        let k = 0;
+        folios.forEach((f, i) => {
+          // the shade deepens as the next leaf rises over this one; a leaf two beneath is not drawn at all
+          const c = i + 1 < folios.length ? Math.max(0, Math.min(1, 1 - tops[i + 1] / h)) : 0;
+          shades[i].style.opacity = still.matches ? '0' : (c * 0.12).toFixed(3);
+          f.classList.toggle('deep', i + 2 < folios.length && tops[i + 2] <= 1);
+          if (tops[i] <= h * 0.35) k = i;
+        });
+        if (k !== cur) { cur = k; markThumb(k); }
+      });
+    };
+    // to a folio, or to something on one: where its leaf begins in the page, and as far down it as that is
+    const to = (id, instant) => {
+      const t = id && document.getElementById(id);
+      const f = t && t.closest('.folio');
+      if (!f || f.parentElement !== main) return false;
+      const k = folios.indexOf(f);
+      const within = t === f ? 0 : t.getBoundingClientRect().top - f.getBoundingClientRect().top;
+      const y = k === 0 && t === f ? 0 : f.previousElementSibling.getBoundingClientRect().top + window.scrollY + within;
+      const far = Math.abs(y - window.scrollY) > window.innerHeight * 1.6;
+      window.scrollTo({ top: y, behavior: instant || still.matches || far ? 'auto' : 'smooth' });
+      if (far && !instant && !still.matches) f.animate([{ opacity: 0.6, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+      if (!f.hasAttribute('tabindex')) f.setAttribute('tabindex', '-1');
+      f.focus({ preventScroll: true });
+      return true;
+    };
+    const onClick = (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = decodeURIComponent(a.getAttribute('href').slice(1));
+      if (!to(id)) return;
+      e.preventDefault();
+      if (location.hash !== `#${id}`) history.pushState(null, '', `#${id}`);
+    };
+    const onHash = () => to(decodeURIComponent(location.hash.slice(1)), true);
+    const onResize = () => { layout(); look(); };
+    const ro = 'ResizeObserver' in window ? new ResizeObserver(onResize) : null;
+    if (ro) folios.forEach((f) => ro.observe(f));
+    document.addEventListener('click', onClick);
+    window.addEventListener('hashchange', onHash);
+    window.addEventListener('scroll', look, { passive: true });
+    window.addEventListener('resize', onResize);
+    layout();
+    look();
+    if (location.hash) to(decodeURIComponent(location.hash.slice(1)), true);
+    leaves = {
+      off() {
+        if (ro) ro.disconnect();
+        document.removeEventListener('click', onClick);
+        window.removeEventListener('hashchange', onHash);
+        window.removeEventListener('scroll', look);
+        window.removeEventListener('resize', onResize);
+        cancelAnimationFrame(raf);
+        made.forEach((e) => e.remove());
+        folios.forEach((f) => { f.style.top = ''; f.classList.remove('deep'); });
+        root.classList.remove('leaves');
+        leaves = null;
+      },
+    };
+  }
+  function leavesOff() { if (leaves) leaves.off(); }
 
   // ---------------------------------------------------------------------------------------------
   // The book. Each folio of the page is a spread: its .page-v on the left, its .page-r on the right.
@@ -347,6 +430,7 @@
   const PAGE = themeColor ? themeColor.getAttribute('content') : '', DESK = '#653A1D';
 
   function build() {
+    leavesOff();
     stopScrollScribe();
     unmark();
     document.querySelectorAll('.inked').forEach((e) => e.classList.remove('inked'));
@@ -413,7 +497,6 @@
 
     // the thumb index stands out from the book's left edge
     if (thumbs) { thumbs.classList.remove('slim', 'open'); bk.append(thumbs); }
-    if (folioWatch) { folioWatch.disconnect(); folioWatch = null; }
 
     bk.append(block);
     stage.append(bk);
@@ -459,7 +542,8 @@
     book = null;
     if (organBtn) organBtn.hidden = true;
     if (fsBtn) fsBtn.hidden = true;
-    if (cur > 0) spreads[cur].folio.scrollIntoView();
+    if (!printing) leavesOn();
+    if (cur > 0) { const f = spreads[cur].folio, a = f.previousElementSibling; (a && a.classList.contains('anchor') ? a : f).scrollIntoView(); }
   }
 
   function layout() {
@@ -776,7 +860,7 @@
   }
   if (main && main.querySelector('.folio')) {
     decide();
-    if (!book) { scrollScribe(); slimThumbs(); }
+    if (!book) { scrollScribe(); slimThumbs(); leavesOn(); }
     let raf = 0;
     window.addEventListener('resize', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(decide); });
     window.addEventListener('beforeprint', () => { printing = true; unbuild(); });

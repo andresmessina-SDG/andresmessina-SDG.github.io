@@ -53,11 +53,15 @@ colophon that says what it is set in and when it was bound. The build ties
 each number to its word and each book of Scripture to its chapter and
 verse, so that no line begins with a figure cut off from them.
 
-On a phone, a narrow or short window, without JavaScript, and on paper, the
-same document is one leaf of vellum read down the page, with each work's
-line of the chorale beneath it, and the thumb index folded to slim spines
-of calf at the left edge, drawn out by a touch. Nothing moves for readers who ask for
-stillness: the book still binds, and its leaves turn at once.
+On a phone, or a narrow or short window, the same document is read down the
+page, a folio to a leaf, as the church history's eras are: each leaf holds
+still at its foot for a moment's scrolling, then the next rises over it and
+the one beneath dims. Each work's line of the chorale is at the foot of its
+leaf, and the thumb index is folded to slim spines of calf at the left
+edge, drawn out by a touch. Without JavaScript, and on paper, it is simply
+one long page. Nothing moves for readers who ask for stillness: the book
+still binds, and its leaves turn at once; the leaves still lie one over
+another, but without the shade.
 
 ## What is where
 
