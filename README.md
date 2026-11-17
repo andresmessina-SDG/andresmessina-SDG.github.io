@@ -18,8 +18,10 @@ signed his scores: *J.J.* (*Jesu, juva*, "Jesus, help") at the head and
 | `src/strings/en.toml`, `src/strings/es.toml` | Every word on the page, and the five works. Edit these to change the text or add a work. |
 | `src/head.html`, `src/page.html`, `src/404.html` | The page templates. |
 | `src/initial.svg`, `src/tail.svg` | The gilded initial A and the ivy that trails from it. |
-| `assets/site.css`, `assets/site.js` | Styles, and the one glint of light across the gold. |
+| `assets/site.css`, `assets/site.js` | Styles, and the little that moves: the glint across the gold; the staves ruled, versals painted and plates laid as they scroll into view; S.D.G. written by a quill and sealed; the leaf turning between English and Spanish; and B-A-C-H played on a small organ when asked. Nothing moves for readers who ask for stillness. |
 | `src/score-open.svg`, `src/score-close.svg` | The first and last lines of Bach's *Ein feste Burg ist unser Gott* (BWV 302, soprano), engraved by `tools/engrave.py` with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
+| `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
+| `src/sdg.svg`, `src/seal.svg` | The gilded S.D.G. as paths with the pen strokes that write it, and the wax seal beside it; drawn by `tools/quill.py` from the page's own EB Garamond. |
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. |
 | `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
@@ -45,6 +47,12 @@ To re-engrave the music (needs fontTools; Bravura is downloaded on first run):
 
 ```bash
 python3 tools/engrave.py && python3 tools/build.py
+```
+
+To redraw the signature or the seal (needs fontTools and brotli):
+
+```bash
+python3 tools/quill.py && python3 tools/build.py
 ```
 
 Commit what they write. GitHub Pages serves the repository as it is.

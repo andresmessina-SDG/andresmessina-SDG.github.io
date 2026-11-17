@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Engrave the two lines of Bach that sit on the page's staves: python3 tools/engrave.py
 
-Writes src/score-open.svg (the first line of the chorale, under "The works")
-and src/score-close.svg (its last line, which ends at the final double bar).
+Writes src/score-open.svg (the first line of the chorale, under "The works"),
+src/score-close.svg (its last line, which ends at the final double bar) and
+src/bach.svg (B-A-C-H, Bach's name in German note names, in the colophon,
+which site.js plays when it is pressed).
 
 The notes are the soprano of J. S. Bach's four-part setting of Luther's
 "Ein feste Burg ist unser Gott", BWV 302, in D major and common time:
@@ -35,9 +37,10 @@ WORDS = "var(--muted)"
 # SMuFL code points
 G_CLEF, SHARP, COMMON_TIME = 0xE050, 0xE262, 0xE08A
 HEAD_BLACK, HEAD_HALF, FERMATA = 0xE0A4, 0xE0A3, 0xE4C0
+HEAD_WHOLE, FLAT, NATURAL = 0xE0A2, 0xE260, 0xE261
 
 # Diatonic steps above E4, the bottom line of the treble staff.
-STEP = {"D4": -1, "E4": 0, "F#4": 1, "G4": 2, "A4": 3, "B4": 4, "C#5": 5, "D5": 6}
+STEP = {"D4": -1, "E4": 0, "F#4": 1, "G4": 2, "A4": 3, "Bb4": 4, "B4": 4, "C5": 5, "C#5": 5, "D5": 6}
 
 BAR = "|"
 # (pitch, length in quarters, syllable, hyphen after it, fermata)
@@ -205,13 +208,50 @@ def engrave(notes, with_clef: bool, g: Glyphs, w: "Words", label: str) -> str:
             f'</svg>\n')
 
 
+# B-A-C-H: in German, B is B flat and H is B natural. (pitch, accidental, letter)
+MOTIF = [("Bb4", FLAT, "B"), ("A4", None, "A"), ("C5", None, "C"), ("B4", NATURAL, "H")]
+
+
+def engrave_motif(g: Glyphs) -> str:
+    """A short staff of its own, in whole notes: each note is a <g class="n"> that site.js lights as it sounds."""
+    top = 3.0 * S
+    bottom = top + 4 * S + 0.5
+    x = 0.4 * S
+    clef = g.path(G_CLEF, x, y_of("G4", bottom))
+    x += g.bounds(G_CLEF)[2] + 1.6 * S
+    head_w = g.bounds(HEAD_WHOLE)[2]
+    notes, letters = [], []
+    for pitch, acc, letter in MOTIF:
+        if acc:
+            aw = g.bounds(acc)[2]
+            acc_path = g.path(acc, x, y_of(pitch, bottom))
+            x += aw + 0.35 * S
+        else:
+            acc_path = ""
+        head = g.path(HEAD_WHOLE, x, y_of(pitch, bottom))
+        notes.append(f'<g class="n">{acc_path}{head}</g>')
+        letters.append(f'<text x="{x + head_w / 2:.2f}" y="{bottom + 3.6 * S:.2f}">{letter}</text>')
+        x += head_w + 2.6 * S
+    x -= 1.2 * S
+    width = x + 0.16 * S + 0.5
+    lines = "".join(f'<rect x="0" y="{top + i * S:.2f}" width="{width:.2f}" height="1"/>' for i in range(5))
+    bar = f'<rect x="{x:.2f}" y="{top:.2f}" width="{0.16 * S:.2f}" height="{4 * S + 1:.2f}"/>'
+    height = bottom + 3.6 * S + 4
+    return (f'<svg class="motif" viewBox="0 0 {width:.1f} {height:.1f}" width="{width:.1f}" height="{height:.1f}" aria-hidden="true">\n'
+            f'  <g class="motif-staff" fill="var(--rule)">{lines}</g>\n'
+            f'  <g fill="{INK}">{clef}{bar}{"".join(notes)}</g>\n'
+            f'  <g class="motif-letters" text-anchor="middle">{"".join(letters)}</g>\n'
+            f'</svg>\n')
+
+
 def main():
     g, w = Glyphs(font()), Words()
+    (ROOT / "src" / "bach.svg").write_text(engrave_motif(g), encoding="utf-8")
     (ROOT / "src" / "score-open.svg").write_text(
         engrave(OPENING, True, g, w, "The first line of Bach’s setting of Ein feste Burg ist unser Gott"), encoding="utf-8")
     (ROOT / "src" / "score-close.svg").write_text(
         engrave(CLOSING, False, g, w, "The last line of Bach’s setting of Ein feste Burg ist unser Gott"), encoding="utf-8")
-    print("wrote src/score-open.svg and src/score-close.svg")
+    print("wrote src/score-open.svg, src/score-close.svg and src/bach.svg")
 
 
 if __name__ == "__main__":

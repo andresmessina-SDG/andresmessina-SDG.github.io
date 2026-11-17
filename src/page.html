@@ -47,7 +47,12 @@
     </div>
 
     <div class="signature">
-      <p class="sdg" lang="la">S.D.G.</p>
+      <div class="sealed">
+{{{seal}}}
+        <p class="sdg" lang="la"><span class="sr">S.D.G.</span>
+{{{sdg}}}
+        </p>
+      </div>
       <p class="sdg-gloss">{{sdg_gloss}}</p>
     </div>
   </main>
@@ -55,6 +60,10 @@
   <footer class="colophon">
     <p class="promise">{{promise}}</p>
     <p class="bach">{{{bach_html}}}</p>
+    <button class="motif-play" type="button" hidden>
+{{{motif}}}
+      <span>{{bach_play}}</span>
+    </button>
     <nav class="foot-links">
       <a href="https://ko-fi.com/andresmessina">{{support}}</a>
       <a href="https://github.com/andresmessina-SDG">{{source}}</a>

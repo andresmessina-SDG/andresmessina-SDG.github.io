@@ -162,6 +162,9 @@ def main() -> None:
     tail = indent((SRC / "tail.svg").read_text(encoding="utf-8").rstrip(), 8)
     score_open = indent((SRC / "score-open.svg").read_text(encoding="utf-8").rstrip(), 6)
     score_close = indent((SRC / "score-close.svg").read_text(encoding="utf-8").rstrip(), 6)
+    motif = indent((SRC / "bach.svg").read_text(encoding="utf-8").rstrip(), 6)
+    sdg = indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 10)
+    seal = indent((SRC / "seal.svg").read_text(encoding="utf-8").rstrip(), 8)
     v = version()
 
     for lang, t in strings.items():
@@ -171,6 +174,7 @@ def main() -> None:
                   "head_links": head_links(t, url, strings),
                   "langs": langs_nav(t), "initial": initial, "tail": tail,
                   "score_open": score_open, "score_close": score_close,
+                  "motif": motif, "sdg": sdg, "seal": seal,
                   "bach_html": re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["bach"])),
                   "works": works_html(t)}
         out = ROOT / t["path"] / "index.html"
@@ -186,7 +190,7 @@ def main() -> None:
               "page_title": f'{en["nf_title"]} · Andres Messina', "v": v,
               "description": en["nf_p"],
               "head_links": '<meta name="robots" content="noindex">',
-              "nf_works": nf_works,
+              "nf_works": nf_works, "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
               "es_nf_h": es["nf_h"], "es_nf_p": es["nf_p"], "es_nf_home": es["nf_home"]}
     (ROOT / "404.html").write_text(render(head, values) + render(notfound, values), encoding="utf-8")
     print("wrote 404.html")
