@@ -1,6 +1,8 @@
-/* Andres Messina: one leaf of vellum, set like a page of a book of hours and signed like a Bach score.
-   A gilded initial opens it, red and blue versals hang in the margin beside each work,
-   hairline staves rule the page, and a final double bar leads to S.D.G. Light only, by design. */
+/* Andres Messina: a book of hours, signed like a Bach score. On a wide screen it lies open on the desk,
+   a spread to each work, turned leaf by leaf; elsewhere, and on paper, it is one leaf of vellum read
+   down the page. A gilded initial opens it, red and blue versals hang in the margin beside each work,
+   a line of Bach's chorale is ruled at the foot of every folio, and the last leads to S.D.G.
+   Light only, by design. */
 
 /* EB Garamond and IM Fell English SC, served from this site (SIL Open Font License, see fonts/). */
 @font-face { font-family: "EB Garamond"; font-style: italic; font-weight: 400; font-display: swap; src: url("/assets/fonts/eb-garamond-italic-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
@@ -61,13 +63,28 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: var(--gilt); }
 .jj span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
+.head-tools { display: flex; align-items: baseline; gap: 10px; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
 .langs a { color: var(--muted); text-decoration: none; padding: 4px 8px; transition: color .2s ease; }
 .langs a:hover { color: var(--ink); }
 .langs a[aria-current="page"] { color: var(--vermilion); }
 .langs span { color: var(--rule); }
 
-.skip { position: absolute; left: -9999px; top: 8px; z-index: 5; padding: 6px 12px; background: var(--vellum); color: var(--ink); font-family: var(--rubric); letter-spacing: 0.05em; border: 1px solid var(--rule); }
+/* the organ stop: drawn out, each page's line of the chorale sounds as the book opens to it */
+.organ {
+  display: inline-flex; align-items: center; gap: 7px; padding: 4px 8px; border: 0; background: none; cursor: pointer;
+  font: 0.95rem/1 var(--rubric); letter-spacing: 0.05em; color: var(--muted); transition: color .2s ease;
+}
+.organ[hidden] { display: none; }
+.organ:hover { color: var(--ink); }
+.organ .stop { width: 17px; height: 17px; overflow: visible; }
+.organ .stop circle { fill: none; stroke: var(--gilt); stroke-width: 1.2; }
+.organ .stop .knob { fill: var(--vellum-edge); stroke: var(--muted); stroke-width: 1; transition: fill .25s ease, transform .25s ease; transform-origin: 10px 10px; }
+.organ[aria-pressed="true"] { color: var(--vermilion); }
+.organ[aria-pressed="true"] .knob { fill: var(--vermilion); stroke: #7A2414; transform: scale(1.18); }
+.organ:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 30; padding: 6px 12px; background: var(--vellum); color: var(--ink); font-family: var(--rubric); letter-spacing: 0.05em; border: 1px solid var(--rule); }
 .skip:focus { left: max(16px, env(safe-area-inset-left, 0px)); }
 
 /* ---------- The opening: gilded initial ---------- */
@@ -101,76 +118,86 @@ h1 {
 .cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 .cred-link a:hover { color: var(--vermilion); }
 
-.verse { margin: 34px 0 0; padding: 0; }
+/* a rubric: a heading written in red, as the scribe left them for the rubricator */
+.rubric { font-weight: 400; line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
+.rubric::before { content: "¶ "; content: "¶ " / ""; }
+
+/* ---------- The kalendar: today's date, a red-letter day, the day's verse, and the contents ---------- */
+.kalendar { margin-top: 64px; }
+.kal-date { display: flex; align-items: center; gap: 14px; margin: 14px 0 0; }
+.kal-date[hidden] { display: none; }
+.kal-num { font-size: 3.4rem; line-height: .8; font-weight: 500; color: var(--lapis); font-variant-numeric: lining-nums; }
+.kal-date.red .kal-num { color: var(--vermilion); }
+.kal-names { display: grid; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; line-height: 1.25; color: var(--ink); }
+.kal-names .kal-ad { color: var(--muted); font-size: .85rem; }
+.kal-feast { margin: 8px 0 0; font-style: italic; color: var(--vermilion); }
+.verse { margin: 18px 0 0; padding: 0; }
 .verse p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.125rem; text-wrap: pretty; }
 .verse p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--vermilion); }
 .lord { font-variant-caps: small-caps; }
-.verse cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
+.verse cite, .epigraph cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
 
-/* ---------- Staves: five hairlines a staff space (5px) apart ---------- */
-.staff, .score {
-  display: block; height: 21px; border: 0; margin: 0; position: relative;
-  background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 5px) no-repeat;
-  background-size: 100% 21px;
-}
-.staff.open::before, .score-open::before { content: ""; position: absolute; left: 0; top: 0; width: 1px; height: 21px; background: var(--rule); }
-.staff.final::after, .score-close::after {
-  content: ""; position: absolute; right: 0; top: 0; width: 8px; height: 21px;
-  background: linear-gradient(to right, var(--ink) 0 1px, transparent 1px 3.5px, var(--ink) 3.5px 8px);
-}
-/* Bach's notes, engraved by tools/engrave.py, laid on the first and last staves */
-.score { margin-block: 18px 26px; }
-.score-notes { position: absolute; top: -16px; left: 0; overflow: visible; }
-.score-close .score-notes { left: auto; right: 9px; }
+.contents { margin-top: 40px; }
+.contents ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 2px; }
+.contents a { display: flex; align-items: baseline; gap: 2px; padding: 3px 0; text-decoration: none; font-size: 1.1rem; transition: color .2s ease; }
+.contents a:hover { color: var(--vermilion); }
+.contents .c-v { font-weight: 600; font-size: 1.3em; line-height: 0; }
+.contents .blue .c-v { color: var(--lapis); }
+.contents .red .c-v { color: var(--vermilion); }
+.contents .c-dots { flex: 1; min-width: 24px; margin: 0 8px; border-bottom: 1.5px dotted var(--rule); transform: translateY(-.28em); }
+.contents .c-fol { font-family: var(--rubric); font-size: .9rem; letter-spacing: .06em; color: var(--vermilion); }
+
+/* ---------- Staves: Bach's chorale, a line to each folio, engraved by tools/engrave.py ---------- */
+.score { margin: 26px 0 0; width: fit-content; max-width: 100%; border-radius: 3px; }
+.score-notes { display: block; max-width: 100%; height: auto; overflow: visible; }
 .score-words { font-family: var(--text); font-style: italic; font-size: 11.5px; }
-
-.label { font-weight: 400; line-height: 1.3; margin: 72px 0 16px; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
-.label::before { content: "¶ "; content: "¶ " / ""; }
+.score .n { transition: fill .25s ease; }
+.score .n.lit { fill: var(--vermilion); transition-duration: .05s; }
+/* site.js makes each staff a button that plays its line */
+.score[role="button"] { cursor: pointer; }
+.score[role="button"]:hover .score-staff { fill: var(--gilt); }
+.score[role="button"]:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; }
 
 /* ---------- The works ---------- */
-.works { list-style: none; margin: 0; padding: 0; }
-.works > li.sep { padding: 0; }
-.work { position: relative; padding: 34px 0 36px calc(var(--ini-col) + var(--ini-gap)); }
+.work { position: relative; margin-top: 72px; padding: 0 0 0 calc(var(--ini-col) + var(--ini-gap)); }
 /* pen-flourishing that runs down the margin from each versal and fades */
 .work::before {
-  content: ""; position: absolute; top: calc(34px + 3.68rem + 24px); bottom: 30px;
+  content: ""; position: absolute; top: calc(3.68rem + 24px); bottom: 70px;
   left: calc(var(--ini-col) - 27px); width: 28px;
   background-repeat: repeat-y; background-position: center top;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
           mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
   opacity: .85;
 }
-.work.blue::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%23B0361F' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%23B0361F' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%23B0361F' stroke='none'/%3E%3C/svg%3E"); }
-.work.red::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%2323407A' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%2323407A' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%2323407A' stroke='none'/%3E%3C/svg%3E"); }
+.blue { --c: var(--lapis); --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%23B0361F' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%23B0361F' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%23B0361F' stroke='none'/%3E%3C/svg%3E"); }
+.red { --c: var(--vermilion); --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%2323407A' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%2323407A' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%2323407A' stroke='none'/%3E%3C/svg%3E"); }
+.work::before { background-image: var(--pen); }
 
-.work h3 { position: relative; margin: 0; font-weight: 500; font-size: 1.875rem; line-height: 1.12; letter-spacing: -0.005em; text-wrap: balance; }
-.work h3 a { text-decoration: none; background-image: linear-gradient(var(--gilt), var(--gilt)); background-size: 0 1px; background-repeat: no-repeat; background-position: 0 96%; transition: background-size .35s ease; }
-.work h3 a:hover { background-size: 100% 1px; }
+.work h2 { position: relative; margin: 0; font-weight: 500; font-size: 1.875rem; line-height: 1.12; letter-spacing: -0.005em; text-wrap: balance; }
+.work h2 a { text-decoration: none; background-image: linear-gradient(var(--gilt), var(--gilt)); background-size: 0 1px; background-repeat: no-repeat; background-position: 0 96%; transition: background-size .35s ease; }
+.work h2 a:hover { background-size: 100% 1px; }
+.work h2 a:focus-visible { outline-offset: 6px; }
 .versal {
   /* padded so a painted fill (below) reaches every part of the letter; the padding is taken back in top */
   position: absolute; top: -0.26em; right: calc(100% + var(--ini-gap));
   width: var(--ini-col); padding: .2em 0 .2em .4em; text-align: right;
-  font-size: 4.6rem; line-height: 0.8; font-weight: 500;
+  font-size: 4.6rem; line-height: 0.8; font-weight: 500; color: var(--c);
 }
 .versal::after { /* the penwork dots that cradle the letter */
   content: ""; position: absolute; right: 2px; top: calc(100% - .2em + 10px); width: 22px; height: 8px;
   background: radial-gradient(circle, var(--c) 1.1px, transparent 1.4px) 0 0 / 7px 8px repeat-x;
   opacity: .55;
 }
-.work.blue { --c: var(--lapis); }
-.work.red { --c: var(--vermilion); }
-.versal { color: var(--c); }
 
 /* Each work's plate: a picture of it, matted on vellum with a hairline of gold, like a miniature */
 .plate {
-  display: block; margin: 18px 0 4px; padding: 6px;
+  position: relative; display: block; margin: 18px 0 4px; padding: 6px;
   background: #FBF8F0; border: 1px solid var(--rule); border-radius: 2px;
   box-shadow: 0 1px 1px rgba(60, 40, 10, .06), 0 14px 28px -20px rgba(60, 40, 10, .45);
   transition: box-shadow .3s ease, transform .3s ease;
 }
 .plate img { display: block; box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid rgba(162, 122, 40, .5); background: var(--vellum-edge); }
-/* a short silent clip of the work, fetched only when a pointer comes near, laid exactly over the picture */
-.plate { position: relative; }
+/* a short silent clip of the work, fetched only when wanted, laid exactly over the picture */
 .plate video {
   position: absolute; left: 7px; top: 7px; width: calc(100% - 14px); height: calc(100% - 14px); /* the picture, inside its gold hairline */
   opacity: 0; transition: opacity .45s ease; pointer-events: none; background: transparent;
@@ -180,23 +207,19 @@ h1 {
 .plate:focus-visible { outline-offset: 3px; }
 
 .kind { margin: 8px 0 0; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; color: var(--muted); }
-.what { margin: 12px 0 0; text-wrap: pretty; }
+.epigraph { margin: 22px 0 0; padding: 0; }
+.epigraph p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.0625rem; text-wrap: pretty; }
+.epigraph p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--c); }
+.what { margin: 14px 0 0; text-wrap: pretty; }
 .facts { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 2px 20px; font-size: 0.95rem; color: var(--muted); }
 .go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; }
 .go a { text-decoration: none; color: var(--ink); transition: color .2s ease; }
 .go a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 .go a:hover { color: var(--vermilion); }
 
-/* ---------- The end of the score ---------- */
-.signature { display: flex; flex-direction: column; align-items: flex-end; margin-top: 22px; text-align: right; }
-.sealed { display: flex; align-items: center; gap: 16px; }
-/* S.D.G. in EB Garamond 600, as gilded paths (src/sdg.svg, by tools/quill.py) */
-.sdg { margin: 0; font-size: 2.75rem; line-height: 1; }
-.sdg svg { display: block; width: 3.394em; height: 0.735em; overflow: visible; filter: drop-shadow(0 .5px .3px rgba(80, 55, 10, .3)); }
-/* the wax seal pressed beside it (src/seal.svg) */
-.seal { display: block; flex: none; width: 60px; height: 60px; transform: rotate(-7deg); filter: drop-shadow(0 1.5px 1.2px rgba(70, 20, 5, .35)); }
-.sdg-gloss { margin: 8px 0 0; font-style: italic; color: var(--muted); }
-.colophon { margin-top: 56px; display: grid; gap: 12px; }
+/* ---------- The colophon, and the end of the score ---------- */
+.colophon { margin-top: 80px; display: grid; gap: 12px; }
+.colophon .rubric { margin-bottom: 2px; }
 .promise { margin: 0; text-wrap: pretty; }
 .bach { margin: 0; font-size: 0.95rem; color: var(--muted); text-wrap: pretty; }
 .foot-links { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 26px; font-family: var(--rubric); letter-spacing: 0.05em; }
@@ -217,6 +240,16 @@ h1 {
 .motif-letters { font: italic 11.5px var(--text); fill: var(--muted); }
 .motif .n, .motif-letters text { transition: fill .25s ease; }
 .motif .n.lit, .motif-letters text.lit { fill: var(--vermilion); transition-duration: .05s; }
+
+.finis { margin-top: 40px; }
+.signature { display: flex; flex-direction: column; align-items: flex-end; margin-top: 22px; text-align: right; }
+.sealed { display: flex; align-items: center; gap: 16px; }
+/* S.D.G. in EB Garamond 600, as gilded paths (src/sdg.svg, by tools/quill.py) */
+.sdg { margin: 0; font-size: 2.75rem; line-height: 1; }
+.sdg svg { display: block; width: 3.394em; height: 0.735em; overflow: visible; filter: drop-shadow(0 .5px .3px rgba(80, 55, 10, .3)); }
+/* the wax seal pressed beside it (src/seal.svg) */
+.seal { display: block; flex: none; width: 60px; height: 60px; transform: rotate(-7deg); filter: drop-shadow(0 1.5px 1.2px rgba(70, 20, 5, .35)); }
+.sdg-gloss { margin: 8px 0 0; font-style: italic; color: var(--muted); }
 .fleuron { display: block; width: 34px; height: 20px; margin: 48px auto 0; color: var(--gilt); }
 
 /* ---------- Not found ---------- */
@@ -227,6 +260,7 @@ h1 {
 .nf-list a { text-decoration: none; font-size: 1.25rem; }
 .nf-list a:hover { color: var(--vermilion); }
 .nf-list a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
+.nf .score-final { margin-top: 56px; }
 
 /* ---------- Wide: the initials hang in the margin ---------- */
 @media (min-width: 1000px) {
@@ -246,21 +280,21 @@ h1 {
   .lede { font-size: 1.1875rem; margin-top: 40px; }
   .byline { gap: 14px; align-items: flex-start; }
   .portrait { width: 76px; height: 76px; margin-top: 2px; }
-  .work { padding-top: 28px; padding-bottom: 30px; }
-  .work::before { top: calc(28px + 2.72rem + 24px); }
-  .work h3 { font-size: 1.5625rem; }
+  .kalendar { margin-top: 52px; }
+  .work { margin-top: 60px; }
+  .work::before { top: calc(2.72rem + 24px); }
+  .work h2 { font-size: 1.5625rem; }
   .versal { font-size: 3.4rem; }
-  .label { margin-top: 56px; }
   .sdg { font-size: 2.25rem; }
   .seal { width: 50px; height: 50px; }
   .sealed { gap: 12px; }
 }
-.work h3 a:focus-visible { outline-offset: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .plate:hover { transform: none; } }
 
 /* ---------- Evening light ----------
    After sunset where the reader is (src/evening.js sets --dusk, 0 by day to 1 by night), the leaf warms
-   and its edges fall into shadow, as if read by a candle. It is not a dark mode: the page stays vellum. */
+   and its edges fall into shadow, as if read by a candle; the pointer carries the flame (site.js sets
+   --lx and --ly). It is not a dark mode: the page stays vellum. */
 html::after, html::before {
   content: ""; position: fixed; inset: 0; z-index: 20; pointer-events: none;
   opacity: var(--dusk, 0); transition: opacity 2.5s ease;
@@ -270,7 +304,7 @@ html::after {
     radial-gradient(ellipse 115% 95% at 50% 42%, transparent 48%, rgba(66, 34, 8, .32) 100%),
     linear-gradient(rgba(255, 150, 60, .075), rgba(255, 150, 60, .075));
 }
-html::before { background: radial-gradient(ellipse 70% 50% at 50% 34%, rgba(255, 206, 128, .2), transparent 72%); }
+html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50%) var(--ly, 34%), rgba(255, 206, 128, .22), transparent 72%); }
 @media print { html::before, html::after { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   html.evening::before { animation: candle 11s ease-in-out infinite; }
@@ -298,36 +332,31 @@ html::before { background: radial-gradient(ellipse 70% 50% at 50% 34%, rgba(255,
 @keyframes leaf-under { from { filter: brightness(.88); } }
 
 /* ---------- The scribe at work ----------
-   site.js marks what is still below the fold .pending, and .inked once it scrolls into view.
-   Without site.js, for readers who ask for stillness, or on paper, the page is simply finished. */
+   site.js marks what the reader has not yet come to .pending, and .inked when they do: as it scrolls
+   into view, or as the book opens to it. Without site.js, for readers who ask for stillness, or on
+   paper, the page is simply finished. */
 @media screen {
-  .score.pending, .staff.pending { background-size: 0 21px; }
-  .score.pending::before, .score.pending::after, .staff.pending::before, .staff.pending::after { opacity: 0; }
-  .score.pending .score-notes { clip-path: inset(-24px 100% -24px 0); }
-  .score.inked, .staff.inked { animation: rule 1.1s cubic-bezier(.3, .6, .3, 1) both; }
-  .score.inked::before { animation: appear .3s both; }
-  .score.inked::after { animation: appear .4s 1s both; }
-  .score.inked .score-notes { animation: engrave 1.7s .35s cubic-bezier(.4, 0, .6, 1) both; }
-  @keyframes rule { from { background-size: 0 21px; } to { background-size: 100% 21px; } }
-  @keyframes engrave { from { clip-path: inset(-24px 100% -24px 0); } to { clip-path: inset(-24px 0 -24px 0); } }
+  .score.pending svg { clip-path: inset(-30px 100% -30px 0); }
+  .score.inked svg { animation: engrave 1.9s .2s cubic-bezier(.4, 0, .6, 1) both; }
+  @keyframes engrave { from { clip-path: inset(-30px 100% -30px 0); } to { clip-path: inset(-30px -10px -30px 0); } }
   @keyframes appear { from { opacity: 0; } }
 
   /* each versal is outlined, then washed with its colour by a broad brush */
-  .work.pending .versal, .work.inked .versal {
+  .versal.pending, .versal.inked {
     color: transparent; -webkit-text-stroke: .6px var(--c);
     background: linear-gradient(110deg, var(--c) 45%, transparent 55%) no-repeat 100% 0 / 250% 100%;
     -webkit-background-clip: text; background-clip: text;
   }
-  .work.inked .versal { animation: wash 1.1s .25s cubic-bezier(.45, 0, .25, 1) forwards; }
+  .versal.inked { animation: wash 1.1s .25s cubic-bezier(.45, 0, .25, 1) forwards; }
   @keyframes wash { to { background-position: 0 0; -webkit-text-stroke-color: transparent; } }
-  .work.pending .versal::after { opacity: 0; }
-  .work.inked .versal::after { animation: appear .5s 1.1s both; }
+  .versal.pending::after { opacity: 0; }
+  .versal.inked::after { animation: appear .5s 1.1s both; }
   /* the pen-flourishing runs down the margin, and the plate is laid on the page */
-  .work.pending::before { clip-path: inset(0 0 100% 0); }
-  .work.inked::before { animation: flourish 1.8s .7s ease-out both; }
+  .work.pending::before, .book .page-v.pending::before { clip-path: inset(0 0 100% 0); }
+  .work.inked::before, .book .page-v.inked::before { animation: flourish 1.8s .7s ease-out both; }
   @keyframes flourish { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
-  .work.pending .plate { opacity: 0; translate: 0 18px; }
-  .work.inked .plate { animation: lay .9s .3s cubic-bezier(.2, .7, .2, 1) both; }
+  .plate.pending { opacity: 0; translate: 0 18px; }
+  .plate.inked { animation: lay .9s .3s cubic-bezier(.2, .7, .2, 1) both; }
   @keyframes lay { from { opacity: 0; translate: 0 18px; } }
 
   /* S.D.G. written by a quill, stroke by stroke (timings from tools/quill.py), then sealed */
@@ -345,4 +374,206 @@ html::before { background: radial-gradient(ellipse 70% 50% at 50% 34%, rgba(255,
   }
 }
 
+/* =====================================================================================================
+   The book. On a screen wide and tall enough, site.js binds the page above into a book of hours lying
+   open: each folio a spread, turned leaf by leaf. Everything inside is laid out at one size, a page of
+   520 by 720, and the whole book is zoomed to fit the window, as a real page scales rather than reflows.
+   ===================================================================================================== */
+html.bound, html.bound body { height: 100%; overflow: hidden; }
+html.bound body { padding: 0; }
+html.bound .leaf { max-width: none; padding: 0; }
+html.bound .head {
+  position: fixed; z-index: 15; top: 0; left: 0; right: 0; align-items: center;
+  padding: 14px max(22px, env(safe-area-inset-right, 0px)) 0 max(22px, env(safe-area-inset-left, 0px));
+  justify-content: flex-end; pointer-events: none;
+}
+html.bound .head > * { pointer-events: auto; }
+html.bound .folio { display: none; }
 
+.stage {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: 44px 24px 58px;
+}
+.stage::before {   /* the lamp over the desk */
+  content: ""; position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(255, 252, 240, .5), transparent 60%),
+              radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(90, 60, 25, .14) 100%);
+}
+.book {
+  --pw: 520px; --ph: 720px; --board: 14px;
+  position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
+  border-radius: 5px 5px 6px 6px;
+  /* boards bound in oxblood calf, with a gilt fillet tooled round them */
+  background:
+    linear-gradient(to right, transparent calc(50% - 7px), rgba(0, 0, 0, .35) 50%, transparent calc(50% + 7px)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .03 0 0 0 0 .02 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 20%, #7A2A20, #561A14 70%);
+  box-shadow:
+    inset 0 0 0 4px #5A1C16, inset 0 0 0 5px rgba(201, 160, 69, .55),
+    calc(var(--sun, 0) * -18px) 28px 48px -16px rgba(50, 25, 5, .5),
+    calc(var(--sun, 0) * -6px) 6px 14px rgba(50, 25, 5, .18);
+}
+/* a hand on a page turns it, so the book's text is not for selecting; touch moves reach the page, pinching stays the reader's */
+.block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: 2400px;
+  -webkit-user-select: none; user-select: none; touch-action: pinch-zoom; }
+/* the fore-edges: as many leaves as are left on either side, seen edge on */
+.edge {
+  position: absolute; top: 2px; bottom: 2px; width: var(--w, 4px); transition: width .7s ease;
+  background: repeating-linear-gradient(to right, #F3ECDB 0 1px, #D8CBAE 1px 1.7px);
+  box-shadow: 0 0 0 .5px rgba(120, 90, 40, .25);
+}
+.edge.l { right: 100%; border-radius: 3px 0 0 3px; }
+.edge.r { left: 100%; border-radius: 0 3px 3px 0; }
+
+.sheet { position: absolute; top: 0; width: var(--pw); height: var(--ph); }
+.sheet.fixed-l { left: 0; }
+.sheet.fixed-r, .sheet.leaf { left: var(--pw); }
+.sheet.leaf { transform-origin: 0 50%; transform-style: preserve-3d; will-change: transform; }
+.face {
+  position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background-color: #FBF7EC;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.face.back { transform: rotateY(180deg); }
+/* the page curves down into the gutter, and is a shade warmer at its outer edge */
+.face.recto { background-image: linear-gradient(to right, rgba(70, 45, 15, .2), rgba(70, 45, 15, .05) 5%, transparent 14%, transparent 92%, rgba(120, 90, 40, .06)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.face.verso { background-image: linear-gradient(to left, rgba(70, 45, 15, .2), rgba(70, 45, 15, .05) 5%, transparent 14%, transparent 92%, rgba(120, 90, 40, .06)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* the light across a leaf as it turns: darker as it rises from the page, and a sheen where it bends */
+.face .shade { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 3; }
+.face.recto .shade { background: linear-gradient(to right, rgba(40, 25, 5, .55), rgba(40, 25, 5, .12) 60%, rgba(255, 250, 235, .25) 92%, rgba(40, 25, 5, .2)); }
+.face.verso .shade { background: linear-gradient(to left, rgba(40, 25, 5, .5), rgba(40, 25, 5, .1) 55%, rgba(255, 250, 235, .3) 90%, rgba(40, 25, 5, .15)); }
+/* the shadow a rising leaf casts on the page below it */
+.sheet .cast { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 3; }
+.sheet.fixed-r .cast, .face.recto .cast { background: linear-gradient(to right, rgba(40, 25, 5, .38), transparent 45%); }
+.sheet.fixed-l .cast, .face.verso .cast { background: linear-gradient(to left, rgba(40, 25, 5, .38), transparent 45%); }
+
+/* the text block of each page: the outer margin wider than the inner, the foot deepest */
+.book .page { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; font-size: 16.5px; line-height: 1.5; }
+.book .page-v { padding: 58px 46px 78px 74px; }
+.book .page-r { padding: 58px 74px 78px 46px; }
+.book .page > :first-child { margin-top: 0; }
+/* foliation, top right of every recto, and a catchword at the foot naming the next page */
+.folnum { position: absolute; top: 26px; right: 40px; z-index: 2; font: 13px/1 var(--rubric); letter-spacing: .08em; color: var(--vermilion); }
+.catch {
+  position: absolute; bottom: 30px; z-index: 2; padding: 4px 2px; border: 0; background: none; cursor: pointer;
+  font: 13.5px/1.2 var(--rubric); letter-spacing: .06em; color: var(--muted); transition: color .2s ease;
+}
+.catch:hover, .catch:focus-visible { color: var(--vermilion); }
+.catch:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+.catch.next { right: 74px; }
+.catch.next::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
+.catch.prev { left: 74px; }
+.catch.prev::before { content: "‹\00a0"; content: "‹\00a0" / ""; color: var(--gilt); }
+/* the corners: a reader's hand lifts them; a press there turns the leaf */
+.corner { position: absolute; bottom: 0; width: 64px; height: 64px; z-index: 2; cursor: pointer; border: 0; padding: 0; background: none; }
+.corner.next { right: 0; }
+.corner.prev { left: 0; }
+.corner::after {
+  content: ""; position: absolute; bottom: 0; width: 0; height: 0; transition: width .25s ease, height .25s ease;
+  box-shadow: -2px -2px 6px rgba(50, 30, 5, .18);
+}
+.corner.next::after { right: 0; background: linear-gradient(135deg, #EFE6D2 45%, #D8CBAE 50%, transparent 51%); }
+.corner.prev::after { left: 0; background: linear-gradient(225deg, #EFE6D2 45%, #D8CBAE 50%, transparent 51%); box-shadow: 2px -2px 6px rgba(50, 30, 5, .18); }
+.corner:hover::after, .corner:focus-visible::after { width: 34px; height: 34px; }
+.corner:focus-visible { outline: none; }
+
+/* the ribbon: a silk marker laid in at the gutter, hanging out at the foot; it opens the contents */
+.ribbon {
+  position: absolute; z-index: 6; left: calc(var(--board) + var(--pw) + 38px); top: calc(100% - 22px);
+  width: 20px; height: 66px; padding: 0; border: 0; cursor: pointer;
+  background: linear-gradient(to right, #8E2716, #C2452B 35%, #E0664A 50%, #B23A22 70%, #7E2012);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+  filter: drop-shadow(0 2px 2px rgba(50, 20, 5, .35));
+  transform-origin: 50% 0; transition: transform .35s ease;
+}
+.ribbon:hover, .ribbon:focus-visible { transform: rotate(-4deg) translateY(3px); }
+.ribbon:focus-visible { outline: none; filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 3px var(--gilt)); }
+
+/* the contents, unrolled from the ribbon */
+.slip {
+  position: fixed; inset: 0; margin: auto; width: 400px; height: fit-content; max-height: 90vh; padding: 34px 40px 30px;
+  border: 1px solid var(--rule); border-radius: 3px; color: var(--ink);
+  background: #FBF7EC; box-shadow: 0 30px 60px -20px rgba(40, 20, 5, .55), 0 0 0 6px rgba(251, 247, 236, .6);
+  font: 16.5px/1.5 var(--text);
+}
+.slip::backdrop { background: rgba(60, 35, 10, .28); }
+.slip .contents { margin: 0; }
+.slip .slip-close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0; background: none; cursor: pointer; color: var(--muted); font: 22px/1 var(--text); }
+.slip .slip-close:hover { color: var(--vermilion); }
+@media (prefers-reduced-motion: no-preference) {
+  .slip:popover-open { animation: unroll .35s cubic-bezier(.2, .7, .2, 1); }
+  @keyframes unroll { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0); } }
+}
+
+/* --- the pages themselves --- */
+/* the maker, on the first verso */
+.book .maker .jj { font-size: 20px; }
+.book .maker .jj span { font-size: 13px; }
+.book .maker .opening { display: grid; grid-template-columns: 112px 1fr; column-gap: 20px; align-items: start; margin: 34px 0 0; padding: 0; min-height: 0; }
+.book .maker .initial { position: relative; left: 0; right: auto; top: 4px; width: 112px; height: 112px; grid-row: 1 / span 2; }
+.book .maker .initial .tail { display: none; }
+.book .maker h1 { padding: 0; font-size: 48px; line-height: 1; }
+.book .maker .subtitle { margin: 12px 0 0; font-size: 14.5px; }
+.book .maker .lede { margin: 44px 0 0; font-size: 18px; line-height: 1.55; }
+.book .maker .byline { margin: 28px 0 0; gap: 18px; }
+.book .maker .portrait { width: 78px; height: 78px; }
+.book .maker .creds p { font-size: 14.5px; }
+.book .maker .cred-title { font-size: 14.5px; }
+.book .maker .cred-degrees { font-size: 13.5px; }
+
+/* the kalendar, on the first recto */
+.book .kalendar { margin: 0; }
+.book .kal-date { margin-top: 14px; }
+.book .kal-num { font-size: 60px; }
+.book .kal-names { font-size: 14px; }
+.book .kal-names .kal-ad { font-size: 12.5px; }
+.book .kal-feast { font-size: 15px; margin-top: 6px; }
+.book .kalendar .verse { margin-top: 16px; }
+.book .kalendar .verse p { font-size: 15.5px; line-height: 1.5; }
+.book .kalendar .verse cite { font-size: 12.5px; }
+.book .kalendar .contents { margin-top: 26px; }
+.book .contents ol { margin-top: 8px; gap: 0; }
+.book .contents a { font-size: 16.5px; padding: 3px 0; }
+.book .page .score { margin-top: auto; padding-top: 16px; }
+.book .page .score-notes { max-width: none; }
+
+/* a work: its title and miniature on the verso, its text and its line of the chorale on the recto */
+.book .page-v.blue, .book .page-v.red { --ini-col: 64px; --ini-gap: 8px; }
+.book .page-v h2:not(.rubric) { position: relative; margin: 0; font-size: 31px; font-weight: 500; line-height: 1.1; text-wrap: balance; }
+.book .page-v h2:not(.rubric) a { text-decoration: none; }
+.book .page-v .versal { font-size: 76px; top: -.24em; }
+.book .page-v .kind { margin-top: 8px; font-size: 14px; }
+.book .page-v .plate { margin: 40px 0 0; padding: 7px; box-shadow: 0 0 0 4px #FBF7EC, 0 0 0 5px rgba(162, 122, 40, .55), 0 18px 30px -18px rgba(60, 40, 10, .5); }
+.book .page-v .plate:hover { transform: none; }
+.book .page-v .plate video { left: 8px; top: 8px; width: calc(100% - 16px); height: calc(100% - 16px); }
+.book .page-v .epigraph { margin: auto 0; padding: 26px 8px 0; text-align: center; }
+.book .page-v .epigraph p { font-size: 17px; line-height: 1.5; text-wrap: balance; }
+.book .page-v .epigraph p::before { content: none; }
+.book .page-v .epigraph cite { margin-top: 8px; font-size: 12.5px; }
+/* the pen-flourishing down the outer margin, beneath the versal */
+.book .page-v.blue::before, .book .page-v.red::before {
+  content: ""; position: absolute; top: 150px; bottom: 90px; left: 30px; width: 28px;
+  background: var(--pen) repeat-y center top; opacity: .8;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+.book .page-r .what { margin-top: 52px; font-size: 19px; line-height: 1.6; }
+/* the first letter of the text, a small lombard in the work's colour */
+.book .page-r .what::first-letter { float: left; margin: 4px 6px 0 0; font-size: 3.05em; line-height: .78; font-weight: 500; color: var(--c); }
+.book .page-r .facts { margin-top: 22px; font-size: 15px; }
+.book .page-r .go { margin-top: 18px; font-size: 16.5px; }
+
+/* the colophon, and the last page: the final line of the chorale, and the signature */
+.book .colophon { margin: 0; gap: 14px; }
+.book .colophon .promise { font-size: 17px; }
+.book .colophon .bach { font-size: 14.5px; line-height: 1.55; }
+.book .colophon .foot-links { font-size: 15px; margin-top: auto; padding-bottom: 6px; }
+.book .finis { margin: 0; align-items: center; }
+.book .finis .score { margin: 30px auto 0; padding: 0; }
+.book .finis .signature { margin: auto 0; align-items: center; text-align: center; }
+.book .finis .sdg { font-size: 64px; }
+.book .finis .seal { width: 84px; height: 84px; }
+.book .finis .sealed { gap: 22px; }
+.book .finis .sdg-gloss { margin-top: 14px; font-size: 15px; }
+.book .finis .fleuron { margin: 0 auto; }

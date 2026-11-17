@@ -4,77 +4,104 @@
 
   <header class="head">
     <p class="jj">J.J.<span>{{jj_gloss}}</span></p>
-    {{{langs}}}
+    <div class="head-tools">
+      <button class="organ" type="button" aria-pressed="false" title="{{organ_hint}}" hidden>
+        <svg class="stop" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2"/><circle class="knob" cx="10" cy="10" r="4.6"/></svg>
+        <span>{{organ}}</span>
+      </button>
+      {{{langs}}}
+    </div>
   </header>
 
-  <main>
-    <section class="opening">
-      <div class="initial" aria-hidden="true">
+  <!-- One document, read in order. On a wide screen site.js binds it as a book: each folio
+       below becomes a spread, its .page-v the left page and its .page-r the right. -->
+  <main id="main" data-ui='{{{ui}}}'>
+
+    <div class="folio" id="opening" data-name="{{kalendar}}">
+      <section class="page page-v maker" aria-labelledby="name">
+        <div class="opening">
+          <div class="initial" aria-hidden="true">
 {{{initial}}}
 {{{tail}}}
-      </div>
-      <h1><span class="sr">A</span>ndres Messina</h1>
-      <p class="subtitle">{{subtitle}}</p>
-    </section>
+          </div>
+          <h1 id="name"><span class="sr">A</span>ndres Messina</h1>
+          <p class="subtitle">{{subtitle}}</p>
+        </div>
 
-    <p class="lede">{{lede}}</p>
+        <p class="lede">{{lede}}</p>
 
-    <div class="byline">
-      <span class="portrait"><img src="/assets/portrait.jpg" alt="{{portrait_alt}}" width="240" height="240" decoding="async"></span>
-      <div class="creds">
-        <p class="cred-title">{{cred_title}}</p>
-        <p class="cred-fields">{{cred_fields}}</p>
-        <p class="cred-degrees">{{cred_degrees}}</p>
-        <p class="cred-link"><a href="https://www.linkedin.com/in/andresmessina/" rel="me">{{linkedin}}</a></p>
-      </div>
+        <div class="byline">
+          <span class="portrait"><img src="/assets/portrait.jpg" alt="{{portrait_alt}}" width="240" height="240" decoding="async"></span>
+          <div class="creds">
+            <p class="cred-title">{{cred_title}}</p>
+            <p class="cred-fields">{{cred_fields}}</p>
+            <p class="cred-degrees">{{cred_degrees}}</p>
+            <p class="cred-link"><a href="https://www.linkedin.com/in/andresmessina/" rel="me">{{linkedin}}</a></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page page-r kalendar" aria-labelledby="kal">
+        <h2 class="rubric" id="kal">{{kalendar}}</h2>
+        <p class="kal-date" hidden><span class="kal-num"></span><span class="kal-names"><span class="kal-wd"></span><span class="kal-mo"></span><span class="kal-ad"></span></span></p>
+        <p class="kal-feast" hidden></p>
+        <blockquote class="verse">
+          <p>{{{verse_html}}}</p>
+          <cite>{{verse_ref}}</cite>
+        </blockquote>
+        <script>{{{kalendar_js}}}</script>
+
+        <nav class="contents" aria-labelledby="works">
+          <h2 class="rubric" id="works">{{works_label}}</h2>
+          <ol>
+{{{contents}}}
+          </ol>
+        </nav>
+        <div class="score">
+{{{chorale_1}}}
+        </div>
+      </section>
     </div>
 
-    <blockquote class="verse">
-      <p>{{{verse_html}}}</p>
-      <cite>{{verse_ref}}</cite>
-    </blockquote>
-    <script>{{{verse_js}}}</script>
-
-    <h2 class="label" id="works">{{works_label}}</h2>
-    <div class="score score-open">
-{{{score_open}}}
-    </div>
-
-    <ul class="works">
 {{{works}}}
-    </ul>
-    <div class="score score-close">
-{{{score_close}}}
-    </div>
 
-    <div class="signature">
-      <div class="sealed">
+    <div class="folio" id="colophon" data-name="{{colophon_name}}">
+      <footer class="page page-v colophon">
+        <h2 class="rubric">{{colophon_name}}</h2>
+        <p class="promise">{{promise}}</p>
+        <p class="bach">{{{bach_html}}}</p>
+        <button class="motif-play" type="button" hidden>
+{{{motif}}}
+          <span>{{bach_play}}</span>
+        </button>
+        <nav class="foot-links">
+          <a href="https://ko-fi.com/andresmessina">{{support}}</a>
+          <a href="https://github.com/andresmessina-SDG">{{source}}</a>
+        </nav>
+      </footer>
+
+      <section class="page page-r finis" aria-label="S.D.G.">
+        <div class="score score-final">
+{{{chorale_7}}}
+        </div>
+        <div class="signature">
+          <div class="sealed">
 {{{seal}}}
-        <p class="sdg" lang="la"><span class="sr">S.D.G.</span>
+            <p class="sdg" lang="la"><span class="sr">S.D.G.</span>
 {{{sdg}}}
-        </p>
-      </div>
-      <p class="sdg-gloss">{{sdg_gloss}}</p>
+            </p>
+          </div>
+          <p class="sdg-gloss">{{sdg_gloss}}</p>
+        </div>
+        <svg class="fleuron" viewBox="0 0 34 20" aria-hidden="true">
+          <path d="M2 14 C 2 8, 8 6, 11 10 C 13 13, 9 15, 8 12.5" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M11 10 C 14 10, 16 10, 18 10" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M33 10 C 28 9, 26 3, 21 3.5 C 17 4, 16 8, 18 10 C 16 12, 17 16, 21 16.5 C 26 17, 28 11, 33 10z" fill="currentColor"/>
+        </svg>
+      </section>
     </div>
   </main>
-
-  <footer class="colophon">
-    <p class="promise">{{promise}}</p>
-    <p class="bach">{{{bach_html}}}</p>
-    <button class="motif-play" type="button" hidden>
-{{{motif}}}
-      <span>{{bach_play}}</span>
-    </button>
-    <nav class="foot-links">
-      <a href="https://ko-fi.com/andresmessina">{{support}}</a>
-      <a href="https://github.com/andresmessina-SDG">{{source}}</a>
-    </nav>
-    <svg class="fleuron" viewBox="0 0 34 20" aria-hidden="true">
-      <path d="M2 14 C 2 8, 8 6, 11 10 C 13 13, 9 15, 8 12.5" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-      <path d="M11 10 C 14 10, 16 10, 18 10" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-      <path d="M33 10 C 28 9, 26 3, 21 3.5 C 17 4, 16 8, 18 10 C 16 12, 17 16, 21 16.5 C 26 17, 28 11, 33 10z" fill="currentColor"/>
-    </svg>
-  </footer>
+  <p class="sr" aria-live="polite" id="turned"></p>
 </div>
 <script src="/assets/site.js?v={{v}}" defer></script>
 </body>

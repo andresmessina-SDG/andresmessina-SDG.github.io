@@ -1,10 +1,11 @@
 # The English page, built to /index.html. es.toml carries the same keys.
+# The works are in the order of the book: the story of redemption, from the Word to the new creation.
 
 lang = "en"
 locale = "en_US"
 path = ""
 title = "Andres Messina"
-description = "Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, A History of the Christian Church, Worldviews in Motion, Revelation: The Illuminated Codex and The Pilgrim’s Road."
+description = "Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, Worldviews in Motion, A History of the Christian Church, The Pilgrim’s Road and Revelation: The Illuminated Codex."
 og_alt = "A gilded initial A on a blue ground, beside the name Andres Messina and his five works."
 
 skip = "Skip to the works"
@@ -20,10 +21,29 @@ linkedin = "LinkedIn"
 works_label = "The works"
 sdg_gloss = "Soli Deo Gloria · To God alone be the glory"
 promise = "All five are free. None of them asks for an account or tracks you."
-bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This page borrows his habit, and its staves carry the first and last lines of his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302. His name is a tune as well: in German, B is B flat and H is B natural."
+bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This book borrows his habit, and its staves carry his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302, a line to each page; press one to hear it in his four parts. His name is a tune as well: in German, B is B flat and H is B natural."
 bach_play = "Hear his name"
 support = "Support the work"
 source = "Source on GitHub"
+
+# The book: its kalendar, contents and controls
+kalendar = "Kalendar"
+colophon_name = "Colophon"
+contents = "Contents"
+organ = "Organ"
+organ_hint = "Play each page’s line of the chorale as you turn to it"
+play_line = "Play this line"
+turn_next = "Turn the page"
+turn_prev = "Turn back"
+folio = "Folio"
+# red-letter days in the kalendar
+lords_day = "The Lord’s Day"
+christmas = "Christmas Day"
+good_friday = "Good Friday"
+easter = "Easter Day"
+ascension = "Ascension Day"
+pentecost = "Pentecost"
+reformation = "Reformation Day"
 
 nf_title = "Page not found"
 nf_h = "This page is not here"
@@ -39,26 +59,14 @@ href = "https://andresmessina-sdg.github.io/scriptura/"
 kind = "Bible study app for Linux"
 plate = "scriptura"
 plate_alt = "Scriptura showing John 1 in the King James Version beside the Greek interlinear, with the meaning and grammar under every word."
+epigraph = "Thy word is a lamp unto my feet, and a light unto my path."
+epigraph_ref = "Psalm 119:105"
 what = "Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse."
 facts = ["English · Español · Русский", "Free · Works offline"]
 links = [
   { label = "Visit", href = "https://andresmessina-sdg.github.io/scriptura/" },
   { label = "Install", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
-
-[[works]]
-id = "church-history"
-clip = "church-history"
-versal = "A"
-rest = " History of the Christian Church"
-name = "A History of the Christian Church"
-href = "https://andresmessina-sdg.github.io/church-history/"
-kind = "Website"
-plate = "church-history"
-plate_alt = "The river of church history: one stream from Pentecost dividing into the Church of the East, the Orthodox churches and the Latin West, and the Reformation’s branches beyond."
-what = "The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers."
-facts = ["English", "From Pentecost to today"]
-links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
 id = "worldviews"
@@ -70,23 +78,27 @@ href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
 kind = "Animated watercolor"
 plate = "worldviews"
 plate_alt = "Christian theism painted in watercolor: the triune God above the world, joined to it by a red cross on which man’s sin is laid, over a line of history from Creation to New Creation."
+epigraph = "… bringing into captivity every thought to the obedience of Christ."
+epigraph_ref = "2 Corinthians 10:5"
 what = "The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism."
 facts = ["English", "22 worldviews · 4 acts"]
 links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
 [[works]]
-id = "revelation"
-clip = "revelation"
-versal = "R"
-rest = "evelation: The Illuminated Codex"
-name = "Revelation: The Illuminated Codex"
-href = "https://andresmessina-sdg.github.io/revelation-explainer/"
-kind = "A guide to the last book"
-plate = "revelation"
-plate_alt = "Question 20 of the guide, “What is the first resurrection?”, above a medieval illumination of an angel showing John the New Jerusalem."
-what = "A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture."
-facts = ["English · Español · Русский", "7 visions · 22 questions"]
-links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io/revelation-explainer/" }]
+id = "church-history"
+clip = "church-history"
+versal = "A"
+rest = " History of the Christian Church"
+name = "A History of the Christian Church"
+href = "https://andresmessina-sdg.github.io/church-history/"
+kind = "Website"
+plate = "church-history"
+plate_alt = "The river of church history: one stream from Pentecost dividing into the Church of the East, the Orthodox churches and the Latin West, and the Reformation’s branches beyond."
+epigraph = "Seeing we also are compassed about with so great a cloud of witnesses … let us run with patience the race that is set before us."
+epigraph_ref = "Hebrews 12:1"
+what = "The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers."
+facts = ["English", "From Pentecost to today"]
+links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
 id = "pilgrims-road"
@@ -98,6 +110,24 @@ href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
 kind = "Classroom game"
 plate = "pilgrims-road"
 plate_alt = "The Pilgrim’s Road map: a golden road winding past the medallion stations under a night sky, starting at Bethlehem."
+epigraph = "But now they desire a better country, that is, an heavenly: wherefore God is not ashamed to be called their God: for he hath prepared for them a city."
+epigraph_ref = "Hebrews 11:16"
 what = "Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles."
 facts = ["English", "11 stations · 33 stars"]
 links = [{ label = "Begin the journey", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
+
+[[works]]
+id = "revelation"
+clip = "revelation"
+versal = "R"
+rest = "evelation: The Illuminated Codex"
+name = "Revelation: The Illuminated Codex"
+href = "https://andresmessina-sdg.github.io/revelation-explainer/"
+kind = "A guide to the last book"
+plate = "revelation"
+plate_alt = "Question 20 of the guide, “What is the first resurrection?”, above a medieval illumination of an angel showing John the New Jerusalem."
+epigraph = "And he that sat upon the throne said, Behold, I make all things new."
+epigraph_ref = "Revelation 21:5"
+what = "A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture."
+facts = ["English · Español · Русский", "7 visions · 22 questions"]
+links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io/revelation-explainer/" }]

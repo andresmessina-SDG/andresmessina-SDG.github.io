@@ -68,6 +68,9 @@ def sdg() -> str:
       <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
       <animateTransform id="sdg-glint" attributeName="gradientTransform" type="translate" from="0 0" to="{width + 1200} 0" dur="2.4s" begin="indefinite" fill="freeze"/>
     </linearGradient>
+    <radialGradient id="sdg-lamp" gradientUnits="userSpaceOnUse" cx="-9999" cy="-9999" r="520">
+      <stop offset="0" stop-color="#FFF8DC" stop-opacity=".8"/><stop offset=".5" stop-color="#FFF3C4" stop-opacity=".25"/><stop offset="1" stop-color="#FFF3C4" stop-opacity="0"/>
+    </radialGradient>
     <mask id="sdg-pen" maskUnits="userSpaceOnUse" x="-200" y="-900" width="{width + 400}" height="1100">
       <g class="sdg-pen" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">{pen_strokes}</g>
     </mask>
@@ -76,6 +79,7 @@ def sdg() -> str:
   <g class="sdg-ink" mask="url(#sdg-pen)">
     <use href="#sdg-glyphs" fill="url(#sdg-gold)"/>
     <use href="#sdg-glyphs" fill="url(#sdg-sheen)"/>
+    <use href="#sdg-glyphs" fill="url(#sdg-lamp)"/>
   </g>
 </svg>
 '''

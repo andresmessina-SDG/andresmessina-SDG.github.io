@@ -19,8 +19,8 @@ const pages = {};
 
 const og = (lang) => {
   const t = lang === 'es'
-    ? { sub: 'Obras sobre las Escrituras y la iglesia', works: ['Scriptura', 'A History of the Christian Church', 'Worldviews in Motion', 'Apocalipsis: El Códice Iluminado', 'The Pilgrim’s Road'] }
-    : { sub: 'Works on Scripture and the church', works: ['Scriptura', 'A History of the Christian Church', 'Worldviews in Motion', 'Revelation: The Illuminated Codex', 'The Pilgrim’s Road'] };
+    ? { sub: 'Obras sobre las Escrituras y la iglesia', works: ['Scriptura', 'Worldviews in Motion', 'A History of the Christian Church', 'The Pilgrim’s Road', 'Apocalipsis: El Códice Iluminado'] }
+    : { sub: 'Works on Scripture and the church', works: ['Scriptura', 'Worldviews in Motion', 'A History of the Christian Church', 'The Pilgrim’s Road', 'Revelation: The Illuminated Codex'] };
   return `<!doctype html><html lang="${lang}"><meta charset="utf-8"><style>${fontFaces}
   html,body{margin:0}
   body{width:1200px;height:630px;box-sizing:border-box;padding:0 92px;display:grid;grid-template-columns:272px 1fr;gap:60px;align-items:center;

@@ -1,10 +1,11 @@
 # La página en español, construida en /es/index.html. Las mismas claves que en.toml.
+# Las obras van en el orden del libro: la historia de la redención, de la Palabra a la nueva creación.
 
 lang = "es"
 locale = "es_ES"
 path = "es/"
 title = "Andres Messina"
-description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, A History of the Christian Church, Worldviews in Motion, Apocalipsis: El Códice Iluminado y The Pilgrim’s Road."
+description = "Obras de Andres Messina para leer las Escrituras y conocer la historia de la iglesia: Scriptura, Worldviews in Motion, A History of the Christian Church, The Pilgrim’s Road y Apocalipsis: El Códice Iluminado."
 og_alt = "Una A dorada sobre fondo azul, junto al nombre Andres Messina y sus cinco obras."
 
 skip = "Saltar a las obras"
@@ -20,10 +21,29 @@ linkedin = "LinkedIn"
 works_label = "Las obras"
 sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
-bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Esta página toma prestada su costumbre, y sus pentagramas llevan la primera y la última línea de su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302. Su nombre también es una melodía: en alemán, B es si bemol y H es si natural."
+bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si bemol y H es si natural."
 bach_play = "Escuchar su nombre"
 support = "Apoyar el trabajo"
 source = "Código en GitHub"
+
+# El libro: su calendario, su índice y sus mandos
+kalendar = "Calendario"
+colophon_name = "Colofón"
+contents = "Índice"
+organ = "Órgano"
+organ_hint = "Tocar la línea del coral de cada página al pasar a ella"
+play_line = "Escuchar esta línea"
+turn_next = "Pasar la página"
+turn_prev = "Volver la página"
+folio = "Folio"
+# días en rojo del calendario
+lords_day = "El Día del Señor"
+christmas = "Navidad"
+good_friday = "Viernes Santo"
+easter = "Domingo de Resurrección"
+ascension = "Día de la Ascensión"
+pentecost = "Pentecostés"
+reformation = "Día de la Reforma"
 
 nf_title = "Página no encontrada"
 nf_h = "Esta página no está aquí"
@@ -39,27 +59,14 @@ href = "https://andresmessina-sdg.github.io/scriptura/es/"
 kind = "Estudio bíblico para Linux"
 plate = "scriptura"
 plate_alt = "Scriptura con Juan 1 en la versión King James junto al interlineal griego, con el significado y la gramática bajo cada palabra."
+epigraph = "Lámpara es a mis pies tu palabra, y lumbrera a mi camino."
+epigraph_ref = "Salmo 119:105"
 what = "Lee dos traducciones lado a lado, con el griego y el hebreo bajo cada palabra y cómo la iglesia leyó cada versículo."
 facts = ["English · Español · Русский", "Gratis · Funciona sin conexión"]
 links = [
   { label = "Visitar", href = "https://andresmessina-sdg.github.io/scriptura/es/" },
   { label = "Instalar", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
-
-[[works]]
-id = "church-history"
-clip = "church-history"
-title_lang = "en"
-versal = "A"
-rest = " History of the Christian Church"
-name = "A History of the Christian Church"
-href = "https://andresmessina-sdg.github.io/church-history/"
-kind = "Sitio web, en inglés"
-plate = "church-history"
-plate_alt = "El río de la historia de la iglesia: una sola corriente desde Pentecostés que se divide en la Iglesia del Oriente, las iglesias ortodoxas y el Occidente latino, y más allá las ramas de la Reforma."
-what = "La iglesia desde Pentecostés hasta hoy, dibujada como un solo río y contada con las palabras de sus propios testigos: las Escrituras, los padres, los credos y los reformadores."
-facts = ["English", "Desde Pentecostés hasta hoy"]
-links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
 id = "worldviews"
@@ -72,23 +79,28 @@ href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
 kind = "Acuarela animada, en inglés"
 plate = "worldviews"
 plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mundo, unido a él por una cruz roja sobre la que se carga el pecado del hombre, sobre una línea de la historia desde la Creación hasta la Nueva Creación."
+epigraph = "… llevando cautivo todo pensamiento a la obediencia a Cristo."
+epigraph_ref = "2 Corintios 10:5"
 what = "Las principales cosmovisiones del mundo, cada una pintada como una acuarela que responde a cuatro preguntas: de dónde venimos, qué salió mal, qué lo arregla y cómo termina todo. Una pregunta lleva de cada una a la siguiente, comenzando y terminando con el teísmo cristiano."
 facts = ["English", "22 cosmovisiones · 4 actos"]
 links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
 [[works]]
-id = "revelation"
-clip = "revelation"
+id = "church-history"
+clip = "church-history"
+title_lang = "en"
 versal = "A"
-rest = "pocalipsis: El Códice Iluminado"
-name = "Apocalipsis: El Códice Iluminado"
-href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es"
-kind = "Una guía del último libro"
-plate = "revelation"
-plate_alt = "La pregunta 20 de la guía, «¿Qué es la primera resurrección?», sobre una iluminación medieval de un ángel que muestra a Juan la Nueva Jerusalén."
-what = "Una guía clara y llena de esperanza al libro de Apocalipsis: siete visiones de una misma era y veintidós de sus preguntas más malentendidas, leídas a la luz de toda la Escritura."
-facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
-links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]
+rest = " History of the Christian Church"
+name = "A History of the Christian Church"
+href = "https://andresmessina-sdg.github.io/church-history/"
+kind = "Sitio web, en inglés"
+plate = "church-history"
+plate_alt = "El río de la historia de la iglesia: una sola corriente desde Pentecostés que se divide en la Iglesia del Oriente, las iglesias ortodoxas y el Occidente latino, y más allá las ramas de la Reforma."
+epigraph = "Teniendo en derredor nuestro tan grande nube de testigos … corramos con paciencia la carrera que tenemos por delante."
+epigraph_ref = "Hebreos 12:1"
+what = "La iglesia desde Pentecostés hasta hoy, dibujada como un solo río y contada con las palabras de sus propios testigos: las Escrituras, los padres, los credos y los reformadores."
+facts = ["English", "Desde Pentecostés hasta hoy"]
+links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
 id = "pilgrims-road"
@@ -101,6 +113,24 @@ href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
 kind = "Juego para el aula, en inglés"
 plate = "pilgrims-road"
 plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las estaciones bajo un cielo nocturno, desde Belén."
+epigraph = "Pero anhelaban una mejor, esto es, celestial; por lo cual Dios no se avergüenza de llamarse Dios de ellos; porque les ha preparado una ciudad."
+epigraph_ref = "Hebreos 11:16"
 what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
 facts = ["English", "11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
+
+[[works]]
+id = "revelation"
+clip = "revelation"
+versal = "A"
+rest = "pocalipsis: El Códice Iluminado"
+name = "Apocalipsis: El Códice Iluminado"
+href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es"
+kind = "Una guía del último libro"
+plate = "revelation"
+plate_alt = "La pregunta 20 de la guía, «¿Qué es la primera resurrección?», sobre una iluminación medieval de un ángel que muestra a Juan la Nueva Jerusalén."
+epigraph = "Y el que estaba sentado en el trono dijo: He aquí, yo hago nuevas todas las cosas."
+epigraph_ref = "Apocalipsis 21:5"
+what = "Una guía clara y llena de esperanza al libro de Apocalipsis: siete visiones de una misma era y veintidós de sus preguntas más malentendidas, leídas a la luz de toda la Escritura."
+facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
+links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]

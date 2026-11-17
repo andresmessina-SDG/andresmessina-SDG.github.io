@@ -15,10 +15,15 @@
     <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse">
       <g fill="#F7F2E6" opacity=".55"><circle cx="6" cy="4.6" r=".62"/><circle cx="4.9" cy="6.5" r=".62"/><circle cx="7.1" cy="6.5" r=".62"/></g>
     </pattern>
+    <!-- the light a pointer casts on the gold: site.js moves its centre (cx, cy) under the pointer -->
+    <radialGradient id="lamp" gradientUnits="userSpaceOnUse" cx="-200" cy="-200" r="46">
+      <stop offset="0" stop-color="#FFF8DC" stop-opacity=".85"/><stop offset=".45" stop-color="#FFF3C4" stop-opacity=".3"/><stop offset="1" stop-color="#FFF3C4" stop-opacity="0"/>
+    </radialGradient>
     <clipPath id="inner"><rect x="8" y="8" width="104" height="104"/></clipPath>
   </defs>
   <!-- gilt frame -->
   <rect x="1.5" y="1.5" width="117" height="117" fill="url(#gold)"/>
+  <path d="M1.5 1.5h117v117h-117zM5 5v110h110v-110z" fill-rule="evenodd" fill="url(#lamp)"/>
   <rect x="5" y="5" width="110" height="110" fill="#8A661E"/>
   <rect x="6" y="6" width="108" height="108" fill="url(#ground)"/>
   <!-- white dot triads on the ground -->
@@ -38,6 +43,8 @@
         fill="url(#gold)" stroke="#5E440F" stroke-width=".7" paint-order="stroke">A</text>
   <text x="60" y="97" text-anchor="middle" font-family="EB Garamond, Georgia, serif" font-weight="600" font-size="100"
         fill="url(#sheen)">A</text>
+  <text x="60" y="97" text-anchor="middle" font-family="EB Garamond, Georgia, serif" font-weight="600" font-size="100"
+        fill="url(#lamp)">A</text>
   <!-- corner bezants -->
   <g fill="url(#gold)" stroke="#6E4F12" stroke-width=".4">
     <circle cx="1.5" cy="1.5" r="3.4"/><circle cx="118.5" cy="1.5" r="3.4"/>
