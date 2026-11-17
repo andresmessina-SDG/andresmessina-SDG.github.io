@@ -23,7 +23,7 @@ sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
 bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si bemol y H es si natural."
 bach_play = "Escuchar su nombre"
-materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino, la piel de su encuadernación, la cinta y el roble debajo."
+materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino, la piel de su encuadernación y el roble debajo."
 materials_link = "De dónde viene cada uno"
 support = "Apoyar el trabajo"
 source = "Código en GitHub"
@@ -39,6 +39,8 @@ play_line = "Escuchar esta línea"
 turn_next = "Pasar la página"
 turn_prev = "Volver la página"
 folio = "Folio"
+within = "Contenido"
+thumbs_label = "Índice de uñeros"
 # días en rojo del calendario
 lords_day = "El Día del Señor"
 christmas = "Navidad"
@@ -65,6 +67,21 @@ plate_alt = "Scriptura con Juan 1 en la versión King James junto al interlineal
 epigraph = "Lámpara es a mis pies tu palabra, y lumbrera a mi camino."
 epigraph_ref = "Salmo 119:105"
 what = "Lee dos traducciones lado a lado, con el griego y el hebreo bajo cada palabra y cómo la iglesia leyó cada versículo."
+short = "Scriptura"
+within = [
+  "Dos traducciones lado a lado",
+  "Interlineales en griego y hebreo",
+  "El léxico de Strong",
+  "Cómo leyó la iglesia cada versículo, de los padres a la Edad Media",
+  "Comentarios, devocionales y confesiones",
+  "340.000 referencias cruzadas",
+  "Resaltados, notas, un diario y sermones",
+  "Planes de lectura",
+  "Pinturas, mapas, arqueología y genealogías",
+  "El árbol familiar de la Biblia",
+  "Capítulos leídos en voz alta",
+  "Un pasaje a pantalla completa para el proyector",
+]
 facts = ["English · Español · Русский", "Gratis · Funciona sin conexión"]
 links = [
   { label = "Visitar", href = "https://andresmessina-sdg.github.io/scriptura/es/" },
@@ -85,6 +102,31 @@ plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mu
 epigraph = "… llevando cautivo todo pensamiento a la obediencia a Cristo."
 epigraph_ref = "2 Corintios 10:5"
 what = "Las principales cosmovisiones del mundo, cada una pintada como una acuarela que responde a cuatro preguntas: de dónde venimos, qué salió mal, qué lo arregla y cómo termina todo. Una pregunta lleva de cada una a la siguiente, comenzando y terminando con el teísmo cristiano."
+short = "Worldviews"
+within = [
+  "Teísmo cristiano",
+  "Judaísmo",
+  "Islam",
+  "Deísmo",
+  "Deísmo terapéutico moralista",
+  "Naturalismo",
+  "Humanismo secular",
+  "Nihilismo",
+  "Existencialismo",
+  "Posmodernismo",
+  "Marxismo",
+  "Individualismo expresivo",
+  "Transhumanismo",
+  "Nueva Era",
+  "Neopaganismo",
+  "Monismo hindú",
+  "Budismo",
+  "Taoísmo",
+  "Confucianismo",
+  "Animismo",
+  "Platonismo",
+  "Gnosticismo",
+]
 facts = ["English", "22 cosmovisiones · 4 actos"]
 links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
@@ -102,6 +144,19 @@ plate_alt = "El río de la historia de la iglesia: una sola corriente desde Pent
 epigraph = "Teniendo en derredor nuestro tan grande nube de testigos … corramos con paciencia la carrera que tenemos por delante."
 epigraph_ref = "Hebreos 12:1"
 what = "La iglesia desde Pentecostés hasta hoy, dibujada como un solo río y contada con las palabras de sus propios testigos: las Escrituras, los padres, los credos y los reformadores."
+short = "Historia"
+within = [
+  "I La iglesia apostólica, 30–100",
+  "II La iglesia antenicena, 100–325",
+  "III Nicena y postnicena, 325–590",
+  "IV La Alta Edad Media, 590–1073",
+  "V La Plena Edad Media, 1073–1294",
+  "VI La Baja Edad Media, 1294–1517",
+  "VII La Reforma, 1517–1618",
+  "VIII Ortodoxia y despertar, 1618–1800",
+  "IX Avivamiento y misiones, 1800–1900",
+  "X La iglesia global, de 1900 a hoy",
+]
 facts = ["English", "Desde Pentecostés hasta hoy"]
 links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
@@ -119,6 +174,20 @@ plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las 
 epigraph = "Pero anhelaban una mejor, esto es, celestial; por lo cual Dios no se avergüenza de llamarse Dios de ellos; porque les ha preparado una ciudad."
 epigraph_ref = "Hebreos 11:16"
 what = "Once estaciones desde Belén hasta la Gran Puerta. Los alumnos aprenden la historia, las creencias y las ramas del cristianismo con preguntas, acertijos y rompecabezas."
+short = "Peregrino"
+within = [
+  "Belén: dónde comenzó",
+  "Galilea: acertijos de «¿Quién soy?»",
+  "La sala del Credo: lo que creen los cristianos",
+  "La sala de las lámparas: un juego de memoria",
+  "Los tres caminos: las ramas del cristianismo",
+  "El camino de las caravanas: un repaso de arcade",
+  "El camino de los años: una línea del tiempo",
+  "El escritorio del copista: encuentra el error",
+  "El scriptorium: palabras clave",
+  "La biblioteca de rollos: completa el rollo",
+  "La gran puerta: la prueba final",
+]
 facts = ["English", "11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
 
@@ -135,5 +204,30 @@ plate_alt = "La pregunta 20 de la guía, «¿Qué es la primera resurrección?»
 epigraph = "Y el que estaba sentado en el trono dijo: He aquí, yo hago nuevas todas las cosas."
 epigraph_ref = "Apocalipsis 21:5"
 what = "Una guía clara y llena de esperanza al libro de Apocalipsis: siete visiones de una misma era y veintidós de sus preguntas más malentendidas, leídas a la luz de toda la Escritura."
+short = "Apocalipsis"
+within = [
+  "¿Qué son las siete cartas?",
+  "¿Quién es el Cordero en el trono?",
+  "¿Quiénes son los cuatro jinetes?",
+  "¿Quiénes son los 144.000?",
+  "¿Y qué hay de Israel?",
+  "¿Qué son las trompetas y las copas?",
+  "¿Quiénes son los dos testigos?",
+  "¿Qué significan los 1.260 días?",
+  "¿Gobierna Satanás el mundo?",
+  "¿Qué es la bestia?",
+  "¿Qué significa el 666?",
+  "¿Qué es la marca de la bestia?",
+  "¿Quién es el Anticristo?",
+  "¿Qué es la gran tribulación?",
+  "¿Quién es Babilonia la grande?",
+  "¿Qué es el Armagedón?",
+  "¿Y el arrebatamiento?",
+  "¿Qué pasa cuando Jesús regrese?",
+  "¿Qué es el milenio?",
+  "¿Qué es la primera resurrección?",
+  "¿Qué es el juicio final?",
+  "¿Qué es la nueva Jerusalén?",
+]
 facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
 links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]

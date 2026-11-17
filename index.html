@@ -31,7 +31,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://andresmessina-sdg.github.io/#me","name":"Andres Messina","url":"https://andresmessina-sdg.github.io/","image":"https://andresmessina-sdg.github.io/assets/portrait.jpg","description":"I am a Christian who loves to learn and build to the glory of God. I work hard to curate an edifying and aesthetically excellent experience that helps others learn about Scripture, Christianity and the history of the church.","jobTitle":"Humanities & Social Science Expert","knowsLanguage":["es","en"],"knowsAbout":["Theology","Philosophy","Economics","International Law"],"sameAs":["https://www.linkedin.com/in/andresmessina/","https://github.com/andresmessina-SDG","https://ko-fi.com/andresmessina"]},{"@type":"WebPage","@id":"https://andresmessina-sdg.github.io/","url":"https://andresmessina-sdg.github.io/","name":"Andres Messina","description":"Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, Worldviews in Motion, A History of the Christian Church, The Pilgrim’s Road and Revelation: The Illuminated Codex.","inLanguage":"en","author":{"@id":"https://andresmessina-sdg.github.io/#me"},"about":{"@id":"https://andresmessina-sdg.github.io/#me"},"mainEntity":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"SoftwareApplication","operatingSystem":"Linux","applicationCategory":"ReferenceApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"name":"Scriptura","url":"https://andresmessina-sdg.github.io/scriptura/","description":"Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":2,"item":{"@type":"WebSite","name":"Worldviews in Motion","url":"https://andresmessina-sdg.github.io/Worldviews-in-Motion/","description":"The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":3,"item":{"@type":"WebSite","name":"A History of the Christian Church","url":"https://andresmessina-sdg.github.io/church-history/","description":"The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":4,"item":{"@type":"LearningResource","learningResourceType":"game","name":"The Pilgrim’s Road","url":"https://andresmessina-sdg.github.io/the-pilgrims-road/","description":"Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":5,"item":{"@type":"WebSite","name":"Revelation: The Illuminated Codex","url":"https://andresmessina-sdg.github.io/revelation-explainer/","description":"A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}}]}}]}</script>
 <link rel="preload" href="/assets/fonts/eb-garamond-roman-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/im-fell-english-sc-roman-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=2e99537f13">
+<link rel="stylesheet" href="/assets/site.css?v=706cf7bec3">
 <script>// Evening light: after sunset where the reader is, the vellum warms as if read by a candle.
 // Where is guessed from the browser's time zone alone (nothing is asked, sent or kept): a
 // city for the zones most readers come from, else a longitude from the zone's offset.
@@ -120,6 +120,16 @@
       <nav class="langs" aria-label="Language"><a href="/" hreflang="en" lang="en" aria-current="page">English</a><span aria-hidden="true">·</span><a href="/es/" hreflang="es" lang="es">Español</a></nav>
     </div>
   </header>
+
+  <nav class="thumbs" aria-label="Thumb index">
+      <a class="thumb" href="#opening" style="--k:0" title="Kalendar" aria-label="Kalendar"><span>Kalendar</span></a>
+      <a class="thumb" href="#scriptura" style="--k:1" title="Scriptura" aria-label="Scriptura"><span>Scriptura</span></a>
+      <a class="thumb" href="#worldviews" style="--k:2" title="Worldviews in Motion" aria-label="Worldviews in Motion"><span>Worldviews</span></a>
+      <a class="thumb" href="#church-history" style="--k:3" title="A History of the Christian Church" aria-label="A History of the Christian Church"><span>History</span></a>
+      <a class="thumb" href="#pilgrims-road" style="--k:4" title="The Pilgrim’s Road" aria-label="The Pilgrim’s Road"><span>Pilgrim</span></a>
+      <a class="thumb" href="#revelation" style="--k:5" title="Revelation: The Illuminated Codex" aria-label="Revelation: The Illuminated Codex"><span>Revelation</span></a>
+      <a class="thumb" href="#colophon" style="--k:6" title="Colophon" aria-label="Colophon"><span>Colophon</span></a>
+  </nav>
 
   <!-- One document, read in order. On a wide screen site.js binds it as a book: each folio
        below becomes a spread, its .page-v the left page and its .page-r the right. -->
@@ -233,6 +243,10 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
       </div>
       <div class="page page-r blue">
         <p class="what">Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse.</p>
+        <section class="within" aria-labelledby="scriptura-within">
+          <h3 class="rubric" id="scriptura-within">Within</h3>
+          <p><span class="it"><span class="pil r" aria-hidden="true">¶</span> Two translations side by side</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Greek and Hebrew interlinears</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Strong’s lexicon</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> How the church read each verse, from the fathers through the Middle Ages</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Commentaries, devotionals and confessions</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> 340,000 cross-references</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Highlights, notes, a journal and sermons</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Reading plans</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Paintings, maps, archaeology and genealogies</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> The Bible Family Tree</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Chapters read aloud</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> A passage full screen for a projector</span></p>
+        </section>
         <p class="facts"><span>English · Español · Русский</span><span>Free · Works offline</span></p>
         <p class="go">
           <a href="https://andresmessina-sdg.github.io/scriptura/">Visit</a>
@@ -260,6 +274,10 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
       </div>
       <div class="page page-r red">
         <p class="what">The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism.</p>
+        <section class="within" aria-labelledby="worldviews-within">
+          <h3 class="rubric" id="worldviews-within">Within</h3>
+          <p><span class="it"><span class="pil r" aria-hidden="true">¶</span> Christian theism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Judaism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Islam</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Deism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Moralistic Therapeutic Deism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Naturalism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Secular humanism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Nihilism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Existentialism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Postmodernism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Marxism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Expressive individualism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Transhumanism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> New Age</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Neo-paganism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Hindu monism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Buddhism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Taoism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Confucianism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Animism</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Platonism</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Gnosticism</span></p>
+        </section>
         <p class="facts"><span>English</span><span>22 worldviews · 4 acts</span></p>
         <p class="go">
           <a href="https://andresmessina-sdg.github.io/Worldviews-in-Motion/">Watch the paintings</a>
@@ -286,6 +304,10 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
       </div>
       <div class="page page-r blue">
         <p class="what">The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers.</p>
+        <section class="within" aria-labelledby="church-history-within">
+          <h3 class="rubric" id="church-history-within">Within</h3>
+          <p><span class="it"><span class="pil num r">I</span> The Apostolic Church, 30–100</span> <span class="it"><span class="pil num b">II</span> The Ante-Nicene Church, 100–325</span> <span class="it"><span class="pil num r">III</span> Nicene and Post-Nicene, 325–590</span> <span class="it"><span class="pil num b">IV</span> The Early Middle Ages, 590–1073</span> <span class="it"><span class="pil num r">V</span> The High Middle Ages, 1073–1294</span> <span class="it"><span class="pil num b">VI</span> The Late Middle Ages, 1294–1517</span> <span class="it"><span class="pil num r">VII</span> The Reformation, 1517–1618</span> <span class="it"><span class="pil num b">VIII</span> Orthodoxy and Awakening, 1618–1800</span> <span class="it"><span class="pil num r">IX</span> Revival and Missions, 1800–1900</span> <span class="it"><span class="pil num b">X</span> The Global Church, 1900–today</span></p>
+        </section>
         <p class="facts"><span>English</span><span>From Pentecost to today</span></p>
         <p class="go">
           <a href="https://andresmessina-sdg.github.io/church-history/">Follow the river</a>
@@ -312,6 +334,10 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
       </div>
       <div class="page page-r red">
         <p class="what">Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles.</p>
+        <section class="within" aria-labelledby="pilgrims-road-within">
+          <h3 class="rubric" id="pilgrims-road-within">Within</h3>
+          <p><span class="it"><span class="pil r" aria-hidden="true">¶</span> Bethlehem: where it began</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Galilee: “Who am I?” riddles</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> The Creed Hall: what Christians believe</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> The Lamp Room: a memory match</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> The Three Roads: the branches of Christianity</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> The Caravan Road: an arcade review</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> The Road of Years: a timeline</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> The Copyist’s Desk: spot the mistake</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> The Scriptorium: key words</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> The Scroll Library: fill in the scroll</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> The Great Gate: the final trial</span></p>
+        </section>
         <p class="facts"><span>English</span><span>11 stations · 33 stars</span></p>
         <p class="go">
           <a href="https://andresmessina-sdg.github.io/the-pilgrims-road/">Begin the journey</a>
@@ -338,6 +364,10 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
       </div>
       <div class="page page-r blue">
         <p class="what">A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture.</p>
+        <section class="within" aria-labelledby="revelation-within">
+          <h3 class="rubric" id="revelation-within">Within</h3>
+          <p><span class="it"><span class="pil r" aria-hidden="true">¶</span> What are the seven letters?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Who is the Lamb on the throne?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Who are the four horsemen?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> Who are the 144,000?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> What about Israel?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What are the trumpets and bowls?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Who are the two witnesses?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What do the 1,260 days mean?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Is Satan ruling the world?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is the beast?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> What does 666 mean?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is the mark of the beast?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Who is the Antichrist?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is the great tribulation?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> Who is Babylon the Great?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is Armageddon?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> What about the rapture?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What happens when Jesus returns?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> What is the millennium?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is the first resurrection?</span> <span class="it"><span class="pil r" aria-hidden="true">¶</span> What is the final judgment?</span> <span class="it"><span class="pil b" aria-hidden="true">¶</span> What is the New Jerusalem?</span></p>
+        </section>
         <p class="facts"><span>English · Español · Русский</span><span>7 visions · 22 questions</span></p>
         <p class="go">
           <a href="https://andresmessina-sdg.github.io/revelation-explainer/">Open the codex</a>
@@ -365,7 +395,7 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
           </svg>
           <span>Hear his name</span>
         </button>
-        <p class="materials">Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding, the ribbon and the oak beneath. <a href="https://github.com/andresmessina-SDG/andresmessina-SDG.github.io/blob/main/assets/book/SOURCES.md">Where each comes from</a></p>
+        <p class="materials">Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding and the oak beneath. <a href="https://github.com/andresmessina-SDG/andresmessina-SDG.github.io/blob/main/assets/book/SOURCES.md">Where each comes from</a></p>
         <nav class="foot-links">
           <a href="https://ko-fi.com/andresmessina">Support the work</a>
           <a href="https://github.com/andresmessina-SDG">Source on GitHub</a>
@@ -418,6 +448,6 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
   </main>
   <p class="sr" aria-live="polite" id="turned"></p>
 </div>
-<script src="/assets/site.js?v=2e99537f13" defer></script>
+<script src="/assets/site.js?v=706cf7bec3" defer></script>
 </body>
 </html>

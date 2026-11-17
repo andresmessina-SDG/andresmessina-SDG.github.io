@@ -23,7 +23,7 @@ sdg_gloss = "Soli Deo Gloria · To God alone be the glory"
 promise = "All five are free. None of them asks for an account or tracks you."
 bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This book borrows his habit, and its staves carry his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302, a line to each page; press one to hear it in his four parts. His name is a tune as well: in German, B is B flat and H is B natural."
 bach_play = "Hear his name"
-materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding, the ribbon and the oak beneath."
+materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding and the oak beneath."
 materials_link = "Where each comes from"
 support = "Support the work"
 source = "Source on GitHub"
@@ -39,6 +39,8 @@ play_line = "Play this line"
 turn_next = "Turn the page"
 turn_prev = "Turn back"
 folio = "Folio"
+within = "Within"
+thumbs_label = "Thumb index"
 # red-letter days in the kalendar
 lords_day = "The Lord’s Day"
 christmas = "Christmas Day"
@@ -65,6 +67,21 @@ plate_alt = "Scriptura showing John 1 in the King James Version beside the Greek
 epigraph = "Thy word is a lamp unto my feet, and a light unto my path."
 epigraph_ref = "Psalm 119:105"
 what = "Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse."
+short = "Scriptura"
+within = [
+  "Two translations side by side",
+  "Greek and Hebrew interlinears",
+  "Strong’s lexicon",
+  "How the church read each verse, from the fathers through the Middle Ages",
+  "Commentaries, devotionals and confessions",
+  "340,000 cross-references",
+  "Highlights, notes, a journal and sermons",
+  "Reading plans",
+  "Paintings, maps, archaeology and genealogies",
+  "The Bible Family Tree",
+  "Chapters read aloud",
+  "A passage full screen for a projector",
+]
 facts = ["English · Español · Русский", "Free · Works offline"]
 links = [
   { label = "Visit", href = "https://andresmessina-sdg.github.io/scriptura/" },
@@ -84,6 +101,31 @@ plate_alt = "Christian theism painted in watercolor: the triune God above the wo
 epigraph = "… bringing into captivity every thought to the obedience of Christ."
 epigraph_ref = "2 Corinthians 10:5"
 what = "The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism."
+short = "Worldviews"
+within = [
+  "Christian theism",
+  "Judaism",
+  "Islam",
+  "Deism",
+  "Moralistic Therapeutic Deism",
+  "Naturalism",
+  "Secular humanism",
+  "Nihilism",
+  "Existentialism",
+  "Postmodernism",
+  "Marxism",
+  "Expressive individualism",
+  "Transhumanism",
+  "New Age",
+  "Neo-paganism",
+  "Hindu monism",
+  "Buddhism",
+  "Taoism",
+  "Confucianism",
+  "Animism",
+  "Platonism",
+  "Gnosticism",
+]
 facts = ["English", "22 worldviews · 4 acts"]
 links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
@@ -100,6 +142,19 @@ plate_alt = "The river of church history: one stream from Pentecost dividing int
 epigraph = "Seeing we also are compassed about with so great a cloud of witnesses … let us run with patience the race that is set before us."
 epigraph_ref = "Hebrews 12:1"
 what = "The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers."
+short = "History"
+within = [
+  "I The Apostolic Church, 30–100",
+  "II The Ante-Nicene Church, 100–325",
+  "III Nicene and Post-Nicene, 325–590",
+  "IV The Early Middle Ages, 590–1073",
+  "V The High Middle Ages, 1073–1294",
+  "VI The Late Middle Ages, 1294–1517",
+  "VII The Reformation, 1517–1618",
+  "VIII Orthodoxy and Awakening, 1618–1800",
+  "IX Revival and Missions, 1800–1900",
+  "X The Global Church, 1900–today",
+]
 facts = ["English", "From Pentecost to today"]
 links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
@@ -116,6 +171,20 @@ plate_alt = "The Pilgrim’s Road map: a golden road winding past the medallion 
 epigraph = "But now they desire a better country, that is, an heavenly: wherefore God is not ashamed to be called their God: for he hath prepared for them a city."
 epigraph_ref = "Hebrews 11:16"
 what = "Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles."
+short = "Pilgrim"
+within = [
+  "Bethlehem: where it began",
+  "Galilee: “Who am I?” riddles",
+  "The Creed Hall: what Christians believe",
+  "The Lamp Room: a memory match",
+  "The Three Roads: the branches of Christianity",
+  "The Caravan Road: an arcade review",
+  "The Road of Years: a timeline",
+  "The Copyist’s Desk: spot the mistake",
+  "The Scriptorium: key words",
+  "The Scroll Library: fill in the scroll",
+  "The Great Gate: the final trial",
+]
 facts = ["English", "11 stations · 33 stars"]
 links = [{ label = "Begin the journey", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
 
@@ -132,5 +201,30 @@ plate_alt = "Question 20 of the guide, “What is the first resurrection?”, ab
 epigraph = "And he that sat upon the throne said, Behold, I make all things new."
 epigraph_ref = "Revelation 21:5"
 what = "A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture."
+short = "Revelation"
+within = [
+  "What are the seven letters?",
+  "Who is the Lamb on the throne?",
+  "Who are the four horsemen?",
+  "Who are the 144,000?",
+  "What about Israel?",
+  "What are the trumpets and bowls?",
+  "Who are the two witnesses?",
+  "What do the 1,260 days mean?",
+  "Is Satan ruling the world?",
+  "What is the beast?",
+  "What does 666 mean?",
+  "What is the mark of the beast?",
+  "Who is the Antichrist?",
+  "What is the great tribulation?",
+  "Who is Babylon the Great?",
+  "What is Armageddon?",
+  "What about the rapture?",
+  "What happens when Jesus returns?",
+  "What is the millennium?",
+  "What is the first resurrection?",
+  "What is the final judgment?",
+  "What is the New Jerusalem?",
+]
 facts = ["English · Español · Русский", "7 visions · 22 questions"]
 links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io/revelation-explainer/" }]

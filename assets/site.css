@@ -58,7 +58,7 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 
 /* ---------- Head of the score ---------- */
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: var(--gilt); }
+.jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #86631E; }   /* gilt, deep enough to read: 4.5:1 on the parchment */
 .jj span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
 .head-tools { display: flex; align-items: baseline; gap: 10px; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
@@ -212,6 +212,13 @@ h1 {
 .go a { text-decoration: none; color: var(--ink); transition: color .2s ease; }
 .go a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
 .go a:hover { color: var(--vermilion); }
+/* what a work holds, run on as a manuscript runs its text: each item after a paragraph mark, red and blue in turn */
+.within { margin: 22px 0 0; }
+.within p { margin: 6px 0 0; font-size: 1rem; line-height: 1.6; text-wrap: pretty; }
+.within .pil { font-style: normal; }
+.within .pil.r { color: var(--vermilion); }
+.within .pil.b { color: var(--lapis); }
+.within .pil.num { font-family: var(--rubric); font-size: .9em; letter-spacing: .04em; }
 
 /* ---------- The colophon, and the end of the score ---------- */
 .colophon { margin-top: 80px; display: grid; gap: 12px; }
@@ -405,7 +412,7 @@ html.bound .folio { display: none; }
 :fullscreen .fs .out { display: inline; }
 .fs:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
-.stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 36px 10px 10px; }
+.stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 36px 10px 10px 52px; }   /* room on the left for the thumb index; site.js sets it to the zoom */
 .stage::before {   /* the lamp over the desk: a pool of warm light, falling away into the corners */
   content: ""; position: fixed; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 70% 65% at 50% 45%, rgba(255, 214, 160, .22), transparent 70%),
@@ -485,8 +492,10 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .sheet.fixed-l .cast, .face.verso .cast { background: linear-gradient(to left, rgba(40, 25, 5, .38), transparent 45%); }
 
 /* the text block of each page; every size within it is a step of the type unit */
+/* (the face clips at the same edge; overflow hidden here makes a page's scroll height count its foot
+   margin, so that site.js and the tests can tell when its text runs into that margin) */
 .book .page {
-  position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column;
+  position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; overflow: hidden;
   font-size: var(--u); line-height: 1.55;
 }
 .book .page-v { padding: var(--mt) var(--mi) var(--mb) var(--mo); }
@@ -519,38 +528,69 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .corner:hover::after, .corner:focus-visible::after { width: 45%; height: 45%; }
 .corner:focus-visible { outline: none; }
 
-/* the ribbon: a silk marker laid in from the head of the spine, down the gutter margin of the right
-   page where no text runs; it opens the contents */
-.ribbon {
-  position: absolute; z-index: 400; left: calc(var(--board) + var(--pw) + var(--mi) * .4 - 7px); top: -8px;
-  width: 14px; height: calc(var(--ph) * .17); padding: 0; border: 0; cursor: pointer;
-  /* grosgrain, its rib running across, dyed in the page's red (assets/book/ribbon.webp), lying a little
-     rounded on the page */
-  background:
-    linear-gradient(to right, rgba(30, 5, 2, .45), transparent 28%, rgba(255, 210, 190, .1) 50%, transparent 72%, rgba(30, 5, 2, .5)),
-    url("/assets/book/ribbon.webp") center top / 100% auto repeat-y;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
-  filter: drop-shadow(1px 2px 1.5px rgba(50, 20, 5, .35));
-  transform-origin: 50% 0; transition: transform .35s ease, height .35s ease;
-}
-.ribbon:hover, .ribbon:focus-visible { height: calc(var(--ph) * .17 + 10px); }
-.ribbon:focus-visible { outline: none; filter: drop-shadow(0 0 3px var(--gilt)); }
 
-/* the contents, unrolled from the ribbon */
-.slip {
-  position: fixed; inset: 0; margin: auto; width: 420px; max-width: calc(100vw - 40px); height: fit-content; max-height: 90vh; padding: 34px 40px 30px;
-  border: 1px solid var(--rule); border-radius: 3px; color: var(--ink);
-  background: #FAF5E8 url("/assets/book/parchment.webp") center / 720px 720px; box-shadow: 0 30px 60px -20px rgba(20, 10, 3, .7);
-  font: 17px/1.5 var(--text);
+/* ---------- The thumb index ----------
+   A tab for each folio, as an old book had a tab on the leaf where each part begins. In the book they
+   are tabs of vellum lettered in ink, each edged in red or blue like the pilcrows of the text, standing
+   out from its left edge one under another; the open folio's stands out furthest and is lettered in
+   red, and a pointer draws any of them out. On a narrow page site.js folds them to the left edge as
+   slim spines of the binding's calf, and a touch draws them all out. Without the script there is no
+   index here: the contents on the first page serve. */
+.thumbs { display: none; }
+.thumb { position: relative; box-sizing: border-box; text-decoration: none; transition: transform .25s cubic-bezier(.2, .7, .2, 1), filter .25s ease; }
+.thumb span { display: block; font-family: var(--rubric); letter-spacing: .08em; white-space: nowrap; }
+.thumb:nth-child(odd) { --tab: var(--vermilion); }
+.thumb:nth-child(even) { --tab: var(--lapis); }
+
+/* in the book: tabs a seventh of the text block high, standing out from the boards by a finger's
+   width; their inner ends run under the book, which is why they sit behind it */
+.book .thumbs {
+  position: absolute; z-index: -1; right: calc(100% - 18px); top: calc(var(--board) + var(--mt) * .8);
+  display: flex; flex-direction: column; gap: calc(var(--u) * .28);
 }
-.slip::backdrop { background: rgba(60, 35, 10, .28); }
-.slip .contents { margin: 0; }
-.slip .slip-close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0; background: none; cursor: pointer; color: var(--muted); font: 22px/1 var(--text); }
-.slip .slip-close:hover { color: var(--vermilion); }
-@media (prefers-reduced-motion: no-preference) {
-  .slip:popover-open { animation: unroll .35s cubic-bezier(.2, .7, .2, 1); }
-  @keyframes unroll { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0); } }
+.book .thumb {
+  display: flex; align-items: center; justify-content: center; width: 60px; height: calc((var(--ph) - var(--mt) * 1.6) / 7 - var(--u) * .28);
+  padding-right: 22px; border-radius: 9px 0 0 9px;
+  background: #F1E7D0 url("/assets/book/parchment.webp") calc(var(--k) * -97px) calc(var(--k) * -61px) / 360px auto;
+  box-shadow:
+    inset 3px 0 0 var(--tab), inset 4px 0 1px rgba(40, 20, 5, .25),
+    inset 0 1px 0 rgba(255, 252, 240, .7), inset 0 -1px 0 rgba(90, 60, 25, .25),
+    inset -22px 0 12px -10px rgba(40, 20, 5, .55),
+    -2px 2px 4px rgba(0, 0, 0, .45);
+  transform: translateX(8px); filter: brightness(.86) saturate(.9);
 }
+.book .thumb span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: calc(var(--u) * .74); color: var(--ink); }
+.book .thumb[aria-current="true"] { transform: none; filter: none; }
+.book .thumb[aria-current="true"] span { color: var(--vermilion); }
+.book .thumb:hover, .book .thumb:focus-visible { transform: translateX(2px); filter: none; }
+.book .thumb[aria-current="true"]:hover { transform: translateX(-2px); }
+.book .thumb:focus-visible { outline: 1.5px solid #E9C877; outline-offset: 2px; }
+
+/* on a narrow page: slim spines of calf at the left edge, the open folio's a little wider; drawn
+   out, each tab shows its whole name, struck in gold */
+html.thumbable .thumbs.slim {
+  display: flex; flex-direction: column; gap: 3px; position: fixed; z-index: 25; left: 0; top: 50%; transform: translateY(-50%);
+}
+.thumbs.slim .thumb {
+  display: flex; align-items: center; justify-content: flex-end; width: 150px; height: 38px; padding-right: 14px;
+  border-radius: 0 6px 6px 0; transform: translateX(-142px);
+  background: #4A1A12 url("/assets/book/leather.webp") 0 calc(var(--k) * -131px) / 420px auto;
+  box-shadow: inset -2px 0 0 var(--tab), inset -1.5px 0 3px rgba(255, 215, 185, .14), 2px 2px 4px rgba(0, 0, 0, .3);
+}
+.thumbs.slim .thumb::after { content: ""; position: absolute; top: 0; bottom: 0; right: -14px; width: 14px; }   /* a finger's reach */
+.thumbs.slim .thumb span {
+  font-size: .95rem; opacity: 0; transition: opacity .2s ease;
+  color: transparent; background: #C9A045 url("/assets/book/gold.webp") center / 140px 140px;
+  -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 -.5px 0 rgba(0, 0, 0, .7)) drop-shadow(0 .5px 0 rgba(255, 230, 170, .25));
+}
+.thumbs.slim .thumb[aria-current="true"] { transform: translateX(-138px); }
+.thumbs.slim.open .thumb { transform: translateX(0); transition-delay: calc(var(--k) * 22ms); box-shadow: inset -2px 0 0 var(--tab), inset -1.5px 0 3px rgba(255, 215, 185, .14), 3px 3px 10px rgba(30, 15, 5, .35); }
+.thumbs.slim.open .thumb span { opacity: 1; transition-delay: calc(.1s + var(--k) * 22ms); }
+.thumbs.slim.open .thumb::after { display: none; }
+.thumbs.slim .thumb:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .thumb, .thumbs.slim .thumb span { transition: none; } }
+@media print { .thumbs { display: none !important; } }
 
 /* --- the pages themselves: sizes in steps of a minor third from the unit ---
    1.2^-1.5 .75 small capitals (rubrics, kinds, references)   1.2^-1 .833 secondary text
@@ -614,7 +654,29 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 }
 .book .page-r .what { margin-top: .1em; font-size: 1.25em; line-height: 1.55; }
 /* the first letter of the text, a lombard in the work's colour, two lines deep */
-.book .page-r .what::first-letter { float: left; margin: .1em .12em 0 0; font-size: 3.2em; line-height: .78; font-weight: 500; color: var(--c); }
+.book .page-r .what::first-letter { initial-letter: 2; -webkit-initial-letter: 2; margin-right: .06em; font-weight: 500; color: var(--c); }
+/* where initial-letter is not known, the same two-line drop by hand, close against the rest of its word */
+@supports not ((initial-letter: 2) or (-webkit-initial-letter: 2)) {
+  .book .page-r .what::first-letter { float: left; margin: .1em .03em 0 -.02em; font-size: 3.2em; line-height: .78; }
+}
+/* the smaller text of a page set justified, with words broken where the language allows, as a scribe
+   ruled a text block true; the larger text of a recto and of the maker's page is left ragged, since at
+   that size a short measure justified opens rivers between the words */
+.book .colophon .bach, .book .within p {
+  text-align: justify; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 6 3 2;
+}
+.book .within { margin-top: 1.5em; }
+.book .within p { margin-top: .35em; font-size: .94em; line-height: 1.6; }
+/* where the page has room (site.js tries), a work's contents are set as a list, one to a line, in one
+   column or two, each hanging from its pilcrow */
+.book .within.listed p { text-align: left; -webkit-hyphens: manual; hyphens: manual; line-height: 1.45; }
+.book .within.listed .it { display: block; padding-left: .83em; text-indent: -.83em; margin-top: .22em; break-inside: avoid; }
+.book .within.listed.cols p { columns: 2; column-gap: 1.6em; }
+.book .within.listed.cols.three p { columns: 3; column-gap: 1.2em; }
+.book .within.listed.cols .it:first-child { margin-top: 0; }
+/* numerals hang in a column of their own, ranged right */
+.book .within.listed .it:has(.num) { padding-left: 2.3em; text-indent: -2.3em; }
+.book .within.listed .num { display: inline-block; width: 2.2em; text-indent: 0; text-align: right; margin-right: .1em; }
 .book .page-r .facts { margin-top: 1.3em; }
 .book .page-r .go { margin-top: 1.1em; font-size: .9em; }
 

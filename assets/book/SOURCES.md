@@ -13,7 +13,6 @@ printed on, so that they can lie on this page instead.
 | `parchment.webp` | The smooth (hair) side of a medieval parchment leaf, made to tile | Membeth, [Pergament.2.jpg](https://commons.wikimedia.org/wiki/File:Pergament.2.jpg) | CC0 |
 | `leather.webp` | The worn calf of a 120-year-old family Bible's cover, for the boards | Photograph by Pink Sherbet Photography, [via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Free_vintage_antique_leather_book_cover_texture_for_layers_(2981931138).jpg), resized | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) |
 | `oak.webp` | Oak planks, for the desk; darkened | Poly Haven, [Oak wood planks](https://polyhaven.com/a/oak_wood_planks) (Rico Cilliers, Charlotte Baglioni, Dimitrios Savva and others), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Oak_wood_planks_diff_8k_(PNG).png) | CC0 |
-| `ribbon.webp` | A grosgrain ribbon, dyed in the page's red, for the bookmark | Loggie-log, [Grosgrain ribbon detail.JPG](https://commons.wikimedia.org/wiki/File:Grosgrain_ribbon_detail.JPG) | Public domain |
 | `fleuron.webp` | A printer's ornament from the Kilmarnock edition of Burns's poems, 1786, its paper taken out | Photograph by Rosser1954, [via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Fleuron_from_1786_Robert_Burns_Kilmarnock_Edition.jpg), cropped and cleaned | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
 The share images (`assets/og-*.png`) and the icons are drawn by

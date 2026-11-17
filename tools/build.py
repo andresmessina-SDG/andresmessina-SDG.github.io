@@ -81,6 +81,10 @@ def works_html(t: dict) -> str:
   </div>
   <div class="page page-r {colour}">
     <p class="what">{esc(w["what"])}</p>
+    <section class="within" aria-labelledby="{w["id"]}-within">
+      <h3 class="rubric" id="{w["id"]}-within">{esc(t["within"])}</h3>
+      <p>{within_html(w["within"])}</p>
+    </section>
     <p class="facts">{facts}</p>
     <p class="go">
 {links}
@@ -91,6 +95,35 @@ def works_html(t: dict) -> str:
   </div>
 </article>""")
     return indent("\n\n".join(items), 4)
+
+
+def within_html(items: list) -> str:
+    """What a work holds, run on as a manuscript runs its text on: each item after a paragraph mark,
+    the marks red and blue in turn, and no item broken from its mark. An item numbered in roman
+    numerals (the ages of the church) has its numeral for its mark, coloured the same way."""
+    out = []
+    for k, item in enumerate(items):
+        colour = "r" if k % 2 == 0 else "b"
+        num = re.match(r"([IVXLC]+) (.+)$", item)
+        if num:
+            mark = f'<span class="pil num {colour}">{num[1]}</span>'
+            item = num[2]
+        else:
+            mark = f'<span class="pil {colour}" aria-hidden="true">¶</span>'
+        out.append(f'<span class="it">{mark}\u00a0{esc(item)}</span>')
+    return " ".join(out)
+
+
+def thumbs_html(t: dict) -> str:
+    """The thumb index: a tab for each folio, as a Bible's thumb index has one for each book."""
+    rows = [("opening", t["kalendar"], t["kalendar"], None)]
+    rows += [(w["id"], w["short"], w["name"], w.get("title_lang")) for w in t["works"]]
+    rows.append(("colophon", t["colophon_name"], t["colophon_name"], None))
+    out = []
+    for i, (wid, short, name, tl) in enumerate(rows):
+        lang = f' lang="{tl}"' if tl and short == name else ""
+        out.append(f'<a class="thumb" href="#{wid}" style="--k:{i}" title="{esc(name)}" aria-label="{esc(name)}"><span{lang}>{esc(short)}</span></a>')
+    return indent("\n".join(out), 6)
 
 
 def contents_html(t: dict) -> str:
@@ -233,7 +266,7 @@ def main() -> None:
                   "motif": motif, "sdg": sdg, "evening": evening,
                   "verse_html": lord(verses[0][lang]), "verse_ref": verses[0][f"{lang}_ref"],
                   "kalendar_js": kalendar_js(verses, t), "ui": ui_json(t),
-                  "contents": contents_html(t),
+                  "contents": contents_html(t), "thumbs": thumbs_html(t),
                   "bach_html": re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["bach"])),
                   "works": works_html(t)}
         out = ROOT / t["path"] / "index.html"

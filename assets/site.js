@@ -257,6 +257,43 @@
   function stopScrollScribe() { if (seen) { seen.disconnect(); seen = null; } }
 
   // ---------------------------------------------------------------------------------------------
+  // The thumb index: a tab for each folio. In the book it stands out from the left edge and its links
+  // turn the book (see onLink); on a narrow page it folds to the left edge as slim spines: a first
+  // touch draws all the tabs out, a touch on one goes there, and anything else folds them away.
+  const thumbs = document.querySelector('.thumbs');
+  const tabs = thumbs ? [...thumbs.querySelectorAll('.thumb')] : [];
+  function markThumb(k) { tabs.forEach((t, i) => (i === k ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current'))); }
+  let folioWatch = null;
+  function slimThumbs() {
+    if (!thumbs) return;
+    root.classList.add('thumbable');
+    thumbs.classList.add('slim');
+    // the tab of the folio in view stands out a little
+    if (folioWatch) folioWatch.disconnect();
+    const folios = [...main.querySelectorAll(':scope > .folio')];
+    const seen = new Set();
+    folioWatch = new IntersectionObserver((entries) => {
+      for (const e of entries) (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
+      const k = folios.findIndex((f) => seen.has(f));
+      if (k >= 0) markThumb(k);
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    folios.forEach((f) => folioWatch.observe(f));
+  }
+  if (thumbs) {
+    thumbs.addEventListener('click', (e) => {
+      if (!thumbs.classList.contains('slim')) return;           // in the book, onLink turns to it
+      const a = e.target.closest('.thumb');
+      if (!a) return;
+      if (!thumbs.classList.contains('open')) { e.preventDefault(); thumbs.classList.add('open'); return; }
+      thumbs.classList.remove('open');                           // and the link takes the reader there
+    });
+    const fold = (e) => { if (thumbs.classList.contains('open') && !thumbs.contains(e.target)) thumbs.classList.remove('open'); };
+    document.addEventListener('pointerdown', fold);
+    window.addEventListener('scroll', () => { if (thumbs.classList.contains('open')) thumbs.classList.remove('open'); }, { passive: true });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') thumbs.classList.remove('open'); });
+  }
+
+  // ---------------------------------------------------------------------------------------------
   // The book. Each folio of the page is a spread: its .page-v on the left, its .page-r on the right.
   // The pages are bound as leaves turning on the gutter: leaf j carries the right page of spread j
   // on its front and the left page of spread j + 1 on its back; the first left page and the last
@@ -278,14 +315,15 @@
   //    units the text block stops there, and the width to spare goes one part to the gutter and two
   //    to the outer margin, as the canon of manuscript margins has it; head 7.2% and foot 10% of the
   //    height.
-  const TOP = 36, SIDE = 10, FOOT = 10, BOARD = 13, EDGE = 12;
+  //  - The thumb index stands 42 of the book's pixels out from its left board, and the desk gives it room.
+  const TOP = 36, SIDE = 10, FOOT = 10, BOARD = 13, EDGE = 12, THUMBS = 42;
   const MIN_PH = 740, TALLEST = 2 / 3, WIDEST = 0.88, MIN_PW = Math.ceil(MIN_PH * TALLEST);
   function geometry() {
     const aw = window.innerWidth - 2 * SIDE, ah = window.innerHeight - TOP - FOOT;
     let z = Math.min(1.4, Math.max(0.8, Math.sqrt(window.innerHeight / 900)));
-    z = Math.min(z, ah / (MIN_PH + 2 * BOARD), aw / (2 * MIN_PW + 2 * BOARD + 2 * EDGE));
+    z = Math.min(z, ah / (MIN_PH + 2 * BOARD), aw / (2 * MIN_PW + 2 * BOARD + 2 * EDGE + THUMBS));
     let ph = ah / z - 2 * BOARD;
-    let pw = (aw / z - 2 * BOARD - 2 * EDGE) / 2;
+    let pw = (aw / z - 2 * BOARD - 2 * EDGE - THUMBS) / 2;
     pw = Math.min(pw, ph * WIDEST);
     ph = Math.min(ph, pw / TALLEST);
     const most = Math.min(22, Math.max(20, 20 + (window.innerHeight - 1080) / 180));
@@ -368,41 +406,17 @@
       }
     });
 
-    // the ribbon, and the contents it opens
-    const ribbon = el('button', 'ribbon', { type: 'button', 'aria-label': UI.contents || 'Contents', title: UI.contents || 'Contents', 'aria-haspopup': 'dialog' });
-    const slip = el('div', 'slip', { id: 'slip', role: 'dialog', 'aria-label': UI.contents || 'Contents' });
-    const popover = typeof slip.showPopover === 'function';
-    if (popover) { slip.setAttribute('popover', ''); ribbon.setAttribute('popovertarget', 'slip'); } else slip.hidden = true;
-    const close = el('button', 'slip-close', { type: 'button', 'aria-label': '×' });
-    close.textContent = '×';
-    const nav = el('nav', 'contents');
-    const h = el('h2', 'rubric'); h.textContent = UI.contents || 'Contents';
-    const ol = el('ol');
-    spreads.forEach((s, k) => {
-      const li = el('li', k % 2 ? 'blue' : 'red');
-      const a = el('a', '', { href: k ? `#${s.id}` : '#opening' });
-      const lang = s.folio.getAttribute('lang');
-      if (lang) a.setAttribute('lang', lang);
-      const v = el('span', 'c-v'); v.textContent = s.name.charAt(0);
-      a.append(v, s.name.slice(1), el('span', 'c-dots', { 'aria-hidden': 'true' }));
-      const n = el('span', 'c-fol'); n.textContent = ROMAN[k];
-      a.append(n);
-      li.append(a);
-      ol.append(li);
-    });
-    nav.append(h, ol);
-    slip.append(close, nav);
-    const hideSlip = () => { if (popover) { try { slip.hidePopover(); } catch (e) {} } else slip.hidden = true; };
-    close.addEventListener('click', hideSlip);
-    if (!popover) ribbon.addEventListener('click', () => { slip.hidden = !slip.hidden; });
+    // the thumb index stands out from the book's left edge
+    if (thumbs) { thumbs.classList.remove('slim', 'open'); bk.append(thumbs); }
+    if (folioWatch) { folioWatch.disconnect(); folioWatch = null; }
 
-    bk.append(block, ribbon);
-    stage.append(bk, slip);
+    bk.append(block);
+    stage.append(bk);
     main.append(stage);
     root.classList.add('bound');
 
     book = { stage, bk, block, edgeL, edgeR, fixedL, fixedR, fL, fR, leaves, spreads, N, versoFace, rectoFace,
-      cur: 0, busy: false, queued: null, ribbon, slip, hideSlip, seenSpreads: new Set() };
+      cur: 0, busy: false, queued: null, seenSpreads: new Set() };
 
     // the pages not yet opened to are drawn in when they are
     if (!still.matches) {
@@ -412,7 +426,6 @@
     }
     // links to a folio turn to it
     bk.addEventListener('click', onLink);
-    slip.addEventListener('click', onLink);
     bindTurning();
     layout();
     const start = spreadFromHash();
@@ -430,6 +443,7 @@
     }
     const jj = spreads[0].v.querySelector('.jj');
     if (jj) document.querySelector('.head').prepend(jj);
+    if (thumbs) { main.before(thumbs); slimThumbs(); }
     stage.remove();
     root.classList.remove('bound');
     unmark();
@@ -447,6 +461,23 @@
     b.style.zoom = g.z;
     for (const k of ['pw', 'ph', 'u', 'mi', 'mo', 'mt', 'mb']) b.style.setProperty(`--${k}`, `${g[k].toFixed(1)}px`);
     b.style.setProperty('--sz', g.sz.toFixed(3));
+    book.stage.style.paddingLeft = `${Math.round(SIDE + THUMBS * g.z)}px`;
+    fitWithin();
+  }
+
+  // A work's contents run on in a paragraph; where its page has room for them as a list, one to a
+  // line, they are set so, in one column or else in two, whichever the page holds without spilling.
+  function fitWithin() {
+    for (const s of book.spreads) {
+      const w = s.r.querySelector('.within');
+      if (!w) continue;
+      const fits = () => s.r.scrollHeight <= s.r.clientHeight + 1;
+      for (const cls of [['listed'], ['listed', 'cols'], ['listed', 'cols', 'three'], []]) {
+        w.classList.remove('listed', 'cols', 'three');
+        w.classList.add(...cls);
+        if (fits()) break;
+      }
+    }
   }
 
   // ---- where the book lies open ----
@@ -516,7 +547,6 @@
   function go(k, opts = {}) {
     if (!book) return;
     k = Math.max(0, Math.min(book.N, k));
-    book.hideSlip();
     if (book.busy) { book.queued = [k, opts]; return; }
     if (k === book.cur) return;
     Organ.stop();
@@ -561,6 +591,7 @@
   // of the screen, say where it is, draw in what is new, and play its clip and its line
   function arrive(turned) {
     const k = book.cur, s = book.spreads[k];
+    markThumb(k);
     visibility();
     edges();
     const live = document.getElementById('turned');
@@ -606,7 +637,6 @@
       if (!book || e.altKey || e.ctrlKey || e.metaKey) return;
       const t = e.target;
       if (t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
-      if (book.slip.matches && book.slip.matches(':popover-open')) return;
       if ((e.key === 'f' || e.key === 'F') && canFull) { e.preventDefault(); toggleFull(); return; }
       const k = book.cur;
       const keys = { ArrowRight: k + 1, ArrowDown: k + 1, PageDown: k + 1, ArrowLeft: k - 1, ArrowUp: k - 1, PageUp: k - 1, Home: 0, End: book.N };
@@ -723,11 +753,13 @@
   }
   if (main && main.querySelector('.folio')) {
     decide();
-    if (!book) scrollScribe();
+    if (!book) { scrollScribe(); slimThumbs(); }
     let raf = 0;
     window.addEventListener('resize', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(decide); });
     window.addEventListener('beforeprint', () => { printing = true; unbuild(); });
     window.addEventListener('afterprint', () => { printing = false; decide(); });
+    // the type's own metrics decide what a page holds, so the contents are fitted again once it has come
+    if (document.fonts) document.fonts.ready.then(() => { if (book) fitWithin(); });
   }
 
   // ---------------------------------------------------------------------------------------------

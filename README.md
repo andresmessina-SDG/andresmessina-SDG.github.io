@@ -31,16 +31,21 @@ minor third from it; the margins widen from the gutter outward and from the
 head down, as a manuscript's do. F, or the button above the book, reads it
 full screen. Its leaves turn by the arrow keys, Page Up and Down, Home and End,
 the wheel or a trackpad, a hand dragging a page, its corners, or the
-catchword at its foot; the ribbon opens the contents; each spread has its
-own address (`/#worldviews`), and Back turns back. The left page of each
-work carries its miniature, which plays its clip as the book opens to it.
+catchword at its foot; a thumb index of vellum tabs down its left edge
+turns straight to any folio; each spread has its own address
+(`/#worldviews`), and Back turns back. The left page of each work carries
+its miniature, which plays its clip as the book opens to it; the right
+page, what the work holds, set as a list in one, two or three columns
+where the page has room, or run on after red and blue pilcrows where it
+has not.
 At the foot of every right page is a line of Bach's chorale; with the organ
 stop drawn out (top right), each line sounds, in his four parts, as the
 book opens to it, so that the whole book plays the whole strophe.
 
 On a phone, a narrow or short window, without JavaScript, and on paper, the
 same document is one leaf of vellum read down the page, with each work's
-line of the chorale beneath it. Nothing moves for readers who ask for
+line of the chorale beneath it, and the thumb index folded to slim spines
+of calf at the left edge, drawn out by a touch. Nothing moves for readers who ask for
 stillness: the book still binds, and its leaves turn at once.
 
 ## What is where
@@ -51,7 +56,7 @@ stillness: the book still binds, and its leaves turn at once.
 | `src/head.html`, `src/page.html`, `src/404.html` | The page templates. |
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
-| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the leather boards, the oak desk, the ribbon, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py` prepares them from the originals. |
+| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the leather boards, the oak desk, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py` prepares them from the originals. |
 | `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; versals washed with colour, staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
 | `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ. Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |

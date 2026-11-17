@@ -12,7 +12,6 @@ sizes the page uses, in assets/book/:
   parchment.webp  medieval parchment, made to tile
   leather.webp    the worn calf of a 19th-century family Bible's cover, for the boards
   oak.webp        oak planks, for the desk the book lies on
-  ribbon.webp     a grosgrain ribbon, dyed in the page's red
   fleuron.webp    a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out
 
 "Lifting out" divides a scan by its own paper colour, so the paper becomes white and only ink,
@@ -112,13 +111,6 @@ def main(src):
     o = Image.open(s / "oak.png").convert("RGB")
     arr = np.asarray(o).astype(np.float32) * np.array([0.62, 0.5, 0.4])
     save(Image.fromarray(arr.clip(0, 255).astype(np.uint8)).resize((900, 900), Image.LANCZOS), "oak.webp", 78)
-
-    # the ribbon: grosgrain, turned to hang down, and dyed a deep vermilion
-    r = Image.open(s / "ribbon1.jpg").convert("L")
-    r = r.crop((0, int(r.height * 0.08), r.width, int(r.height * 0.92))).rotate(90, expand=True)
-    r = ImageOps.autocontrast(r, cutoff=1)
-    r = ImageOps.colorize(r, black=(70, 12, 6), mid=(160, 40, 24), white=(232, 120, 92))
-    save(r.resize((64, round(64 * r.height / r.width)), Image.LANCZOS), "ribbon.webp", 84)
 
     # the fleuron
     f = Image.open(s / "fleuron1.jpg").convert("RGB")
