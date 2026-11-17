@@ -219,11 +219,8 @@ def main() -> None:
     head = (SRC / "head.html").read_text(encoding="utf-8")
     page = (SRC / "page.html").read_text(encoding="utf-8")
     notfound = (SRC / "404.html").read_text(encoding="utf-8")
-    initial = indent((SRC / "initial.svg").read_text(encoding="utf-8").rstrip(), 12)
-    tail = indent((SRC / "tail.svg").read_text(encoding="utf-8").rstrip(), 12)
     motif = indent((SRC / "bach.svg").read_text(encoding="utf-8").rstrip(), 10)
     sdg = indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 14)
-    seal = indent((SRC / "seal.svg").read_text(encoding="utf-8").rstrip(), 12)
     v = version()
 
     for lang, t in strings.items():
@@ -231,9 +228,9 @@ def main() -> None:
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,
                   "head_links": head_links(t, url, strings),
-                  "langs": langs_nav(t), "initial": initial, "tail": tail,
+                  "langs": langs_nav(t),
                   "chorale_1": indent(chorale(1), 10), "chorale_7": indent(chorale(7), 10),
-                  "motif": motif, "sdg": sdg, "seal": seal, "evening": evening,
+                  "motif": motif, "sdg": sdg, "evening": evening,
                   "verse_html": lord(verses[0][lang]), "verse_ref": verses[0][f"{lang}_ref"],
                   "kalendar_js": kalendar_js(verses, t), "ui": ui_json(t),
                   "contents": contents_html(t),

@@ -44,12 +44,9 @@ body {
   font-variant-ligatures: common-ligatures;
   font-variant-numeric: oldstyle-nums;
   background-color: var(--vellum);
-  /* a Gothic diaper, as behind a miniature: a hairline gold lattice with a dot-rosette in each lozenge,
-     over the faint grain of vellum */
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52'%3E%3Cpath d='M0 0L52 52M52 0L0 52' stroke='%23A27A28' stroke-width='.45' opacity='.08'/%3E%3Cg fill='%23A27A28' opacity='.2'%3E%3Ccircle cx='26' cy='-1.7' r='.75'/%3E%3Ccircle cx='27.7' cy='0' r='.75'/%3E%3Ccircle cx='26' cy='1.7' r='.75'/%3E%3Ccircle cx='24.3' cy='0' r='.75'/%3E%3Ccircle cx='0' cy='24.3' r='.75'/%3E%3Ccircle cx='1.7' cy='26' r='.75'/%3E%3Ccircle cx='0' cy='27.7' r='.75'/%3E%3Ccircle cx='-1.7' cy='26' r='.75'/%3E%3Ccircle cx='52' cy='24.3' r='.75'/%3E%3Ccircle cx='53.7' cy='26' r='.75'/%3E%3Ccircle cx='52' cy='27.7' r='.75'/%3E%3Ccircle cx='50.3' cy='26' r='.75'/%3E%3Ccircle cx='26' cy='50.3' r='.75'/%3E%3Ccircle cx='27.7' cy='52' r='.75'/%3E%3Ccircle cx='26' cy='53.7' r='.75'/%3E%3Ccircle cx='24.3' cy='52' r='.75'/%3E%3C/g%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 52px 52px, auto;
+  /* real parchment: the hair side of a medieval leaf (assets/book/parchment.webp; see SOURCES.md there) */
+  background-image: url("/assets/book/parchment.webp");
+  background-size: 720px 720px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
@@ -89,9 +86,14 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 
 /* ---------- The opening: gilded initial ---------- */
 .opening { position: relative; margin-top: clamp(48px, 9vw, 96px); padding-left: calc(var(--hero-ini) + var(--hero-gap)); min-height: calc(var(--hero-ini) + 12px); }
-.initial { position: absolute; left: 0; top: 12px; width: var(--hero-ini); height: var(--hero-ini); }
-.initial svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 0.5px rgba(80, 55, 10, .25)); }
-.initial .tail { display: none; position: absolute; left: 10px; top: calc(100% - 2px); width: 40px; height: 120px; }
+/* the opening initial: an A cut from a thirteenth-century Italian Bible, on burnished gold (assets/book/initial-a.webp) */
+.initial { position: absolute; left: 0; top: 12px; width: var(--hero-ini); aspect-ratio: 560 / 627; }
+.initial img { display: block; width: 100%; height: 100%; border-radius: 1.5px; box-shadow: 0 0 0 .5px rgba(60, 40, 10, .3), 0 1px 2px rgba(60, 40, 10, .25); }
+/* the light a pointer casts on its gold (site.js sets --gx and --gy) */
+.initial::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 1.5px; mix-blend-mode: soft-light;
+  background: radial-gradient(circle at var(--gx, -60%) var(--gy, -60%), rgba(255, 248, 220, .85), rgba(255, 248, 220, 0) 42%);
+}
 h1 {
   margin: 0; padding-top: 6px;
   font-weight: 400; font-size: clamp(2.6rem, 8.2vw, 4.75rem); line-height: 0.98; letter-spacing: -0.012em;
@@ -160,18 +162,17 @@ h1 {
 
 /* ---------- The works ---------- */
 .work { position: relative; margin-top: 72px; padding: 0 0 0 calc(var(--ini-col) + var(--ini-gap)); }
-/* pen-flourishing that runs down the margin from each versal and fades */
+/* down the margin from each versal, gilded ivy, flowers and hairline stems from the border of a
+   fifteenth-century Book of Hours (Use of Metz; assets/book/vine.webp), its vellum taken out so that
+   it lies on this page as if painted here */
 .work::before {
-  content: ""; position: absolute; top: calc(3.68rem + 24px); bottom: 70px;
-  left: calc(var(--ini-col) - 27px); width: 28px;
-  background-repeat: repeat-y; background-position: center top;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
-  opacity: .85;
+  content: ""; position: absolute; top: calc(3.68rem + 20px); left: calc(var(--ini-col) - 36px); width: 38px; aspect-ratio: 170 / 1503;
+  background: url("/assets/book/vine.webp") center top / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
 }
-.blue { --c: var(--lapis); --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%23B0361F' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%23B0361F' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%23B0361F' stroke='none'/%3E%3C/svg%3E"); }
-.red { --c: var(--vermilion); --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='44' fill='none' stroke='%2323407A' stroke-width='.9' stroke-linecap='round'%3E%3Cpath d='M14 0v44'/%3E%3Cpath d='M14 9c-5 0-8 3-7 6s5 3 5 0-3-2-4 0'/%3E%3Cpath d='M14 31c5 0 8 3 7 6s-5 3-5 0 3-2 4 0'/%3E%3Ccircle cx='4.5' cy='9' r='.9' fill='%2323407A' stroke='none'/%3E%3Ccircle cx='23.5' cy='31' r='.9' fill='%2323407A' stroke='none'/%3E%3C/svg%3E"); }
-.work::before { background-image: var(--pen); }
+.blue { --c: var(--lapis); }
+.red { --c: var(--vermilion); }
 
 .work h2 { position: relative; margin: 0; font-weight: 500; font-size: 1.875rem; line-height: 1.12; letter-spacing: -0.005em; text-wrap: balance; }
 .work h2 a { text-decoration: none; background-image: linear-gradient(var(--gilt), var(--gilt)); background-size: 0 1px; background-repeat: no-repeat; background-position: 0 96%; transition: background-size .35s ease; }
@@ -182,11 +183,6 @@ h1 {
   position: absolute; top: -0.26em; right: calc(100% + var(--ini-gap));
   width: var(--ini-col); padding: .2em 0 .2em .4em; text-align: right;
   font-size: 4.6rem; line-height: 0.8; font-weight: 500; color: var(--c);
-}
-.versal::after { /* the penwork dots that cradle the letter */
-  content: ""; position: absolute; right: 2px; top: calc(100% - .2em + 10px); width: 22px; height: 8px;
-  background: radial-gradient(circle, var(--c) 1.1px, transparent 1.4px) 0 0 / 7px 8px repeat-x;
-  opacity: .55;
 }
 
 /* Each work's plate: a picture of it, matted on vellum with a hairline of gold, like a miniature */
@@ -243,14 +239,15 @@ h1 {
 
 .finis { margin-top: 40px; }
 .signature { display: flex; flex-direction: column; align-items: flex-end; margin-top: 22px; text-align: right; }
-.sealed { display: flex; align-items: center; gap: 16px; }
 /* S.D.G. in EB Garamond 600, as gilded paths (src/sdg.svg, by tools/quill.py) */
 .sdg { margin: 0; font-size: 2.75rem; line-height: 1; }
 .sdg svg { display: block; width: 3.394em; height: 0.735em; overflow: visible; filter: drop-shadow(0 .5px .3px rgba(80, 55, 10, .3)); }
-/* the wax seal pressed beside it (src/seal.svg) */
-.seal { display: block; flex: none; width: 60px; height: 60px; transform: rotate(-7deg); filter: drop-shadow(0 1.5px 1.2px rgba(70, 20, 5, .35)); }
 .sdg-gloss { margin: 8px 0 0; font-style: italic; color: var(--muted); }
-.fleuron { display: block; width: 34px; height: 20px; margin: 48px auto 0; color: var(--gilt); }
+/* a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out (assets/book/fleuron.webp) */
+.fleuron { display: block; width: 44px; height: auto; margin: 48px auto 0; opacity: .85; }
+.materials { margin: 4px 0 0; font-size: .85rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+.materials a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 2px; }
+.materials a:hover { color: var(--vermilion); }
 
 /* ---------- Not found ---------- */
 .nf .nf-opening { padding-left: 0; min-height: 0; }
@@ -267,9 +264,8 @@ h1 {
   :root { --hero-ini: 152px; --hero-gap: 22px; --ini-col: 72px; --ini-gap: 9px; }
   .opening { padding-left: 0; min-height: 0; }
   .initial { left: auto; right: calc(100% + var(--hero-gap)); top: 14px; }
-  .initial .tail { display: block; }
   .work { padding-left: 0; }
-  .work::before { left: calc(-1 * var(--ini-gap) - 27px); }
+  .work::before { left: calc(-1 * var(--ini-gap) - 44px); width: 42px; }
 }
 /* ---------- Narrow ---------- */
 @media (max-width: 560px) {
@@ -282,12 +278,10 @@ h1 {
   .portrait { width: 76px; height: 76px; margin-top: 2px; }
   .kalendar { margin-top: 52px; }
   .work { margin-top: 60px; }
-  .work::before { top: calc(2.72rem + 24px); }
+  .work::before { top: calc(2.72rem + 18px); left: calc(var(--ini-col) - 30px); width: 30px; }
   .work h2 { font-size: 1.5625rem; }
   .versal { font-size: 3.4rem; }
   .sdg { font-size: 2.25rem; }
-  .seal { width: 50px; height: 50px; }
-  .sealed { gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .plate:hover { transform: none; } }
 
@@ -359,19 +353,11 @@ html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50
   .plate.inked { animation: lay .9s .3s cubic-bezier(.2, .7, .2, 1) both; }
   @keyframes lay { from { opacity: 0; translate: 0 18px; } }
 
-  /* S.D.G. written by a quill, stroke by stroke (timings from tools/quill.py), then sealed */
+  /* S.D.G. written by a quill, stroke by stroke (timings from tools/quill.py) */
   .signature.pending .sdg-pen path { stroke-dasharray: 1 2; stroke-dashoffset: 1; opacity: 0; }
   .signature.inked .sdg-pen path { stroke-dasharray: 1 2; animation: pen var(--t) var(--d) cubic-bezier(.45, .05, .55, .95) both; }
   @keyframes pen { from { stroke-dashoffset: 1; opacity: 0; } 1% { opacity: 1; } to { stroke-dashoffset: 0; opacity: 1; } }
   .signature.written .sdg-ink { mask: none; }
-  .signature.pending .seal { opacity: 0; }
-  .signature.inked .seal { animation: stamp .65s 4.05s cubic-bezier(.3, .7, .3, 1) both; }
-  @keyframes stamp {
-    0% { opacity: 0; transform: translateY(-14px) scale(1.5) rotate(-20deg); filter: drop-shadow(0 16px 10px rgba(70, 20, 5, 0)); }
-    55% { opacity: 1; transform: scale(.9) rotate(-4deg); filter: drop-shadow(0 .5px .5px rgba(70, 20, 5, .5)); }
-    78% { transform: scale(1.04) rotate(-8deg); }
-    100% { opacity: 1; transform: rotate(-7deg); filter: drop-shadow(0 1.5px 1.2px rgba(70, 20, 5, .35)); }
-  }
 }
 
 
@@ -393,7 +379,7 @@ html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50
          part to the gutter and two to the outer margin
    ===================================================================================================== */
 html.bound, html.bound body { height: 100%; overflow: hidden; }
-html.bound body { padding: 0; }
+html.bound body { padding: 0; background: #3B2516 url("/assets/book/oak.webp") center / 900px 900px; }
 html.bound .leaf { max-width: none; padding: 0; }
 /* the controls, in a narrow band of desk above the book */
 html.bound .head {
@@ -420,24 +406,31 @@ html.bound .folio { display: none; }
 .fs:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
 .stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 36px 10px 10px; }
-.stage::before {   /* the lamp over the desk */
+.stage::before {   /* the lamp over the desk: a pool of warm light, falling away into the corners */
   content: ""; position: fixed; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(255, 252, 240, .5), transparent 60%),
-              radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(90, 60, 25, .14) 100%);
+  background: radial-gradient(ellipse 70% 65% at 50% 45%, rgba(255, 214, 160, .22), transparent 70%),
+              radial-gradient(ellipse 110% 100% at 50% 50%, transparent 45%, rgba(20, 10, 4, .55) 100%);
 }
+html.bound .langs a, html.bound .organ, html.bound .fs { color: #D8C6A8; }
+html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover { color: #FFF3DC; }
+html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: #F2A68E; }
+html.bound .langs span { color: #8C7458; }
+html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .book {
   --pw: 680px; --ph: 830px; --board: 13px; --u: 18px; --mi: 42px; --mo: 75px; --mt: 60px; --mb: 83px;
   position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
   border-radius: 5px 5px 6px 6px;
-  /* boards bound in oxblood calf, with a gilt fillet tooled round them */
+  /* the boards, in the worn calf of a nineteenth-century family Bible's cover (assets/book/leather.webp),
+     shadowed where they hinge at the spine, and lit a little from the lamp */
   background:
-    linear-gradient(to right, transparent calc(50% - 7px), rgba(0, 0, 0, .35) 50%, transparent calc(50% + 7px)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .03 0 0 0 0 .02 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 30% 20%, #7A2A20, #561A14 70%);
+    linear-gradient(to right, transparent calc(50% - 10px), rgba(10, 4, 2, .55) 50%, transparent calc(50% + 10px)),
+    radial-gradient(ellipse 85% 75% at 46% 42%, rgba(255, 220, 190, .08), rgba(15, 6, 3, .35) 100%),
+    url("/assets/book/leather.webp") center / cover;
   box-shadow:
-    inset 0 0 0 3.5px #5A1C16, inset 0 0 0 4.5px rgba(201, 160, 69, .55),
-    calc(var(--sun, 0) * -14px) 18px 34px -14px rgba(50, 25, 5, .45),
-    calc(var(--sun, 0) * -4px) 4px 10px rgba(50, 25, 5, .16);
+    inset 0 0 0 1px rgba(15, 6, 3, .5), inset 0 1.5px 1px rgba(255, 215, 185, .18),
+    0 1px 2px rgba(0, 0, 0, .55),
+    calc(var(--sun, 0) * -18px) 24px 44px -10px rgba(0, 0, 0, .6),
+    calc(var(--sun, 0) * -6px) 8px 16px rgba(0, 0, 0, .3);
 }
 /* a hand on a page turns it, so the book's text is not for selecting; touch moves reach the page, pinching stays the reader's */
 .block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 4);
@@ -445,8 +438,10 @@ html.bound .folio { display: none; }
 /* the fore-edges: as many leaves as are left on either side, seen edge on */
 .edge {
   position: absolute; top: 2px; bottom: 2px; width: var(--w, 4px); transition: width .7s ease;
-  background: repeating-linear-gradient(to right, #F3ECDB 0 1px, #D8CBAE 1px 1.7px);
-  box-shadow: 0 0 0 .5px rgba(120, 90, 40, .25);
+  background:
+    linear-gradient(to bottom, rgba(60, 40, 15, .25), transparent 8%, transparent 92%, rgba(60, 40, 15, .3)),
+    repeating-linear-gradient(to right, #EFE5CF 0 .9px, #C9B994 .9px 1.5px);
+  box-shadow: 0 0 1px rgba(40, 25, 8, .5);
 }
 .edge.l { right: 100%; border-radius: 3px 0 0 3px; }
 .edge.r { left: 100%; border-radius: 0 3px 3px 0; }
@@ -457,14 +452,29 @@ html.bound .folio { display: none; }
 .sheet.leaf { transform-origin: 0 50%; transform-style: preserve-3d; will-change: transform; }
 .face {
   position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  background-color: #FBF7EC;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-color: #FAF5E8;
+  background-image: url("/assets/book/parchment.webp");
+  background-size: 720px 720px;
 }
 .face.back { transform: rotateY(180deg); }
-/* the page curves down into the gutter, and is a shade warmer at its outer edge */
-.face.recto { background-image: linear-gradient(to right, rgba(70, 45, 15, .2), rgba(70, 45, 15, .05) 5%, transparent 14%, transparent 92%, rgba(120, 90, 40, .06)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-.face.verso { background-image: linear-gradient(to left, rgba(70, 45, 15, .2), rgba(70, 45, 15, .05) 5%, transparent 14%, transparent 92%, rgba(120, 90, 40, .06)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* the page bows down into the gutter: a deep crease, the curve of the leaf catching the lamp just
+   beyond it, and its head and foot dipping as they near the spine; a shade warmer at its outer edge */
+.face.recto, .face.verso { background-size: auto, auto, 720px 720px; }
+.face.recto {
+  background-image:
+    linear-gradient(to right, rgba(55, 35, 10, .42) 0, rgba(55, 35, 10, .2) 1.4%, rgba(55, 35, 10, .07) 4%, rgba(255, 250, 235, .14) 8%, transparent 13%, transparent 95%, rgba(100, 70, 30, .08) 100%),
+    linear-gradient(to bottom, rgba(100, 70, 30, .06), transparent 5%, transparent 95%, rgba(100, 70, 30, .08)),
+    url("/assets/book/parchment.webp");
+  clip-path: polygon(0 1.1%, 3% .45%, 9% .1%, 18% 0, 100% 0, 100% 100%, 18% 100%, 9% 99.9%, 3% 99.55%, 0 98.9%);
+}
+.face.verso {
+  background-image:
+    linear-gradient(to left, rgba(55, 35, 10, .42) 0, rgba(55, 35, 10, .2) 1.4%, rgba(55, 35, 10, .07) 4%, rgba(255, 250, 235, .14) 8%, transparent 13%, transparent 95%, rgba(100, 70, 30, .08) 100%),
+    linear-gradient(to bottom, rgba(100, 70, 30, .06), transparent 5%, transparent 95%, rgba(100, 70, 30, .08)),
+    url("/assets/book/parchment.webp");
+  background-position: 0 0, 0 0, 37% 61%;   /* a different stretch of the skin */
+  clip-path: polygon(0 0, 82% 0, 91% .1%, 97% .45%, 100% 1.1%, 100% 98.9%, 97% 99.55%, 91% 99.9%, 82% 100%, 0 100%);
+}
 /* the light across a leaf as it turns: darker as it rises from the page, and a sheen where it bends */
 .face .shade { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 3; }
 .face.recto .shade { background: linear-gradient(to right, rgba(40, 25, 5, .55), rgba(40, 25, 5, .12) 60%, rgba(255, 250, 235, .25) 92%, rgba(40, 25, 5, .2)); }
@@ -514,8 +524,12 @@ html.bound .folio { display: none; }
 .ribbon {
   position: absolute; z-index: 400; left: calc(var(--board) + var(--pw) + var(--mi) * .4 - 7px); top: -8px;
   width: 14px; height: calc(var(--ph) * .17); padding: 0; border: 0; cursor: pointer;
-  background: linear-gradient(to right, #8E2716, #C2452B 35%, #E0664A 50%, #B23A22 70%, #7E2012);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%);
+  /* grosgrain, its rib running across, dyed in the page's red (assets/book/ribbon.webp), lying a little
+     rounded on the page */
+  background:
+    linear-gradient(to right, rgba(30, 5, 2, .45), transparent 28%, rgba(255, 210, 190, .1) 50%, transparent 72%, rgba(30, 5, 2, .5)),
+    url("/assets/book/ribbon.webp") center top / 100% auto repeat-y;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
   filter: drop-shadow(1px 2px 1.5px rgba(50, 20, 5, .35));
   transform-origin: 50% 0; transition: transform .35s ease, height .35s ease;
 }
@@ -526,7 +540,7 @@ html.bound .folio { display: none; }
 .slip {
   position: fixed; inset: 0; margin: auto; width: 420px; max-width: calc(100vw - 40px); height: fit-content; max-height: 90vh; padding: 34px 40px 30px;
   border: 1px solid var(--rule); border-radius: 3px; color: var(--ink);
-  background: #FBF7EC; box-shadow: 0 30px 60px -20px rgba(40, 20, 5, .55), 0 0 0 6px rgba(251, 247, 236, .6);
+  background: #FAF5E8 url("/assets/book/parchment.webp") center / 720px 720px; box-shadow: 0 30px 60px -20px rgba(20, 10, 3, .7);
   font: 17px/1.5 var(--text);
 }
 .slip::backdrop { background: rgba(60, 35, 10, .28); }
@@ -553,8 +567,7 @@ html.bound .folio { display: none; }
 .book .maker .jj { font-size: 1.1em; }
 .book .maker .jj span { font-size: .7em; }
 .book .maker .opening { display: grid; grid-template-columns: 6em 1fr; column-gap: 1.1em; align-items: center; margin: auto 0 0; padding: 0; min-height: 0; }
-.book .maker .initial { position: relative; left: 0; right: auto; top: 0; width: 6em; height: 6em; grid-row: 1 / span 2; }
-.book .maker .initial .tail { display: none; }
+.book .maker .initial { position: relative; left: 0; right: auto; top: 0; width: 6em; grid-row: 1 / span 2; }
 .book .maker h1 { padding: 0; font-size: 2.488em; line-height: 1; align-self: end; }
 .book .maker .subtitle { margin: .9em 0 0; align-self: start; }
 .book .maker .lede { margin: 2em 0 0; font-size: 1.25em; line-height: 1.5; }
@@ -591,12 +604,13 @@ html.bound .folio { display: none; }
 .book .page-v .epigraph p { font-size: 1.12em; line-height: 1.5; text-wrap: balance; }
 .book .page-v .epigraph p::before { content: none; }
 .book .page-v .epigraph cite { margin-top: .6em; }
-/* the pen-flourishing down the middle of the outer margin, beneath the versal */
+/* the Metz ivy down the middle of the outer margin, beneath the versal */
 .book .page-v.blue::before, .book .page-v.red::before {
-  content: ""; position: absolute; top: calc(var(--mt) + var(--u) * 5.4); bottom: var(--mb); left: calc(var(--mo) / 2 - 14px); width: 28px;
-  background: var(--pen) repeat-y center top; opacity: .8;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  content: ""; position: absolute; top: calc(var(--mt) + var(--u) * 5.2); left: calc(var(--mo) * .14); width: calc(var(--mo) * .72);
+  aspect-ratio: 170 / 1503; max-height: calc(var(--ph) - var(--mt) - var(--mb) - var(--u) * 5.2);
+  background: url("/assets/book/vine.webp") center top / 100% auto no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
 }
 .book .page-r .what { margin-top: .1em; font-size: 1.25em; line-height: 1.55; }
 /* the first letter of the text, a lombard in the work's colour, two lines deep */
@@ -614,7 +628,6 @@ html.bound .folio { display: none; }
 .book .finis .score { margin: 0 auto; padding: 0; }
 .book .finis .signature { margin: auto 0; align-items: center; text-align: center; }
 .book .finis .sdg { font-size: 3.6em; }
-.book .finis .seal { width: 4.6em; height: 4.6em; }
-.book .finis .sealed { gap: 1.2em; }
 .book .finis .sdg-gloss { margin-top: .8em; }
-.book .finis .fleuron { margin: 0 auto; }
+.book .finis .fleuron { width: 3.4em; margin: 0 auto; }
+.book .colophon .materials { font-size: .833em; }

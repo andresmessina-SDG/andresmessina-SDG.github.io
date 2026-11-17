@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Render the share images and icons from the same gilded initial the page uses:
+// Render the share images and icons from the same initial the page opens with (a real
+// thirteenth-century Bible initial, assets/book/initial-a.webp), on the same parchment:
 //   node tools/render-images.js
 // Writes assets/og-en.png, assets/og-es.png, assets/icon-192.png,
 // apple-touch-icon.png and the PNGs that tools/make-favicon.py packs into favicon.ico.
@@ -10,11 +11,10 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
-const initial = fs.readFileSync(path.join(ROOT, 'src/initial.svg'), 'utf8');
 const css = fs.readFileSync(path.join(ROOT, 'assets/site.css'), 'utf8');
 const fontFaces = css.slice(0, css.indexOf(':root'));
 
-const TYPES = { '.woff2': 'font/woff2', '.html': 'text/html; charset=utf-8', '.css': 'text/css' };
+const TYPES = { '.woff2': 'font/woff2', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.webp': 'image/webp' };
 const pages = {};
 
 const og = (lang) => {
@@ -24,9 +24,9 @@ const og = (lang) => {
   return `<!doctype html><html lang="${lang}"><meta charset="utf-8"><style>${fontFaces}
   html,body{margin:0}
   body{width:1200px;height:630px;box-sizing:border-box;padding:0 92px;display:grid;grid-template-columns:272px 1fr;gap:60px;align-items:center;
-    background:#F7F2E6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background:#F7F2E6 url("/assets/book/parchment.webp") 0 0 / 720px 720px;
     color:#2A2420;font-family:"EB Garamond",serif}
-  .ini svg{width:272px;height:272px;display:block;overflow:visible;filter:drop-shadow(0 2px 1px rgba(80,55,10,.25))}
+  .ini img{width:272px;height:auto;display:block;border-radius:2px;box-shadow:0 0 0 .5px rgba(60,40,10,.3),0 2px 4px rgba(60,40,10,.3)}
   .jj{font-family:"IM Fell English SC";color:#A27A28;font-size:26px;letter-spacing:.1em;margin:0 0 22px}
   h1{margin:0;font-weight:400;font-size:98px;line-height:.95;letter-spacing:-.012em}
   .sub{margin:18px 0 0;font-family:"IM Fell English SC";color:#B0361F;font-size:30px;letter-spacing:.05em}
@@ -35,21 +35,22 @@ const og = (lang) => {
   .works{margin:18px 0 0;font-family:"IM Fell English SC";font-size:22px;letter-spacing:.04em;color:#6F6556;line-height:1.45}
   .works b{font-weight:400;color:#A27A28;padding:0 .35em}
   .sdg{margin:16px 0 0;text-align:right;font-weight:600;font-size:40px;letter-spacing:.14em;margin-right:-.14em;
-    background:linear-gradient(to bottom,#F0DA94 0%,#C9A045 42%,#A27A28 70%,#7C5B19 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    background:url("/assets/book/gold.webp") center / 160px 160px;-webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:.4px #6E4F12}
   </style><body>
-  <div class="ini">${initial}</div>
+  <div class="ini"><img src="/assets/book/initial-a.webp" alt=""></div>
   <div><p class="jj">J.J.</p><h1>Andres Messina</h1><p class="sub">${t.sub}</p><div class="staff"></div>
   <p class="works">${t.works[0]}<b>·</b>${t.works[1]}<br>${t.works[2]}<b>·</b>${t.works[3]}<br>${t.works[4]}</p><p class="sdg">S.D.G.</p></div>
   </body></html>`;
 };
 
-// The icon: the initial alone. Small sizes drop the vine and dots, which only blur.
-const icon = (size, small, pad) => `<!doctype html><meta charset="utf-8"><style>${fontFaces}
+// The icon: the initial alone, cut square from its top, where the A's stem, its bar and the gold are.
+const icon = (size, small, pad) => `<!doctype html><meta charset="utf-8"><style>
   html,body{margin:0;background:${pad ? '#F7F2E6' : 'transparent'}}
   body{width:${size}px;height:${size}px;display:grid;place-items:center}
-  svg{width:${pad ? Math.round(size * 0.8) : size}px;height:${pad ? Math.round(size * 0.8) : size}px;display:block}
-  ${small ? 'svg g[clip-path], svg rect[fill="url(#dots)"], svg g[fill="#F7F2E6"]{display:none}' : ''}
-  </style><body>${initial.replace('viewBox="0 0 120 120"', pad ? 'viewBox="-2 -2 124 124"' : 'viewBox="3 3 114 114"')}</body>`;
+  div{width:${pad ? Math.round(size * 0.84) : size}px;height:${pad ? Math.round(size * 0.84) : size}px;border-radius:${small ? 1 : Math.round(size * 0.04)}px;
+    background:url("/assets/book/initial-a.webp") center ${small ? '22%' : '30%'} / ${small ? '118%' : '100%'} auto no-repeat}
+  </style><body><div></div></body>`;
 
 pages['/og-en.html'] = og('en');
 pages['/og-es.html'] = og('es');

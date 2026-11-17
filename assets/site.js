@@ -19,17 +19,6 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
 
-  // ---------------------------------------------------------------------------------------------
-  // One sweep of light across the gold leaf of the initial, once the letter is set,
-  // and again when a pointer rests on it.
-  const sweep = document.getElementById('sweep');
-  const initial = document.querySelector('.initial');
-  const shine = () => { if (!still.matches && sweep && sweep.beginElement) { try { sweep.beginElement(); } catch (e) {} } };
-  if (sweep && initial) {
-    const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    ready.then(() => setTimeout(shine, 350));
-    initial.addEventListener('mouseenter', shine);
-  }
 
   // ---------------------------------------------------------------------------------------------
   // The organ: a small principal chorus in a stone room, made in the browser. It plays what a staff
@@ -742,18 +731,26 @@
   }
 
   // ---------------------------------------------------------------------------------------------
-  // Light. The gold catches a light that follows the pointer; after dark the pointer carries the
+  // Light. The gold catches a light that follows the pointer: the burnished gold of the opening
+  // initial (a real thirteenth-century one, so the light is laid over it in site.css) and the gilding
+  // of S.D.G. (an SVG gradient moved under the pointer); after dark the pointer carries the
   // candle (src/evening.js); by day the book's shadow falls away from the sun's side of the sky.
   const hour = new Date().getHours() + new Date().getMinutes() / 60;
   root.style.setProperty('--sun', Math.max(-1, Math.min(1, (hour - 13) / 6)).toFixed(2));
-  const lamps = [['lamp', 46], ['sdg-lamp', 520]]
-    .map(([id, r]) => { const g = document.getElementById(id); return g && { g, svg: g.ownerSVGElement }; })
+  const lamps = ['sdg-lamp']
+    .map((id) => { const g = document.getElementById(id); return g && { g, svg: g.ownerSVGElement }; })
     .filter(Boolean);
+  const initial = document.querySelector('.initial');
   let px = -1, py = -1, lightFrame = 0;
   function light() {
     lightFrame = 0;
     root.style.setProperty('--lx', `${px}px`);
     root.style.setProperty('--ly', `${py}px`);
+    if (initial) {
+      const r = initial.getBoundingClientRect();
+      initial.style.setProperty('--gx', `${((px - r.left) / r.width * 100).toFixed(1)}%`);
+      initial.style.setProperty('--gy', `${((py - r.top) / r.height * 100).toFixed(1)}%`);
+    }
     for (const { g, svg } of lamps) {
       const r = svg.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > window.innerHeight) continue;
