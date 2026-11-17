@@ -374,33 +374,59 @@ html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50
   }
 }
 
+
 /* =====================================================================================================
    The book. On a screen wide and tall enough, site.js binds the page above into a book of hours lying
-   open: each folio a spread, turned leaf by leaf. Everything inside is laid out at one size, a page of
-   520 by 720, and the whole book is zoomed to fit the window, as a real page scales rather than reflows.
+   open across the whole window: each folio a spread, turned leaf by leaf.
+
+   Its measures, all set by site.js from the window (see geometry() there):
+   --z   the zoom: the square root of the window's height over 900, so the text is comfortable
+         on a laptop and not outsized on a large screen
+   --ph  the page's height and --pw its width, in the book's own pixels: the pages fill the window,
+         their shape anywhere from a book of hours' 2:3 to a squarish codex's 0.88
+   --u   the type unit, the size of the text: the page's width over 36, from 17 to 20 (22 on the
+         largest screens), so a line holds about 66 to 70 characters; every size on a page is a step
+         of a minor third (1.2) from it
+   --mi, --mo, --mt, --mb   the margins, inner (gutter), outer, head and foot: at the least 6.2%, 11%,
+         7.2% and 10% of the page, as a manuscript's margins widen from the gutter outward and from the
+         head down; on a wide page, so that no line runs past 31 units, the width to spare goes one
+         part to the gutter and two to the outer margin
    ===================================================================================================== */
 html.bound, html.bound body { height: 100%; overflow: hidden; }
 html.bound body { padding: 0; }
 html.bound .leaf { max-width: none; padding: 0; }
+/* the controls, in a narrow band of desk above the book */
 html.bound .head {
-  position: fixed; z-index: 15; top: 0; left: 0; right: 0; align-items: center;
-  padding: 14px max(22px, env(safe-area-inset-right, 0px)) 0 max(22px, env(safe-area-inset-left, 0px));
+  position: fixed; z-index: 15; top: 0; left: 0; right: 0; height: 36px; align-items: center;
+  padding: 0 max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
   justify-content: flex-end; pointer-events: none;
 }
 html.bound .head > * { pointer-events: auto; }
+html.bound .head-tools { align-items: center; gap: 4px; }
+html.bound .langs, html.bound .organ { font-size: 14px; }
 html.bound .folio { display: none; }
 
-.stage {
-  position: fixed; inset: 0; display: grid; place-items: center;
-  padding: 44px 24px 58px;
+/* reading full screen: the browser's own bars go, and only the book is left */
+.fs {
+  display: inline-grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--muted); transition: color .2s ease;
 }
+.fs[hidden] { display: none; }
+.fs:hover { color: var(--ink); }
+.fs svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.fs .out { display: none; }
+:fullscreen .fs .in { display: none; }
+:fullscreen .fs .out { display: inline; }
+.fs:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+
+.stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 36px 10px 10px; }
 .stage::before {   /* the lamp over the desk */
   content: ""; position: fixed; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 75% 70% at 50% 46%, rgba(255, 252, 240, .5), transparent 60%),
               radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(90, 60, 25, .14) 100%);
 }
 .book {
-  --pw: 520px; --ph: 720px; --board: 14px;
+  --pw: 680px; --ph: 830px; --board: 13px; --u: 18px; --mi: 42px; --mo: 75px; --mt: 60px; --mb: 83px;
   position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
   border-radius: 5px 5px 6px 6px;
   /* boards bound in oxblood calf, with a gilt fillet tooled round them */
@@ -409,12 +435,12 @@ html.bound .folio { display: none; }
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .03 0 0 0 0 .02 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
     radial-gradient(ellipse at 30% 20%, #7A2A20, #561A14 70%);
   box-shadow:
-    inset 0 0 0 4px #5A1C16, inset 0 0 0 5px rgba(201, 160, 69, .55),
-    calc(var(--sun, 0) * -18px) 28px 48px -16px rgba(50, 25, 5, .5),
-    calc(var(--sun, 0) * -6px) 6px 14px rgba(50, 25, 5, .18);
+    inset 0 0 0 3.5px #5A1C16, inset 0 0 0 4.5px rgba(201, 160, 69, .55),
+    calc(var(--sun, 0) * -14px) 18px 34px -14px rgba(50, 25, 5, .45),
+    calc(var(--sun, 0) * -4px) 4px 10px rgba(50, 25, 5, .16);
 }
 /* a hand on a page turns it, so the book's text is not for selecting; touch moves reach the page, pinching stays the reader's */
-.block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: 2400px;
+.block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 4);
   -webkit-user-select: none; user-select: none; touch-action: pinch-zoom; }
 /* the fore-edges: as many leaves as are left on either side, seen edge on */
 .edge {
@@ -448,25 +474,30 @@ html.bound .folio { display: none; }
 .sheet.fixed-r .cast, .face.recto .cast { background: linear-gradient(to right, rgba(40, 25, 5, .38), transparent 45%); }
 .sheet.fixed-l .cast, .face.verso .cast { background: linear-gradient(to left, rgba(40, 25, 5, .38), transparent 45%); }
 
-/* the text block of each page: the outer margin wider than the inner, the foot deepest */
-.book .page { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; font-size: 16.5px; line-height: 1.5; }
-.book .page-v { padding: 58px 46px 78px 74px; }
-.book .page-r { padding: 58px 74px 78px 46px; }
+/* the text block of each page; every size within it is a step of the type unit */
+.book .page {
+  position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column;
+  font-size: var(--u); line-height: 1.55;
+}
+.book .page-v { padding: var(--mt) var(--mi) var(--mb) var(--mo); }
+.book .page-r { padding: var(--mt) var(--mo) var(--mb) var(--mi); }
 .book .page > :first-child { margin-top: 0; }
-/* foliation, top right of every recto, and a catchword at the foot naming the next page */
-.folnum { position: absolute; top: 26px; right: 40px; z-index: 2; font: 13px/1 var(--rubric); letter-spacing: .08em; color: var(--vermilion); }
+/* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
+   each on the text block's edge, a third of the way into its margin */
+.folnum, .catch { font-family: var(--rubric); font-size: calc(var(--u) * .75); letter-spacing: .07em; line-height: 1.2; }
+.folnum { position: absolute; z-index: 2; top: calc(var(--mt) * .42); right: var(--mo); color: var(--vermilion); }
 .catch {
-  position: absolute; bottom: 30px; z-index: 2; padding: 4px 2px; border: 0; background: none; cursor: pointer;
-  font: 13.5px/1.2 var(--rubric); letter-spacing: .06em; color: var(--muted); transition: color .2s ease;
+  position: absolute; z-index: 2; bottom: calc(var(--mb) * .36); padding: 4px 2px; border: 0; background: none; cursor: pointer;
+  color: var(--muted); transition: color .2s ease;
 }
 .catch:hover, .catch:focus-visible { color: var(--vermilion); }
 .catch:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
-.catch.next { right: 74px; }
+.catch.next { right: var(--mo); }
 .catch.next::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
-.catch.prev { left: 74px; }
+.catch.prev { left: var(--mo); }
 .catch.prev::before { content: "‹\00a0"; content: "‹\00a0" / ""; color: var(--gilt); }
 /* the corners: a reader's hand lifts them; a press there turns the leaf */
-.corner { position: absolute; bottom: 0; width: 64px; height: 64px; z-index: 2; cursor: pointer; border: 0; padding: 0; background: none; }
+.corner { position: absolute; bottom: 0; width: calc(var(--mb) * .8); height: calc(var(--mb) * .8); z-index: 2; cursor: pointer; border: 0; padding: 0; background: none; }
 .corner.next { right: 0; }
 .corner.prev { left: 0; }
 .corner::after {
@@ -475,27 +506,28 @@ html.bound .folio { display: none; }
 }
 .corner.next::after { right: 0; background: linear-gradient(135deg, #EFE6D2 45%, #D8CBAE 50%, transparent 51%); }
 .corner.prev::after { left: 0; background: linear-gradient(225deg, #EFE6D2 45%, #D8CBAE 50%, transparent 51%); box-shadow: 2px -2px 6px rgba(50, 30, 5, .18); }
-.corner:hover::after, .corner:focus-visible::after { width: 34px; height: 34px; }
+.corner:hover::after, .corner:focus-visible::after { width: 45%; height: 45%; }
 .corner:focus-visible { outline: none; }
 
-/* the ribbon: a silk marker laid in at the gutter, hanging out at the foot; it opens the contents */
+/* the ribbon: a silk marker laid in from the head of the spine, down the gutter margin of the right
+   page where no text runs; it opens the contents */
 .ribbon {
-  position: absolute; z-index: 6; left: calc(var(--board) + var(--pw) + 38px); top: calc(100% - 22px);
-  width: 20px; height: 66px; padding: 0; border: 0; cursor: pointer;
+  position: absolute; z-index: 400; left: calc(var(--board) + var(--pw) + var(--mi) * .4 - 7px); top: -8px;
+  width: 14px; height: calc(var(--ph) * .17); padding: 0; border: 0; cursor: pointer;
   background: linear-gradient(to right, #8E2716, #C2452B 35%, #E0664A 50%, #B23A22 70%, #7E2012);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
-  filter: drop-shadow(0 2px 2px rgba(50, 20, 5, .35));
-  transform-origin: 50% 0; transition: transform .35s ease;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%);
+  filter: drop-shadow(1px 2px 1.5px rgba(50, 20, 5, .35));
+  transform-origin: 50% 0; transition: transform .35s ease, height .35s ease;
 }
-.ribbon:hover, .ribbon:focus-visible { transform: rotate(-4deg) translateY(3px); }
-.ribbon:focus-visible { outline: none; filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 3px var(--gilt)); }
+.ribbon:hover, .ribbon:focus-visible { height: calc(var(--ph) * .17 + 10px); }
+.ribbon:focus-visible { outline: none; filter: drop-shadow(0 0 3px var(--gilt)); }
 
 /* the contents, unrolled from the ribbon */
 .slip {
-  position: fixed; inset: 0; margin: auto; width: 400px; height: fit-content; max-height: 90vh; padding: 34px 40px 30px;
+  position: fixed; inset: 0; margin: auto; width: 420px; max-width: calc(100vw - 40px); height: fit-content; max-height: 90vh; padding: 34px 40px 30px;
   border: 1px solid var(--rule); border-radius: 3px; color: var(--ink);
   background: #FBF7EC; box-shadow: 0 30px 60px -20px rgba(40, 20, 5, .55), 0 0 0 6px rgba(251, 247, 236, .6);
-  font: 16.5px/1.5 var(--text);
+  font: 17px/1.5 var(--text);
 }
 .slip::backdrop { background: rgba(60, 35, 10, .28); }
 .slip .contents { margin: 0; }
@@ -506,74 +538,83 @@ html.bound .folio { display: none; }
   @keyframes unroll { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0); } }
 }
 
-/* --- the pages themselves --- */
-/* the maker, on the first verso */
-.book .maker .jj { font-size: 20px; }
-.book .maker .jj span { font-size: 13px; }
-.book .maker .opening { display: grid; grid-template-columns: 112px 1fr; column-gap: 20px; align-items: start; margin: 34px 0 0; padding: 0; min-height: 0; }
-.book .maker .initial { position: relative; left: 0; right: auto; top: 4px; width: 112px; height: 112px; grid-row: 1 / span 2; }
-.book .maker .initial .tail { display: none; }
-.book .maker h1 { padding: 0; font-size: 48px; line-height: 1; }
-.book .maker .subtitle { margin: 12px 0 0; font-size: 14.5px; }
-.book .maker .lede { margin: 44px 0 0; font-size: 18px; line-height: 1.55; }
-.book .maker .byline { margin: 28px 0 0; gap: 18px; }
-.book .maker .portrait { width: 78px; height: 78px; }
-.book .maker .creds p { font-size: 14.5px; }
-.book .maker .cred-title { font-size: 14.5px; }
-.book .maker .cred-degrees { font-size: 13.5px; }
+/* --- the pages themselves: sizes in steps of a minor third from the unit ---
+   1.2^-1.5 .75 small capitals (rubrics, kinds, references)   1.2^-1 .833 secondary text
+   1      the text                                               1.2^1.25 1.25 a page's main text
+   1.2^3  1.728 a work's title
+   1.2^5  2.488 the maker's name                                 versals and lombards: deep enough to
+   hang two lines of their own text, the cap height of the letter matching the lines it spans */
+.book .rubric, .book .kind, .book .subtitle, .book .cred-title, .book .cred-link, .book .verse cite, .book .epigraph cite,
+.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: .75em; letter-spacing: .07em; }
+.book .cred-fields, .book .cred-degrees, .book .facts, .book .bach, .book .kal-names .kal-ad { font-size: .833em; }
+.book .page .score, .book .motif-play .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
 
-/* the kalendar, on the first recto */
+/* the maker, on the first verso: the name and the lede gathered in the middle of the page, under J.J. */
+.book .maker .jj { font-size: 1.1em; }
+.book .maker .jj span { font-size: .7em; }
+.book .maker .opening { display: grid; grid-template-columns: 6em 1fr; column-gap: 1.1em; align-items: center; margin: auto 0 0; padding: 0; min-height: 0; }
+.book .maker .initial { position: relative; left: 0; right: auto; top: 0; width: 6em; height: 6em; grid-row: 1 / span 2; }
+.book .maker .initial .tail { display: none; }
+.book .maker h1 { padding: 0; font-size: 2.488em; line-height: 1; align-self: end; }
+.book .maker .subtitle { margin: .9em 0 0; align-self: start; }
+.book .maker .lede { margin: 2em 0 0; font-size: 1.25em; line-height: 1.5; }
+.book .maker .byline { margin: 1.6em 0 auto; gap: 1em; }
+.book .maker .portrait { width: 4.6em; height: 4.6em; }
+.book .maker .creds p { line-height: 1.4; }
+.book .maker .cred-fields { margin-top: .2em !important; }
+
+/* the kalendar, on the first recto: the day at the head, the contents in the middle, its line of the chorale at the foot */
 .book .kalendar { margin: 0; }
-.book .kal-date { margin-top: 14px; }
-.book .kal-num { font-size: 60px; }
-.book .kal-names { font-size: 14px; }
-.book .kal-names .kal-ad { font-size: 12.5px; }
-.book .kal-feast { font-size: 15px; margin-top: 6px; }
-.book .kalendar .verse { margin-top: 16px; }
-.book .kalendar .verse p { font-size: 15.5px; line-height: 1.5; }
-.book .kalendar .verse cite { font-size: 12.5px; }
-.book .kalendar .contents { margin-top: 26px; }
-.book .contents ol { margin-top: 8px; gap: 0; }
-.book .contents a { font-size: 16.5px; padding: 3px 0; }
-.book .page .score { margin-top: auto; padding-top: 16px; }
+.book .kal-date { margin-top: .9em; gap: .7em; }
+.book .kal-num { font-size: 3.2em; }
+.book .kal-names { font-size: .8em; }
+.book .kal-feast { margin-top: .35em; }
+.book .kalendar .verse { margin-top: 1em; }
+.book .kalendar .verse p { font-size: .94em; line-height: 1.5; }
+.book .kalendar .contents { margin-top: auto; padding-top: 1.4em; }
+.book .contents ol { margin-top: .5em; gap: 0; }
+.book .contents a { font-size: 1em; padding: .2em 0; }
+.book .page .score { margin-top: auto; padding-top: .9em; }
 .book .page .score-notes { max-width: none; }
 
-/* a work: its title and miniature on the verso, its text and its line of the chorale on the recto */
-.book .page-v.blue, .book .page-v.red { --ini-col: 64px; --ini-gap: 8px; }
-.book .page-v h2:not(.rubric) { position: relative; margin: 0; font-size: 31px; font-weight: 500; line-height: 1.1; text-wrap: balance; }
+/* a work: on the verso its title, its miniature the width of the text, and a verse of Scripture centred
+   in the space below; on the recto its text from the head, and its line of the chorale at the foot */
+.book .page-v.blue, .book .page-v.red { --ini-col: calc(var(--mo) - 16px); --ini-gap: 8px; }
+.book .page-v h2:not(.rubric) { position: relative; margin: 0; font-size: 1.728em; font-weight: 500; line-height: 1.1; text-wrap: balance; }
 .book .page-v h2:not(.rubric) a { text-decoration: none; }
-.book .page-v .versal { font-size: 76px; top: -.24em; }
-.book .page-v .kind { margin-top: 8px; font-size: 14px; }
-.book .page-v .plate { margin: 40px 0 0; padding: 7px; box-shadow: 0 0 0 4px #FBF7EC, 0 0 0 5px rgba(162, 122, 40, .55), 0 18px 30px -18px rgba(60, 40, 10, .5); }
+.book .page-v .versal { font-size: 2.45em; top: -.24em; }   /* 4.2 units: the title and the kind beneath it */
+.book .page-v .kind { margin-top: .45em; }
+.book .page-v .plate { margin: 1.6em 0 0; padding: .4em; box-shadow: 0 0 0 4px #FBF7EC, 0 0 0 5px rgba(162, 122, 40, .55), 0 18px 30px -18px rgba(60, 40, 10, .5); }
 .book .page-v .plate:hover { transform: none; }
-.book .page-v .plate video { left: 8px; top: 8px; width: calc(100% - 16px); height: calc(100% - 16px); }
-.book .page-v .epigraph { margin: auto 0; padding: 26px 8px 0; text-align: center; }
-.book .page-v .epigraph p { font-size: 17px; line-height: 1.5; text-wrap: balance; }
+.book .page-v .plate video { left: calc(.4em + 1px); top: calc(.4em + 1px); width: calc(100% - .8em - 2px); height: calc(100% - .8em - 2px); }
+.book .page-v .epigraph { margin: auto 0; padding: 1.4em 1em 0; text-align: center; }
+.book .page-v .epigraph p { font-size: 1.12em; line-height: 1.5; text-wrap: balance; }
 .book .page-v .epigraph p::before { content: none; }
-.book .page-v .epigraph cite { margin-top: 8px; font-size: 12.5px; }
-/* the pen-flourishing down the outer margin, beneath the versal */
+.book .page-v .epigraph cite { margin-top: .6em; }
+/* the pen-flourishing down the middle of the outer margin, beneath the versal */
 .book .page-v.blue::before, .book .page-v.red::before {
-  content: ""; position: absolute; top: 150px; bottom: 90px; left: 30px; width: 28px;
+  content: ""; position: absolute; top: calc(var(--mt) + var(--u) * 5.4); bottom: var(--mb); left: calc(var(--mo) / 2 - 14px); width: 28px;
   background: var(--pen) repeat-y center top; opacity: .8;
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
           mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
 }
-.book .page-r .what { margin-top: 52px; font-size: 19px; line-height: 1.6; }
-/* the first letter of the text, a small lombard in the work's colour */
-.book .page-r .what::first-letter { float: left; margin: 4px 6px 0 0; font-size: 3.05em; line-height: .78; font-weight: 500; color: var(--c); }
-.book .page-r .facts { margin-top: 22px; font-size: 15px; }
-.book .page-r .go { margin-top: 18px; font-size: 16.5px; }
+.book .page-r .what { margin-top: .1em; font-size: 1.25em; line-height: 1.55; }
+/* the first letter of the text, a lombard in the work's colour, two lines deep */
+.book .page-r .what::first-letter { float: left; margin: .1em .12em 0 0; font-size: 3.2em; line-height: .78; font-weight: 500; color: var(--c); }
+.book .page-r .facts { margin-top: 1.3em; }
+.book .page-r .go { margin-top: 1.1em; font-size: .9em; }
 
-/* the colophon, and the last page: the final line of the chorale, and the signature */
-.book .colophon { margin: 0; gap: 14px; }
-.book .colophon .promise { font-size: 17px; }
-.book .colophon .bach { font-size: 14.5px; line-height: 1.55; }
-.book .colophon .foot-links { font-size: 15px; margin-top: auto; padding-bottom: 6px; }
+/* the colophon, and the last page: the final line of the chorale, and the signature in the middle */
+.book .colophon { margin: 0; gap: .8em; }
+.book .colophon .promise { font-size: 1.25em; line-height: 1.45; }
+.book .colophon .bach { font-size: 1em; line-height: 1.6; }
+.book .colophon .motif-play { font-size: .9em; }
+.book .colophon .foot-links { margin-top: auto; }
 .book .finis { margin: 0; align-items: center; }
-.book .finis .score { margin: 30px auto 0; padding: 0; }
+.book .finis .score { margin: 0 auto; padding: 0; }
 .book .finis .signature { margin: auto 0; align-items: center; text-align: center; }
-.book .finis .sdg { font-size: 64px; }
-.book .finis .seal { width: 84px; height: 84px; }
-.book .finis .sealed { gap: 22px; }
-.book .finis .sdg-gloss { margin-top: 14px; font-size: 15px; }
+.book .finis .sdg { font-size: 3.6em; }
+.book .finis .seal { width: 4.6em; height: 4.6em; }
+.book .finis .sealed { gap: 1.2em; }
+.book .finis .sdg-gloss { margin-top: .8em; }
 .book .finis .fleuron { margin: 0 auto; }

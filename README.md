@@ -19,10 +19,17 @@ opening (the maker, and a kalendar with the day's verse and the contents),
 one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
 
-On a screen wide and tall enough (a window from about 1280 by 720),
-`assets/site.js` binds those pages into a book lying open on the desk: a
-spread to each folio, laid out at one size (pages of 520 by 720) and zoomed
-to fit. Its leaves turn by the arrow keys, Page Up and Down, Home and End,
+On a screen wide and tall enough (a window from about 1024 by 768),
+`assets/site.js` binds those pages into a book lying open across the whole
+window: a spread to each folio. Its measures come from the window, by rules
+set out at `geometry()` in `assets/site.js` and at the head of the book's
+styles in `assets/site.css`: the zoom grows as the square root of the
+window's height; the pages fill the window, shaped anywhere from a book of
+hours' 2:3 to a squarish 0.88; the text is a 36th of the page's width, so a
+line holds about 66 to 70 characters, and every other size is a step of a
+minor third from it; the margins widen from the gutter outward and from the
+head down, as a manuscript's do. F, or the button above the book, reads it
+full screen. Its leaves turn by the arrow keys, Page Up and Down, Home and End,
 the wheel or a trackpad, a hand dragging a page, its corners, or the
 catchword at its foot; the ribbon opens the contents; each spread has its
 own address (`/#worldviews`), and Back turns back. The left page of each

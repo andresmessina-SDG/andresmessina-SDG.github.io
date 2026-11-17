@@ -271,15 +271,40 @@
   // The book. Each folio of the page is a spread: its .page-v on the left, its .page-r on the right.
   // The pages are bound as leaves turning on the gutter: leaf j carries the right page of spread j
   // on its front and the left page of spread j + 1 on its back; the first left page and the last
-  // right page lie on the boards. The whole is laid out at one size and zoomed to fit the window.
-  const PW = 520, PH = 720, BOARD = 14, CHROME_TOP = 44, TAIL = 50;
+  // right page lie on the boards.
   const wideEnough = window.matchMedia('(min-width: 960px) and (min-height: 600px)');
   let book = null, printing = false;
 
-  function fitZoom() {
-    const h = (window.innerHeight - CHROME_TOP - TAIL - 8) / (PH + 2 * BOARD);
-    const w = (window.innerWidth - 64) / (2 * PW + 2 * BOARD + 24);
-    return Math.min(1.5, h, w);
+  // The book's measures, from the window (site.css explains each as it uses it). The book fills the
+  // window but for a band of 36px above it for the controls and 10px of desk round the rest.
+  //  - Zoom: the square root of the window's height over 900, so text grows more slowly than the
+  //    window does: about 15px on screen at 720 high, 19 at 900, 21 at 1080, 24 at 1440.
+  //  - Pages: as tall as the window allows, and as wide, but no wider than a squarish codex (0.88 of
+  //    their height) and no narrower than a book of hours (2:3); never less than 740 by 494 in the
+  //    book's own pixels, the room their contents need; where that cannot be had at a zoom of 0.78
+  //    or more (text of 13px on screen), the page stays a page.
+  //  - Type: the page's width over 36, which sets about 66 to 70 characters a line; from 17 up to 20,
+  //    or up to 22 on screens taller than 1080, which are read from further off.
+  //  - Margins: inner 6.2% of the width and outer 11% at the least; where a line would run past 31
+  //    units the text block stops there, and the width to spare goes one part to the gutter and two
+  //    to the outer margin, as the canon of manuscript margins has it; head 7.2% and foot 10% of the
+  //    height.
+  const TOP = 36, SIDE = 10, FOOT = 10, BOARD = 13, EDGE = 12;
+  const MIN_PH = 740, TALLEST = 2 / 3, WIDEST = 0.88, MIN_PW = Math.ceil(MIN_PH * TALLEST);
+  function geometry() {
+    const aw = window.innerWidth - 2 * SIDE, ah = window.innerHeight - TOP - FOOT;
+    let z = Math.min(1.4, Math.max(0.8, Math.sqrt(window.innerHeight / 900)));
+    z = Math.min(z, ah / (MIN_PH + 2 * BOARD), aw / (2 * MIN_PW + 2 * BOARD + 2 * EDGE));
+    let ph = ah / z - 2 * BOARD;
+    let pw = (aw / z - 2 * BOARD - 2 * EDGE) / 2;
+    pw = Math.min(pw, ph * WIDEST);
+    ph = Math.min(ph, pw / TALLEST);
+    const most = Math.min(22, Math.max(20, 20 + (window.innerHeight - 1080) / 180));
+    const u = Math.min(most, Math.max(17, pw / 36));
+    const block = Math.min(pw * (1 - 0.062 - 0.11), 31 * u);
+    const mi = Math.max(pw * 0.062, (pw - block) / 3), mo = pw - block - mi;
+    const mt = ph * 0.072, mb = ph * 0.1;
+    return { ok: z >= 0.78, z, pw, ph, u, mi, mo, mt, mb, sz: u / 14 };
   }
 
   function face(page, side, back) {
@@ -421,15 +446,18 @@
     unmark();
     document.querySelectorAll('[inert]').forEach((e) => e.removeAttribute('inert'));
     book = null;
-    organBtn.hidden = true;
+    if (organBtn) organBtn.hidden = true;
+    if (fsBtn) fsBtn.hidden = true;
     if (cur > 0) spreads[cur].folio.scrollIntoView();
   }
 
   function layout() {
     if (!book) return;
-    const z = fitZoom();
-    book.bk.style.zoom = z;
-    book.zoom = z;
+    const g = geometry();
+    const b = book.bk;
+    b.style.zoom = g.z;
+    for (const k of ['pw', 'ph', 'u', 'mi', 'mo', 'mt', 'mb']) b.style.setProperty(`--${k}`, `${g[k].toFixed(1)}px`);
+    b.style.setProperty('--sz', g.sz.toFixed(3));
   }
 
   // ---- where the book lies open ----
@@ -590,6 +618,7 @@
       const t = e.target;
       if (t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
       if (book.slip.matches && book.slip.matches(':popover-open')) return;
+      if ((e.key === 'f' || e.key === 'F') && canFull) { e.preventDefault(); toggleFull(); return; }
       const k = book.cur;
       const keys = { ArrowRight: k + 1, ArrowDown: k + 1, PageDown: k + 1, ArrowLeft: k - 1, ArrowUp: k - 1, PageUp: k - 1, Home: 0, End: book.N };
       if (e.key === ' ' && !(t.closest && t.closest('a, button, [role="button"]'))) { e.preventDefault(); go(e.shiftKey ? k - 1 : k + 1, { push: true }); return; }
@@ -687,10 +716,19 @@
     });
   }
 
+  // ---- reading full screen: the browser's own bars go, and the book takes the whole screen ----
+  const fsBtn = document.querySelector('.fs');
+  const canFull = !!(document.fullscreenEnabled && root.requestFullscreen);
+  function toggleFull() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else root.requestFullscreen().catch(() => {});
+  }
+  if (fsBtn && canFull) fsBtn.addEventListener('click', toggleFull);
+
   // ---- bind the book, or keep the page, as the window allows ----
   function decide() {
-    const want = !printing && main && wideEnough.matches && fitZoom() >= 0.8;
-    if (want && !book) { build(); if (organBtn && Organ.ok) organBtn.hidden = false; }
+    const want = !printing && main && wideEnough.matches && geometry().ok;
+    if (want && !book) { build(); if (organBtn && Organ.ok) organBtn.hidden = false; if (fsBtn && canFull) fsBtn.hidden = false; }
     else if (!want && book) unbuild();
     else if (book) layout();
   }
