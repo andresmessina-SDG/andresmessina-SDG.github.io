@@ -341,6 +341,11 @@
     return f;
   }
 
+  // the window's title names the folio the book lies open at; the browser's own colour is the desk's
+  const TITLE = document.title;
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  const PAGE = themeColor ? themeColor.getAttribute('content') : '', DESK = '#653A1D';
+
   function build() {
     stopScrollScribe();
     unmark();
@@ -414,6 +419,7 @@
     stage.append(bk);
     main.append(stage);
     root.classList.add('bound');
+    if (themeColor) themeColor.setAttribute('content', DESK);
 
     book = { stage, bk, block, edgeL, edgeR, fixedL, fixedR, fL, fR, leaves, spreads, N, versoFace, rectoFace,
       cur: 0, busy: false, queued: null, seenSpreads: new Set() };
@@ -446,6 +452,8 @@
     if (thumbs) { main.before(thumbs); slimThumbs(); }
     stage.remove();
     root.classList.remove('bound');
+    if (themeColor) themeColor.setAttribute('content', PAGE);
+    document.title = TITLE;
     unmark();
     document.querySelectorAll('[inert]').forEach((e) => e.removeAttribute('inert'));
     book = null;
@@ -471,11 +479,15 @@
     for (const s of book.spreads) {
       const w = s.r.querySelector('.within');
       if (!w) continue;
+      const p = w.querySelector('p'), items = [...p.querySelectorAll('.it')];
       const fits = () => s.r.scrollHeight <= s.r.clientHeight + 1;
-      for (const cls of [['listed'], ['listed', 'cols'], ['listed', 'cols', 'three'], []]) {
+      // three columns are narrow: they are taken only if every item still keeps to one line
+      const unbroken = () => { const h = items.map((it) => it.getBoundingClientRect().height); return Math.max(...h) < Math.min(...h) * 1.5; };
+      for (const [cls, cols] of [[['listed'], 1], [['listed', 'cols'], 2], [['listed', 'cols', 'three'], 3], [[], 0]]) {
         w.classList.remove('listed', 'cols', 'three');
         w.classList.add(...cls);
-        if (fits()) break;
+        p.style.setProperty('--rows', Math.ceil(items.length / Math.max(1, cols)));
+        if (fits() && (cols < 3 || unbroken())) break;
       }
     }
   }
@@ -592,6 +604,7 @@
   function arrive(turned) {
     const k = book.cur, s = book.spreads[k];
     markThumb(k);
+    document.title = k ? `${s.name} · ${TITLE}` : TITLE;
     visibility();
     edges();
     const live = document.getElementById('turned');
@@ -670,6 +683,13 @@
     });
     block.addEventListener('pointermove', (e) => {
       const p = book.press;
+      if (!p && e.pointerType === 'mouse') {
+        // a hand over the outer margins, where a reader takes hold of a leaf to turn it
+        const r = block.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 2 * parseFloat(book.bk.style.getPropertyValue('--pw'));
+        const mo = parseFloat(book.bk.style.getPropertyValue('--mo')), pw = parseFloat(book.bk.style.getPropertyValue('--pw'));
+        const k = book.cur, edge = (x < mo && k > 0) || (x > 2 * pw - mo && k < book.N);
+        block.classList.toggle('grab', edge && !book.busy && !still.matches && !e.target.closest('a, button, [role="button"], video'));
+      }
       if (!p || p.id !== e.pointerId) return;
       const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
       if (!book.drag) {
@@ -680,6 +700,7 @@
         else if (!p.right && dx > 0 && k > 0) j = k - 1;
         if (j === null) { book.press = null; return; }
         book.drag = { j, fwd: j === k, last: [[performance.now(), e.clientX]] };
+        block.classList.add('dragging');
         stack([j]);
         try { block.setPointerCapture(e.pointerId); } catch (err) {}
         Organ.stop();
@@ -698,6 +719,7 @@
       const d = book.drag;
       if (!d) return;
       book.drag = null;
+      block.classList.remove('dragging');
       const [[t1, x1]] = d.last, [t2, x2] = d.last[d.last.length - 1];
       const v = (x2 - x1) / Math.max(1, t2 - t1);       // px per ms; leftward is negative
       const a = book.leaves[d.j].a;
@@ -714,6 +736,7 @@
         } else stack();
       });
     };
+    block.addEventListener('pointerleave', () => block.classList.remove('grab'));
     block.addEventListener('pointerup', release);
     block.addEventListener('pointercancel', release);
   }

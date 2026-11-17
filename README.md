@@ -37,10 +37,21 @@ turns straight to any folio; each spread has its own address
 its miniature, which plays its clip as the book opens to it; the right
 page, what the work holds, set as a list in one, two or three columns
 where the page has room, or run on after red and blue pilcrows where it
-has not.
+has not; where a work gives each of its parts an address (the church
+history's ages, the codex's questions, the worldviews' paintings), each
+item opens its own. The window's title names the open folio.
 At the foot of every right page is a line of Bach's chorale; with the organ
 stop drawn out (top right), each line sounds, in his four parts, as the
-book opens to it, so that the whole book plays the whole strophe.
+book opens to it, so that the whole book plays the whole strophe. The last
+line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
+
+The book is made as books were: its leaves ruled faintly around the text
+block, as a scribe ruled them before writing; edged red under gold; a
+headband of red and gold silk at the head and tail of the spine; the lower
+outer corners a shade darker where readers' thumbs turn them; and a
+colophon that says what it is set in and when it was bound. The build ties
+each number to its word and each book of Scripture to its chapter and
+verse, so that no line begins with a figure cut off from them.
 
 On a phone, a narrow or short window, without JavaScript, and on paper, the
 same document is one leaf of vellum read down the page, with each work's

@@ -21,10 +21,12 @@ linkedin = "LinkedIn"
 works_label = "Las obras"
 sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
-bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si bemol y H es si natural."
+bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si\u00a0bemol y H es si\u00a0natural."
 bach_play = "Escuchar su nombre"
 materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino, la piel de su encuadernación y el roble debajo."
 materials_link = "De dónde viene cada uno"
+# el colofón propiamente dicho: cómo se hizo el libro; {year} es el año en que se construyó, en números romanos
+imprint = "Compuesto en EB Garamond, la reconstrucción de Georg Duffner de las romanas de Claude Garamont y las cursivas de Robert Granjon, con los títulos en IM Fell English, la de Igino Marini de los tipos que el obispo John Fell compró para la imprenta de Oxford hacia 1670. Encuadernado en el año del Señor {year}."
 support = "Apoyar el trabajo"
 source = "Código en GitHub"
 
@@ -127,6 +129,11 @@ within = [
   "Platonismo",
   "Gnosticismo",
 ]
+within_at = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/#{}"
+within_ids = [
+  "christian", "judaism", "islam", "deism", "mtd", "naturalism", "humanism", "nihilism", "existentialism", "postmodernism", "marxism",
+  "individualism", "transhumanism", "new-age", "neo-paganism", "hindu-monism", "buddhism", "taoism", "confucianism", "animism", "platonism", "gnosticism",
+]
 facts = ["English", "22 cosmovisiones · 4 actos"]
 links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
@@ -157,6 +164,8 @@ within = [
   "IX Avivamiento y misiones, 1800–1900",
   "X La iglesia global, de 1900 a hoy",
 ]
+within_at = "https://andresmessina-sdg.github.io/church-history/{}/"
+within_ids = ["apostolic", "ante-nicene", "nicene", "early-middle-ages", "high-middle-ages", "late-middle-ages", "reformation", "awakening", "missions", "global"]
 facts = ["English", "Desde Pentecostés hasta hoy"]
 links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
@@ -228,6 +237,11 @@ within = [
   "¿Qué es la primera resurrección?",
   "¿Qué es el juicio final?",
   "¿Qué es la nueva Jerusalén?",
+]
+within_at = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es#{}"
+within_ids = [
+  "churches", "throne", "horsemen", "144000", "israel", "trumpets", "witnesses", "1260", "satan", "beast", "666",
+  "mark", "antichrist", "tribulation", "babylon", "armageddon", "rapture", "second-coming", "millennium", "resurrection", "judgment", "new-creation",
 ]
 facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
 links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]

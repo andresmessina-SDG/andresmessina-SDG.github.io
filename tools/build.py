@@ -11,6 +11,7 @@ import html
 import json
 import re
 import tomllib
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,6 +47,41 @@ def render(template: str, values: dict) -> str:
     return out
 
 
+# Ties: a number is kept on the line of the word it counts ("11 stations", "2 Corinthians"), a book of
+# Scripture on the line of its chapter and verse ("Psalm 119:105"), and a catalogue on the line of its
+# number ("BWV 302"), so that no line begins with a figure cut from its word.
+TIES = [
+    (re.compile(r"(?<=\d) (?=[^\W\d_])"), "\u00a0"),
+    (re.compile(r"(?<=[^\W\d_]) (?=\d+[:.,]\d)"), "\u00a0"),
+    (re.compile(r"(?<=[A-Z][A-Z]) (?=\d)"), "\u00a0"),
+]
+UNTIED = {"href", "path", "lang", "locale", "id", "clip", "plate", "title_lang", "within_at", "description", "title"}
+
+
+def tie(value, key: str = ""):
+    """The strings of a page, with their ties made (see TIES)."""
+    if key in UNTIED:
+        return value
+    if isinstance(value, str):
+        for pattern, nbsp in TIES:
+            value = pattern.sub(nbsp, value)
+        return value
+    if isinstance(value, list):
+        return [tie(v, key) for v in value]
+    if isinstance(value, dict):
+        return {k: tie(v, k) for k, v in value.items()}
+    return value
+
+
+def roman(n: int) -> str:
+    out = ""
+    for value, letters in [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                           (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]:
+        while n >= value:
+            out, n = out + letters, n - value
+    return out
+
+
 def indent(block: str, n: int) -> str:
     pad = " " * n
     return "\n".join(pad + line if line.strip() else line for line in block.splitlines())
@@ -55,8 +91,16 @@ ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"]
 
 
 def chorale(k: int) -> str:
-    """Line k of the chorale (1 to 7), engraved by tools/engrave.py."""
-    return (SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip()
+    """Line k of the chorale (1 to 7), engraved by tools/engrave.py. After the last line's double bar
+    stands Fine., as Bach wrote it at the end of his scores, before his S.D.Gl."""
+    svg = (SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip()
+    if k == 7:
+        m = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)" width="[\d.]+"', svg)
+        w, h = float(m[1]), m[2]
+        wide = w + 34
+        svg = svg.replace(m[0], f'viewBox="0 0 {wide:.1f} {h}" width="{wide:.1f}"', 1)
+        svg = svg.replace("\n</svg>", f'\n  <text class="score-fine" x="{w + 7:.1f}" y="29.5" fill="var(--ink)">Fine.</text>\n</svg>', 1)
+    return svg
 
 
 def works_html(t: dict) -> str:
@@ -83,7 +127,7 @@ def works_html(t: dict) -> str:
     <p class="what">{esc(w["what"])}</p>
     <section class="within" aria-labelledby="{w["id"]}-within">
       <h3 class="rubric" id="{w["id"]}-within">{esc(t["within"])}</h3>
-      <p>{within_html(w["within"])}</p>
+      <p>{within_html(w["within"], w.get("within_at", ""), w.get("within_ids"))}</p>
     </section>
     <p class="facts">{facts}</p>
     <p class="go">
@@ -97,10 +141,13 @@ def works_html(t: dict) -> str:
     return indent("\n\n".join(items), 4)
 
 
-def within_html(items: list) -> str:
+def within_html(items: list, at: str = "", ids: list | None = None) -> str:
     """What a work holds, run on as a manuscript runs its text on: each item after a paragraph mark,
     the marks red and blue in turn, and no item broken from its mark. An item numbered in roman
-    numerals (the ages of the church) has its numeral for its mark, coloured the same way."""
+    numerals (the ages of the church) has its numeral for its mark, coloured the same way. Where the
+    work gives each item an address of its own (within_at, with {} for the item's id), the item
+    opens it."""
+    assert not ids or len(ids) == len(items), "within_ids must name every item"
     out = []
     for k, item in enumerate(items):
         colour = "r" if k % 2 == 0 else "b"
@@ -110,7 +157,10 @@ def within_html(items: list) -> str:
             item = num[2]
         else:
             mark = f'<span class="pil {colour}" aria-hidden="true">¶</span>'
-        out.append(f'<span class="it">{mark}\u00a0{esc(item)}</span>')
+        text = esc(item)
+        if ids:
+            text = f'<a href="{esc(at.format(ids[k]))}">{text}</a>'
+        out.append(f'<span class="it">{mark}\u00a0{text}</span>')
     return " ".join(out)
 
 
@@ -256,7 +306,11 @@ def main() -> None:
     sdg = indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 14)
     v = version()
 
+    year = roman(date.today().year)
+    strings = {lang: tie(t) for lang, t in strings.items()}
+    verses = tie(verses)
     for lang, t in strings.items():
+        t["imprint"] = t["imprint"].replace("{year}", year)
         url = BASE + t["path"]
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,

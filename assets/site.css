@@ -36,6 +36,8 @@
 }
 
 html { -webkit-text-size-adjust: 100%; background: var(--vellum); }
+/* text taken up by the reader: a wash of the rubricator's red, not the browser's blue */
+::selection { background: rgba(176, 54, 31, .17); color: inherit; }
 body {
   margin: 0;
   color: var(--ink);
@@ -153,6 +155,7 @@ h1 {
 .score { margin: 26px 0 0; width: fit-content; max-width: 100%; border-radius: 3px; }
 .score-notes { display: block; max-width: 100%; height: auto; overflow: visible; }
 .score-words { font-family: var(--text); font-style: italic; font-size: 11.5px; }
+.score-fine { font-family: var(--text); font-style: italic; font-size: 13.5px; }
 .score .n { transition: fill .25s ease; }
 .score .n.lit { fill: var(--vermilion); transition-duration: .05s; }
 /* site.js makes each staff a button that plays its line */
@@ -219,6 +222,12 @@ h1 {
 .within .pil.r { color: var(--vermilion); }
 .within .pil.b { color: var(--lapis); }
 .within .pil.num { font-family: var(--rubric); font-size: .9em; letter-spacing: .04em; }
+/* an item that opens its own place in the work reads as the others do, until a pointer or the keyboard comes to it */
+.within a { color: inherit; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
+.within a:hover { color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .45); }
+.within a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+/* where there is no pointer to come to them, they are underlined faintly from the first */
+@media (hover: none) { .within a { text-decoration-color: rgba(111, 101, 86, .35); } }
 
 /* ---------- The colophon, and the end of the score ---------- */
 .colophon { margin-top: 80px; display: grid; gap: 12px; }
@@ -252,7 +261,8 @@ h1 {
 .sdg-gloss { margin: 8px 0 0; font-style: italic; color: var(--muted); }
 /* a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out (assets/book/fleuron.webp) */
 .fleuron { display: block; width: 44px; height: auto; margin: 48px auto 0; opacity: .85; }
-.materials { margin: 4px 0 0; font-size: .85rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+.materials, .imprint { margin: 4px 0 0; font-size: .85rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+.imprint { font-style: italic; }
 .materials a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 2px; }
 .materials a:hover { color: var(--vermilion); }
 
@@ -443,13 +453,28 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 4);
   -webkit-user-select: none; user-select: none; touch-action: pinch-zoom; }
 /* the fore-edges: as many leaves as are left on either side, seen edge on */
+/* edged red under gold, as Bibles and prayer books are: burnished gold over the fore-edge, the red
+   beneath it showing in the hairlines between the leaves, the gold darker toward head and foot */
 .edge {
   position: absolute; top: 2px; bottom: 2px; width: var(--w, 4px); transition: width .7s ease;
   background:
-    linear-gradient(to bottom, rgba(60, 40, 15, .25), transparent 8%, transparent 92%, rgba(60, 40, 15, .3)),
-    repeating-linear-gradient(to right, #EFE5CF 0 .9px, #C9B994 .9px 1.5px);
-  box-shadow: 0 0 1px rgba(40, 25, 8, .5);
+    linear-gradient(to bottom, rgba(60, 25, 5, .45), transparent 9%, rgba(255, 240, 200, .18) 45%, transparent 60%, transparent 91%, rgba(60, 25, 5, .5)),
+    repeating-linear-gradient(to right, rgba(130, 30, 18, .55) 0 .45px, transparent .45px 1.6px),
+    linear-gradient(to right, #B88A35, #E2C274 45%, #C49A45);
+  box-shadow: 0 0 1px rgba(40, 20, 5, .6);
 }
+/* the headbands: silk worked red and gold round a core at the head and the tail of the spine, showing
+   where the leaves bow down into the gutter */
+.block::before, .block::after {
+  content: ""; position: absolute; left: calc(50% - 15px); width: 30px; height: 6.5px; border-radius: 3.25px;
+  background:
+    linear-gradient(to bottom, rgba(255, 238, 205, .32), transparent 38%, rgba(25, 8, 2, .55)),
+    repeating-linear-gradient(97deg, #7A2116 0 1.1px, #93301F 1.1px 2.2px, #B8914A 2.2px 3.3px, #9C7737 3.3px 4.4px);
+  box-shadow: 0 1px 1.5px rgba(20, 8, 2, .6), inset 0 0 0 .5px rgba(40, 12, 4, .5);
+  filter: saturate(.85);
+}
+.block::before { top: -3.5px; }
+.block::after { bottom: -3.5px; }
 .edge.l { right: 100%; border-radius: 3px 0 0 3px; }
 .edge.r { left: 100%; border-radius: 0 3px 3px 0; }
 
@@ -466,9 +491,11 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .face.back { transform: rotateY(180deg); }
 /* the page bows down into the gutter: a deep crease, the curve of the leaf catching the lamp just
    beyond it, and its head and foot dipping as they near the spine; a shade warmer at its outer edge */
-.face.recto, .face.verso { background-size: auto, auto, 720px 720px; }
+.face.recto, .face.verso { background-size: auto, auto, auto, 720px 720px; }
+/* (and the lower outer corner of each, a shade darker where readers' thumbs have turned it) */
 .face.recto {
   background-image:
+    radial-gradient(ellipse 22% 15% at 100% 100%, rgba(110, 75, 35, .13), rgba(110, 75, 35, .04) 55%, transparent 100%),
     linear-gradient(to right, rgba(55, 35, 10, .42) 0, rgba(55, 35, 10, .2) 1.4%, rgba(55, 35, 10, .07) 4%, rgba(255, 250, 235, .14) 8%, transparent 13%, transparent 95%, rgba(100, 70, 30, .08) 100%),
     linear-gradient(to bottom, rgba(100, 70, 30, .06), transparent 5%, transparent 95%, rgba(100, 70, 30, .08)),
     url("/assets/book/parchment.webp");
@@ -476,10 +503,11 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 }
 .face.verso {
   background-image:
+    radial-gradient(ellipse 22% 15% at 0 100%, rgba(110, 75, 35, .13), rgba(110, 75, 35, .04) 55%, transparent 100%),
     linear-gradient(to left, rgba(55, 35, 10, .42) 0, rgba(55, 35, 10, .2) 1.4%, rgba(55, 35, 10, .07) 4%, rgba(255, 250, 235, .14) 8%, transparent 13%, transparent 95%, rgba(100, 70, 30, .08) 100%),
     linear-gradient(to bottom, rgba(100, 70, 30, .06), transparent 5%, transparent 95%, rgba(100, 70, 30, .08)),
     url("/assets/book/parchment.webp");
-  background-position: 0 0, 0 0, 37% 61%;   /* a different stretch of the skin */
+  background-position: 0 0, 0 0, 0 0, 37% 61%;   /* a different stretch of the skin */
   clip-path: polygon(0 0, 82% 0, 91% .1%, 97% .45%, 100% 1.1%, 100% 98.9%, 97% 99.55%, 91% 99.9%, 82% 100%, 0 100%);
 }
 /* the light across a leaf as it turns: darker as it rises from the page, and a sheen where it bends */
@@ -500,6 +528,21 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 }
 .book .page-v { padding: var(--mt) var(--mi) var(--mb) var(--mo); }
 .book .page-r { padding: var(--mt) var(--mo) var(--mb) var(--mi); }
+/* the ruling: before he wrote, a scribe ruled each leaf in drypoint or a faint lead, a line down
+   either side of the text block and across its head and foot, each run from edge to edge of the page */
+.book .page {
+  --ruled: rgba(120, 88, 50, .11);
+  background:
+    linear-gradient(var(--ruled), var(--ruled)) var(--rl) 0 / 1px 100% no-repeat,
+    linear-gradient(var(--ruled), var(--ruled)) var(--rr) 0 / 1px 100% no-repeat,
+    linear-gradient(var(--ruled), var(--ruled)) 0 calc(var(--mt) - var(--u) * .35) / 100% 1px no-repeat,
+    linear-gradient(var(--ruled), var(--ruled)) 0 calc(var(--ph) - var(--mb) + var(--u) * .2) / 100% 1px no-repeat;
+}
+.book .page-v { --rl: calc(var(--mo) - 3px); --rr: calc(var(--pw) - var(--mi) + 2px); }
+.book .page-r { --rl: calc(var(--mi) - 3px); --rr: calc(var(--pw) - var(--mo) + 2px); }
+/* where a hand takes hold of a leaf to turn it, in its outer margin, the pointer is a hand */
+.block.grab { cursor: grab; }
+.block.dragging, .block.dragging * { cursor: grabbing !important; }
 .book .page > :first-child { margin-top: 0; }
 /* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
    each on the text block's edge, a third of the way into its margin */
@@ -668,12 +711,14 @@ html.thumbable .thumbs.slim {
 .book .within { margin-top: 1.5em; }
 .book .within p { margin-top: .35em; font-size: .94em; line-height: 1.6; }
 /* where the page has room (site.js tries), a work's contents are set as a list, one to a line, in one
-   column or two, each hanging from its pilcrow */
+   column, or two of equal width, or three each as wide as its longest item; each hangs from its pilcrow */
 .book .within.listed p { text-align: left; -webkit-hyphens: manual; hyphens: manual; line-height: 1.45; }
 .book .within.listed .it { display: block; padding-left: .83em; text-indent: -.83em; margin-top: .22em; break-inside: avoid; }
 .book .within.listed.cols p { columns: 2; column-gap: 1.6em; }
-.book .within.listed.cols.three p { columns: 3; column-gap: 1.2em; }
 .book .within.listed.cols .it:first-child { margin-top: 0; }
+/* (three columns are a grid, so that each can be as wide as its longest item) */
+.book .within.listed.cols.three p { columns: auto; display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 8), auto); grid-template-columns: repeat(3, auto); column-gap: 1.3em; row-gap: .22em; }
+.book .within.listed.cols.three .it { margin-top: 0; }
 /* numerals hang in a column of their own, ranged right */
 .book .within.listed .it:has(.num) { padding-left: 2.3em; text-indent: -2.3em; }
 .book .within.listed .num { display: inline-block; width: 2.2em; text-indent: 0; text-align: right; margin-right: .1em; }
@@ -685,11 +730,13 @@ html.thumbable .thumbs.slim {
 .book .colophon .promise { font-size: 1.25em; line-height: 1.45; }
 .book .colophon .bach { font-size: 1em; line-height: 1.6; }
 .book .colophon .motif-play { font-size: .9em; }
-.book .colophon .foot-links { margin-top: auto; }
+.book .colophon .foot-links { margin-top: .6em; }
 .book .finis { margin: 0; align-items: center; }
 .book .finis .score { margin: 0 auto; padding: 0; }
 .book .finis .signature { margin: auto 0; align-items: center; text-align: center; }
 .book .finis .sdg { font-size: 3.6em; }
 .book .finis .sdg-gloss { margin-top: .8em; }
 .book .finis .fleuron { width: 3.4em; margin: 0 auto; }
-.book .colophon .materials { font-size: .833em; }
+.book .colophon .materials, .book .colophon .imprint { font-size: .833em; }
+/* the colophon proper, how the book was made and of what, at the foot of its page */
+.book .colophon .imprint { margin-top: auto; }
