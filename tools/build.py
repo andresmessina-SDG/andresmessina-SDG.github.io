@@ -110,6 +110,13 @@ def gloss(k: int, t: dict) -> str:
             f'<span class="score-hear" aria-hidden="true">{esc(t["hear"])}</span></p>')
 
 
+def kept(line: str) -> str:
+    """A line of short items between middle dots, each kept whole on its line (no "Native Spanish |
+    & English"); an item too long to be sure of fitting a phone's line is left to break."""
+    return "\u00a0· ".join(f'<span class="kept">{esc(x)}</span>' if len(x) <= 28 else esc(x)
+                      for x in (x.strip() for x in line.split("·")))
+
+
 def works_html(t: dict) -> str:
     """Each work is a folio: on the left page its title, its miniature and a verse beneath it; on the right
     its text and its line of the chorale."""
@@ -164,7 +171,9 @@ def within_html(items: list, at: str = "", ids: list | None = None) -> str:
             item = num[2]
         else:
             mark = f'<span class="pil {colour}" aria-hidden="true">¶</span>'
-        # an age's years are set apart from its name, so that a list can give them a line of their own
+        # an item's first word is never left alone at the end of a line (¶ Is | Satan ruling the world?)
+        item = item.replace(" ", "\u00a0", 1) if len(item.split(" ")) > 2 else item
+        # an age's years are set apart from its name, quieter
         when = re.match(r"(.+), ((?:de )?\d[\d–]*(?:–today| a hoy)?)$", item)
         if when:
             text = f'{esc(when[1])}<span class="when"><span class="sep">, </span>{esc(when[2])}</span>'
@@ -357,6 +366,7 @@ def main() -> None:
         url = BASE + t["path"]
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,
+                  "cred_fields_html": kept(t["cred_fields"]), "cred_degrees_html": kept(t["cred_degrees"]),
                   "head_links": head_links(t, url, strings),
                   # site.js from the head, fetched first: on a slow line the book waits on it
                   "head_script": f'<script src="/assets/site.js?v={v}" defer fetchpriority="high"></script>\n',

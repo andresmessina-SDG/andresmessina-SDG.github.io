@@ -121,9 +121,8 @@ h1 {
 .cred-fields { margin-top: 3px !important; font-size: 1.02rem; line-height: 1.4; }
 .cred-degrees { margin-top: 2px !important; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
 .cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: 0.05em; }
-.cred-link a { text-decoration: none; transition: color .2s ease; }
-.cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
-.cred-link a:hover { color: var(--vermilion); }
+.cred-fields .kept, .cred-degrees .kept { white-space: nowrap; }
+.cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; }
 
 /* a rubric: a heading written in red, as the scribe left them for the rubricator */
 .rubric { font-weight: 400; line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
@@ -256,8 +255,9 @@ h1 {
 .promise { margin: 0; text-wrap: pretty; }
 .bach { margin: 0; font-size: 0.95rem; color: var(--muted); text-wrap: pretty; }
 .foot-links { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 26px; font-family: var(--rubric); letter-spacing: 0.05em; }
-.foot-links a { text-decoration: none; transition: color .2s ease; }
-.foot-links a:hover { color: var(--vermilion); }
+/* every way out of the book, and every button that sounds, in red as the way into each work is */
+.foot-links a, .cred-link a { color: var(--vermilion); text-decoration: none; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: color .2s ease; }
+.foot-links a:hover, .cred-link a:hover { color: #8E2914; text-decoration-line: underline; }
 /* B-A-C-H: his name in notes; site.js shows the button and plays it */
 .motif-play {
   display: inline-flex; align-items: center; gap: 14px; justify-self: start;
@@ -265,9 +265,9 @@ h1 {
   color: var(--ink); font: 1.02rem/1.3 var(--rubric); letter-spacing: 0.05em; text-align: left;
 }
 .motif-play[hidden] { display: none; }
-.motif-play span { transition: color .2s ease; }
-.motif-play span::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
-.motif-play:hover span, .motif-play.playing span { color: var(--vermilion); }
+.motif-play span { color: var(--vermilion); transition: color .2s ease; }
+.motif-play span::after { content: "\00a0›"; content: "\00a0›" / ""; }
+.motif-play:hover span, .motif-play.playing span { color: #8E2914; }
 .motif-play:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-radius: 2px; }
 .motif { display: block; flex: none; width: 115.9px; height: 57.5px; overflow: visible; }
 .motif-letters { font: italic 11.5px var(--text); fill: var(--muted); }
@@ -845,7 +845,7 @@ html.thumbable .thumbs.slim {
   text-align: justify; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 6 3 2;
 }
 /* (but a run-on list of names is left ragged: its long names, few to a line, would be spaced apart) */
-.book .within:not(.listed) p { text-align: left; }
+.book .within:not(.listed) p { text-align: left; -webkit-hyphens: manual; hyphens: manual; }
 .book .within { margin-top: 1.5em; }
 .book .within p { margin-top: .35em; font-size: max(.94em, calc(15px / var(--z, 1))); line-height: 1.6; }
 /* where the page has room (site.js tries), a work's contents are set as a list, one to a line, in one
