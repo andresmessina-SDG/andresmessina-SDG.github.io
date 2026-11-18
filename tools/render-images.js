@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Render the share images and icons from the same initial the page opens with (a real
-// thirteenth-century Bible initial, assets/book/initial-a.webp), on the same parchment:
+// thirteenth-century Bible initial, assets/book/initial-a.webp), on the book's paper, set as the book is,
+// in EB Garamond and its small capitals:
 //   node tools/render-images.js
 // Writes assets/og-en.png, assets/og-es.png, assets/icon-192.png,
 // apple-touch-icon.png and the PNGs that tools/make-favicon.py packs into favicon.ico.
@@ -27,13 +28,13 @@ const og = (lang) => {
     background:#FAF6ED url("/assets/book/paper.webp") 0 0 / 720px 720px;
     color:#2A2420;font-family:"EB Garamond",serif}
   .ini img{width:272px;height:auto;display:block;border-radius:2px;box-shadow:0 0 0 .5px rgba(60,40,10,.3),0 2px 4px rgba(60,40,10,.3)}
-  .jj{font-family:"EB Garamond";font-variant-caps:all-small-caps;font-weight:500;color:#A27A28;font-size:26px;letter-spacing:.1em;margin:0 0 22px}
+  .jj{font-family:"EB Garamond";font-weight:500;color:#7E5D1B;font-size:26px;letter-spacing:.1em;margin:0 0 22px}
   h1{margin:0;font-weight:400;font-size:98px;line-height:.95;letter-spacing:-.012em}
-  .sub{margin:18px 0 0;font-family:"EB Garamond";font-variant-caps:all-small-caps;font-weight:500;color:#B0361F;font-size:30px;letter-spacing:.05em}
+  .sub{margin:18px 0 0;font-family:"EB Garamond";font-variant-caps:all-small-caps;font-weight:500;color:#685E50;font-size:30px;letter-spacing:.08em}
   .staff{height:17px;margin:34px 0 0;position:relative;background:repeating-linear-gradient(to bottom,#D9CCB1 0 1px,transparent 1px 4px) no-repeat;background-size:100% 17px}
   .staff::after{content:"";position:absolute;right:0;top:0;width:8px;height:17px;background:linear-gradient(to right,#2A2420 0 1px,transparent 1px 3.5px,#2A2420 3.5px 8px)}
-  .works{margin:18px 0 0;font-family:"EB Garamond";font-variant-caps:all-small-caps;font-weight:500;font-size:22px;letter-spacing:.04em;color:#685E50;line-height:1.45}
-  .works b{font-weight:400;color:#A27A28;padding:0 .35em}
+  .works{margin:18px 0 0;font-family:"EB Garamond";font-variant-caps:all-small-caps;font-weight:500;font-size:22px;letter-spacing:.06em;color:#2A2420;line-height:1.5}
+  .works b{font-weight:400;color:#685E50;padding:0 .4em}
   .sdg{margin:16px 0 0;text-align:right;font-weight:600;font-size:40px;letter-spacing:.14em;margin-right:-.14em;
     background:url("/assets/book/gold.webp") center / 160px 160px;-webkit-background-clip:text;background-clip:text;color:transparent;
     -webkit-text-stroke:.4px #6E4F12}
