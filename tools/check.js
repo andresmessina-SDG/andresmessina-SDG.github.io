@@ -7,6 +7,8 @@
 //   node tools/check.js zoom back  only those named
 //
 // What it checks:
+//   built     the pages ask for the stylesheet and script by the stamp of their present contents, so that no
+//             browser keeps an old script cached against new pages (python3 tools/build.py renews it)
 //   pages     at a phone, a tablet, short and tall laptops and large screens, in both languages: no errors,
 //             no failed or missing requests, no broken pictures; the layout each should have (the book,
 //             the leaves on the desk, the leaves); no page of the book spilling into its foot margin; no
@@ -24,6 +26,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const crypto = require('crypto');
 let chromium;
 try { ({ chromium } = require('playwright')); } catch (e) {
   console.error('Playwright is needed: npm install playwright && npx playwright install chromium');
@@ -73,6 +76,18 @@ async function open(browser, base, url, ctxOpts = {}, init) {
 }
 
 const checks = {
+  // the stamp tools/build.py puts on assets/site.css and site.js: the first ten of the SHA-256 of both, in order
+  async built() {
+    const h = crypto.createHash('sha256');
+    for (const f of fs.readdirSync(path.join(ROOT, 'assets')).filter((f) => /^site\./.test(f)).sort()) h.update(fs.readFileSync(path.join(ROOT, 'assets', f)));
+    const v = h.digest('hex').slice(0, 10);
+    for (const page of ['index.html', 'es/index.html', '404.html']) {
+      const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
+      const stamps = [...html.matchAll(/\/assets\/site\.(?:css|js)\?v=([0-9a-f]+)/g)].map((m) => m[1]);
+      expect(stamps.length > 0 && stamps.every((s) => s === v), `built: ${page} asks for site.css and site.js as they are`, stamps.every((s) => s === v) ? v : `has ${[...new Set(stamps)].join(', ')}, files are ${v}: run python3 tools/build.py`);
+    }
+  },
+
   async pages(browser, base) {
     const cases = [
       [1440, 900, '', 'book'], [1280, 720, 'es/', 'book'], [1366, 657, '', 'book'], [1366, 657, 'es/', 'book'],

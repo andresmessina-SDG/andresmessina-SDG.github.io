@@ -103,7 +103,7 @@ another, but without the shade.
 | `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
-| `tools/check.js` | Checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
+| `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
 | `favicon.ico`, `apple-touch-icon.png`, `assets/icon-192.png`, `assets/og-*.png` | Icons and share images, drawn by `tools/render-images.js` from the real initial, parchment and gold. |
 
