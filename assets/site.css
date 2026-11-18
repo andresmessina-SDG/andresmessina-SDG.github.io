@@ -91,16 +91,63 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .organ-at { color: var(--muted); font-variant-numeric: lining-nums; white-space: nowrap; }
 .organ-at:empty { display: none; }
 .organ-at::before { content: "·\00a0"; content: "·\00a0" / ""; }
-/* on the leaves (the phone, the desk) the page's head scrolls away, so the switch is kept in the lower
-   corner of the window, on a slip of the paper, within reach of the page being read */
-html:not(.bound) .organ {
-  position: fixed; z-index: 24; right: max(14px, env(safe-area-inset-right, 0px)); bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  height: 34px; padding: 0 14px 0 12px; gap: 9px; border-radius: 999px; font-size: .9rem; color: #5F5345;
-  background: rgba(250, 247, 240, .94) url("/assets/book/paper.webp") 0 0 / 360px auto;
-  box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .14), 0 10px 22px -10px rgba(60, 44, 28, .45);
+.organ .pipes { display: none; }
+/* the dock: on the leaves (the phone, the desk) the page's head scrolls away, so the organ, and on a
+   phone the contents, are kept in the window's lower corner as round buttons on slips of the paper, a
+   fingertip wide; the organ says what it is when a staff is in view, and while it plays, the line */
+.dock {
+  position: fixed; z-index: 24; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 8px;
 }
-html:not(.bound) .organ:hover { color: var(--ink); }
-@media print { .organ { display: none !important; } }
+.dock[hidden] { display: none; }
+html.spread .dock .toc { display: none; }   /* on the desk the index stands lettered at the left */
+.dock .toc, .dock .organ {
+  box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: 500 .875rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: #5F5345;
+  background: rgba(250, 247, 240, .95) url("/assets/book/paper.webp") 0 0 / 360px auto;
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .14), 0 10px 22px -10px rgba(60, 44, 28, .45);
+  transition: color .2s ease;
+}
+.dock .toc:hover, .dock .organ:hover { color: var(--ink); }
+.dock .toc:focus-visible, .dock .organ:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; border-radius: 999px; }
+.dock .toc svg, .dock .organ .pipes { flex: none; width: 20px; height: 20px; }
+.dock .toc path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.dock .toc circle, .dock .organ .pipes rect { fill: currentColor; }
+.dock .organ .pipes path { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
+.dock .toc[aria-expanded="true"] { color: var(--vermilion); }
+.dock .organ .stop { display: none; }
+.dock .organ .pipes { display: block; }
+.dock .organ .organ-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dock .organ.near:not([aria-pressed="true"]) .organ-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+.dock .organ.near, .dock .organ[aria-pressed="true"] { padding: 0 15px 0 13px; }
+.dock .organ[aria-pressed="true"] { color: var(--vermilion); }
+.dock .organ-at { color: var(--ink); }
+.dock .organ-at::before { content: none; }
+@media print { .organ, .dock { display: none !important; } }
+/* the contents, on a phone: a sheet over the dock, a line to each folio, the open one in red */
+html.leaves:not(.spread) .thumbs.slim { display: none; }
+html.leaves:not(.spread) .thumbs.slim.open {
+  display: grid; position: fixed; z-index: 25; top: auto; left: auto; transform: none; gap: 0;
+  right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + 54px);
+  width: min(300px, calc(100vw - 24px)); padding: 6px; border-radius: 14px;
+  background: rgba(250, 247, 240, .98) url("/assets/book/paper.webp") 0 0 / 360px auto;
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 2px 4px rgba(60, 44, 28, .12), 0 18px 40px -14px rgba(60, 44, 28, .5);
+}
+html.leaves:not(.spread) .thumbs.slim .thumb, html.leaves:not(.spread) .thumbs.slim.open .thumb {
+  width: auto; height: 44px; padding: 0 14px; justify-content: flex-start; border-radius: 9px;
+  transform: none; background: none; box-shadow: none; transition: background-color .15s ease;
+}
+html.leaves:not(.spread) .thumbs.slim .thumb::after { display: none; }
+html.leaves:not(.spread) .thumbs.slim .thumb span {
+  opacity: 1; font-size: 1.05rem; letter-spacing: .06em; color: var(--ink); background: none; filter: none;
+  -webkit-background-clip: border-box; background-clip: border-box; transition: none;
+}
+html.leaves:not(.spread) .thumbs.slim .thumb:hover { background: rgba(90, 70, 45, .06); }
+html.leaves:not(.spread) .thumbs.slim .thumb[aria-current="true"] { background: rgba(176, 54, 31, .07); }
+html.leaves:not(.spread) .thumbs.slim .thumb[aria-current="true"] span { color: var(--vermilion); }
+/* and each leaf's foot leaves room for the dock, so that a leaf holding still is not read under it */
+@media screen { html.leaves:not(.spread) main > .folio { padding-bottom: 76px; } }
 
 .organ:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
@@ -1022,3 +1069,53 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .jj { font-variant-caps: normal; font-weight: 500; }   /* J.J., as Bach wrote it, in capitals */
 /* the tabs' names, a little closer set in the book, so that the longest keeps within its tab */
 .book .thumb span { letter-spacing: .012em; font-size: max(calc(var(--u) * .7), calc(12px / var(--z, 1))); }
+
+
+/* ---------- On a phone (the leaves, not on the desk) ----------
+   the type no smaller than reads easily in the hand; every row and link a fingertip tall; the staves
+   as large as the narrowest line of a phone allows, all at one scale; long lists folded */
+.parts-more { display: none; }
+@media screen {
+  html.leaves:not(.spread) .modern .details dt { font-size: .9rem; }
+  html.leaves:not(.spread) .kal-names .kal-ad, html.leaves:not(.spread) .materials, html.leaves:not(.spread) .imprint { font-size: .9375rem; }
+  html.leaves:not(.spread) .score-hear { font-size: 1em; }
+  html.leaves:not(.spread) .score-gloss { font-size: .95rem; }
+  /* every staff at one scale: as large as a third again, or as the widest of them fits the line */
+  html.leaves:not(.spread) .score-notes {
+    width: min(calc(var(--vbw, 300) * 1.33px), calc(min(100vw - 32px, 37rem) * var(--vbw, 300) / 324.3)); height: auto; max-width: none;
+  }
+  html.leaves:not(.spread) .score-words { font-size: 12px; }
+  /* (on a work's page the staff runs under the column its initial would hang in, so that it has the
+     whole width the opening's and the colophon's have) */
+  html.leaves:not(.spread) .work .score { margin-left: calc(-1 * (var(--ini-col) + var(--ini-gap))); max-width: none; }
+  html.leaves:not(.spread) .contents a { padding: 10px 0; }
+  html.leaves:not(.spread) .langs a { padding: 10px 12px; }
+  /* a row of a list that opens a place opens it wherever it is touched */
+  html.leaves:not(.spread) .modern .parts li { position: relative; padding: .55em 0; }
+  html.leaves:not(.spread) .modern .st-name a::before { content: ""; position: absolute; inset: 0; }
+  html.leaves:not(.spread) .go a, html.leaves:not(.spread) .cred-link a, html.leaves:not(.spread) .foot-links a { display: inline-block; padding-block: 10px; }
+  html.leaves:not(.spread) .go { margin-top: 8px; row-gap: 0; }
+  html.leaves:not(.spread) .cred-link { margin-top: 0 !important; }
+  html.leaves:not(.spread) .materials a { display: inline-block; padding-block: 6px; }
+  /* a long list shows its first six, and the rest on asking */
+  html.leaves:not(.spread) .parts.folded li:nth-child(n+7) { display: none; }
+  html.leaves:not(.spread) .parts-more {
+    display: inline-flex; align-items: center; height: 42px; margin-top: 12px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer;
+    font: 500 .95rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: var(--ink);
+    background: rgba(90, 70, 45, .07); box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .14);
+  }
+  html.leaves:not(.spread) .parts-more::after { content: "\00a0\00a0↓"; content: "\00a0\00a0↓" / ""; letter-spacing: 0; color: var(--muted); }
+  html.leaves:not(.spread) .parts-more:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
+  /* what comes into view is drawn sooner and quicker than in the book */
+  html.leaves:not(.spread) .plate.inked { animation-duration: .5s; animation-delay: 0s; }
+  html.leaves:not(.spread) .score.inked svg { animation-duration: 1.1s; animation-delay: 0s; }
+  html.leaves:not(.spread) .work.inked::before { animation-duration: 1s; animation-delay: .1s; }
+}
+/* on the narrowest phones: several values one to a line, and the maker's name on one line */
+@media screen and (max-width: 480px) {
+  html.leaves .modern .details .dd-sep { display: none; }
+  html.leaves .modern .details .dd-item { display: block; }
+}
+@media screen and (max-width: 360px) {
+  html.leaves h1 { font-size: 2.35rem; }
+}

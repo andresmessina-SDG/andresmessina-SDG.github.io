@@ -83,9 +83,14 @@ On a phone, or a narrow or short window, the same document is read down the
 page, a folio to a leaf, as the church history's eras are: each leaf holds
 still at its foot for a moment's scrolling, then the next rises over it and
 the one beneath dims. Each work's line of the chorale is at the foot of its
-leaf, and the thumb index is folded to slim spines of the cloth at the left
-edge, drawn out by a touch, and drawn out for a moment once a visit as the
-page opens, so that it is known for what it is. On a window wide but too
+leaf. In the window's lower corner a dock holds two round buttons, a fingertip
+wide: Contents, which opens the thumb index as a sheet (a line to each folio, the
+open one in red), and the organ, which names itself once when the first staff
+comes into view. Each leaf's foot leaves room for the dock. On a phone the type
+is no smaller than reads easily in the hand, the staves are drawn at one scale
+as large as the line allows, every row of a work's list opens its place wherever
+it is touched, and a list of more than ten shows its first six and the rest on
+asking. On a window wide but too
 short for the book (a laptop whose screen is scaled up, from 1000px wide),
 the leaves lie on the oak table instead: each a sheet with the desk at either
 side and its two pages side by side as in the book, under the same lettered

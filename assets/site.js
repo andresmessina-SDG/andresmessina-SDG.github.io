@@ -343,7 +343,7 @@
         const work = e.target.closest('.work');
         if (work && e.target.classList.contains('page-v')) ink(work);
       }
-    }, { rootMargin: '0px 0px -12% 0px' });
+    }, { rootMargin: root.classList.contains('leaves') && !root.classList.contains('spread') ? '0px 0px 15% 0px' : '0px 0px -12% 0px' });
     for (const page of document.querySelectorAll('.page')) {
       if (page.getBoundingClientRect().top < fold) continue;
       mark(page, true);
@@ -367,10 +367,39 @@
     root.classList.add('thumbable');
     thumbs.classList.add('slim');      // the leaves (below) tell it which folio is open
   }
-  // Folded, the spines do not say what they are; so once in a visit they are drawn out for a moment
-  // as the page opens, and folded again.
+  // On the leaves read on a phone the index is not spines at the edge (where a thumb's swipe means Back,
+  // and where they read as a fault in the page) but a sheet, opened by a Contents button in the window's
+  // lower corner beside the organ: the dock. In the book the organ goes back to the strip above it.
+  let dock = null, toc = null, organHome = null;
+  function placeControls() {
+    const organ = document.querySelector('.organ');
+    if (!dock) {
+      dock = el('div', 'dock');
+      dock.hidden = true;
+      toc = el('button', 'toc', { type: 'button', 'aria-expanded': 'false', 'aria-label': UI.thumbs_label || UI.contents || 'Contents' });
+      toc.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5.5h10M7 10h10M7 14.5h10"/><circle cx="3.6" cy="5.5" r="1.1"/><circle cx="3.6" cy="10" r="1.1"/><circle cx="3.6" cy="14.5" r="1.1"/></svg>';
+      if (thumbs) { thumbs.id = thumbs.id || 'thumb-index'; toc.setAttribute('aria-controls', thumbs.id); }
+      toc.addEventListener('click', () => {
+        if (!thumbs) return;
+        const open = !thumbs.classList.contains('open');
+        thumbs.classList.toggle('open', open);
+        toc.setAttribute('aria-expanded', String(open));
+        if (open) { const t = thumbs.querySelector('[aria-current="true"]') || thumbs.querySelector('.thumb'); if (t) t.focus({ preventScroll: true }); }
+      });
+      dock.append(toc);
+      document.body.append(dock);
+      if (organ) organHome = [organ.parentElement, organ.nextSibling];
+    }
+    const docked = root.classList.contains('leaves');
+    dock.hidden = !docked;
+    if (organ && !organ.hidden) {
+      if (docked && organ.parentElement !== dock) dock.append(organ);
+      else if (!docked && organHome && organ.parentElement === dock) organHome[0].insertBefore(organ, organHome[1]);
+    }
+  }
+  // (folded spines no longer stand at the edge of a phone's page, so there is nothing to show at first)
   function hintThumbs() {
-    if (!thumbs || still.matches || root.classList.contains('spread') || !thumbs.classList.contains('slim')) return;
+    return;
     try { if (sessionStorage.getItem('thumbs-shown')) return; sessionStorage.setItem('thumbs-shown', '1'); } catch (e) { return; }
     setTimeout(() => {
       if (!thumbs.classList.contains('slim') || root.classList.contains('spread') || window.scrollY > 40) return;
@@ -385,12 +414,13 @@
       const a = e.target.closest('.thumb');
       if (!a) return;
       if (!thumbs.classList.contains('open')) { e.preventDefault(); thumbs.classList.add('open'); return; }
-      thumbs.classList.remove('open');                           // and the link takes the reader there
+      shut();                                                    // and the link takes the reader there
     });
-    const fold = (e) => { if (thumbs.classList.contains('open') && !thumbs.contains(e.target)) thumbs.classList.remove('open'); };
+    const shut = () => { thumbs.classList.remove('open'); if (toc) toc.setAttribute('aria-expanded', 'false'); };
+    const fold = (e) => { if (thumbs.classList.contains('open') && !thumbs.contains(e.target) && !(toc && toc.contains(e.target))) shut(); };
     document.addEventListener('pointerdown', fold);
-    window.addEventListener('scroll', () => { if (thumbs.classList.contains('open')) thumbs.classList.remove('open'); }, { passive: true });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') thumbs.classList.remove('open'); });
+    window.addEventListener('scroll', () => { if (thumbs.classList.contains('open') && !root.classList.contains('dock-sheet')) shut(); }, { passive: true });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && thumbs.classList.contains('open')) { shut(); if (toc && !toc.hidden) toc.focus(); } });
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -407,6 +437,7 @@
     const folios = [...main.querySelectorAll(':scope > .folio')];
     if (!folios.length) return;
     root.classList.add('leaves');
+    placeControls();
     const shades = [], made = [];
     folios.forEach((f, k) => {
       const anchor = el('div', 'anchor', { 'aria-hidden': 'true' });
@@ -438,7 +469,7 @@
         folios.forEach((f, i) => {
           // the shade deepens as the next leaf rises over this one; a leaf two beneath is not drawn at all
           const c = i + 1 < folios.length ? Math.max(0, Math.min(1, 1 - tops[i + 1] / h)) : 0;
-          shades[i].style.opacity = still.matches ? '0' : (c * 0.12).toFixed(3);
+          shades[i].style.opacity = still.matches ? '0' : (c * 0.05).toFixed(3);
           f.classList.toggle('deep', i + 2 < folios.length && tops[i + 2] <= 1);
           if (tops[i] <= h * 0.35) k = i;
         });
@@ -494,6 +525,7 @@
         root.classList.remove('leaves', 'spread');
         root.style.removeProperty('--desk-u');
         leaves = null;
+        placeControls();
       },
     };
   }
@@ -1122,6 +1154,36 @@
     const lines = all.slice(from).map((svg) => { const notes = svg.querySelectorAll('.n'); return { svg, lightsFor: (i) => (notes[i] ? [notes[i]] : []) }; });
     organState(true, from);
     Organ.playAll(lines, { whole: true, onLine: (i) => organState(true, from + i), done: () => organState(false) });
+  }
+  // on the leaves the organ is a round button in the dock; the first time a staff comes into view it
+  // says for a few seconds what it is, and is then round again, out of the reader's way
+  if (organBtn && Organ.ok && 'IntersectionObserver' in window) {
+    let told = false;
+    try { told = !!sessionStorage.getItem('organ-named'); } catch (e) {}
+    const io = told ? null : new IntersectionObserver((es) => {
+      if (told || !es.some((e) => e.isIntersecting) || !root.classList.contains('leaves')) return;
+      told = true;
+      try { sessionStorage.setItem('organ-named', '1'); } catch (e) {}
+      io.disconnect();
+      organBtn.classList.add('near');
+      setTimeout(() => organBtn.classList.remove('near'), 5000);
+    }, { rootMargin: '0px 0px -15% 0px' });
+    if (io) document.querySelectorAll('.score').forEach((sc) => io.observe(sc));
+  }
+  // a long list, read down a phone, shows its first six and the rest on asking
+  for (const parts of document.querySelectorAll('.parts')) {
+    const items = parts.querySelectorAll('li');
+    if (items.length <= 10) continue;
+    parts.classList.add('folded');
+    const more = el('button', 'parts-more', { type: 'button' });
+    more.textContent = (UI.show_all || 'Show all {n}').replace('{n}', items.length);
+    more.addEventListener('click', () => {
+      parts.classList.remove('folded');
+      more.remove();
+      const next = items[6] && items[6].querySelector('a');
+      if (next) next.focus({ preventScroll: true });
+    });
+    parts.querySelector('ol').after(more);
   }
   if (organBtn && Organ.ok) {
     organBtn.hidden = false;

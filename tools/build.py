@@ -94,7 +94,8 @@ def chorale(k: int) -> str:
     """Line k of the chorale (1 to 7), engraved by tools/engrave.py. After the last line's double bar
     stands Fine., as Bach wrote it at the end of his scores, before his S.D.Gl."""
     svg = (SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip()
-    svg = svg.replace('<svg class="score-notes"', f'<svg class="score-notes" data-line="{k}"', 1)   # its place in the strophe, for site.js
+    w0 = re.search(r'viewBox="0 0 ([\d.]+)', svg)[1]
+    svg = svg.replace('<svg class="score-notes"', f'<svg class="score-notes" data-line="{k}" style="--vbw: {w0}"', 1)   # its place in the strophe, for site.js; its width, for site.css
     if k == 7:
         m = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)" width="[\d.]+"', svg)
         w, h = float(m[1]), m[2]
@@ -179,7 +180,9 @@ def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
             name = f'<a href="{esc(at.format(ids[k]))}">{name}</a>'
         what = f'<span class="st-what">{esc(m[2])}</span>' if m[2] else ""
         rows.append(f'        <li><span class="st-n" aria-hidden="true">{k + 1:02d}</span><span class="st-name">{name}</span>{what}</li>')
-    details = "\n".join(f'      <div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>' for k, v in w["details"])
+    # (a value of several, such as the languages, keeps each whole, so a narrow page can set them one to a line)
+    dd = lambda v: '<span class="dd-sep"> · </span>'.join(f'<span class="dd-item">{esc(x)}</span>' for x in v.split(" · ")) if " · " in v else esc(v)
+    details = "\n".join(f'      <div><dt>{esc(k)}</dt><dd>{dd(v)}</dd></div>' for k, v in w["details"])
     hid = f'{w["id"]}-parts'
     return f"""<article class="folio work {colour} modern" id="{w["id"]}" data-name="{esc(w["name"])}"{title_lang}>
   <div class="page page-v {colour} modern">
@@ -289,7 +292,7 @@ def kalendar_js(verses: list, t: dict) -> str:
 
 def ui_json(t: dict) -> str:
     """The words site.js needs for the book's own controls, kept with the page's other words."""
-    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "organ_at", "opening_name", "colophon_name"]
+    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "organ_at", "show_all", "opening_name", "colophon_name", "thumbs_label"]
     return esc(json.dumps({k: t[k] for k in keys}, ensure_ascii=False, separators=(",", ":")))
 
 
