@@ -160,7 +160,7 @@ def works_html(t: dict) -> str:
 
 def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
     """A work set as a modern book sets it (a prototype, on the work whose strings ask for it): on the
-    left page a label, the title, what the work is, its picture and the verse beneath as a caption; on
+    left page a label, the title (plain, without an initial), what the work is, its picture and the verse beneath as a caption; on
     the right its parts as a numbered table, its particulars, the way in and its line of the chorale."""
     title_lang = f' lang="{w["title_lang"]}"' if "title_lang" in w else ""
     clip = f' data-clip="/assets/works/{w["clip"]}.mp4"' if "clip" in w else ""
@@ -175,7 +175,7 @@ def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
     return f"""<article class="folio work {colour} modern" id="{w["id"]}" data-name="{esc(w["name"])}"{title_lang}>
   <div class="page page-v {colour} modern">
     <p class="kicker"><span class="kicker-n">{esc(t["number"])}\u00a0{i + 1}</span> <span class="kind">{esc(w["kind"])}</span></p>
-    <h2{title_lang}><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h2>
+    <h2{title_lang}><a href="{esc(w["href"])}">{esc(w["versal"])}{esc(w["rest"])}</a></h2>
     <p class="what">{esc(w["what"])}</p>
     <figure class="plate-fig">
       <a class="plate" href="{esc(w["href"])}"{clip}><img src="/assets/works/{w["plate"]}-1200.webp" srcset="/assets/works/{w["plate"]}-640.webp 640w, /assets/works/{w["plate"]}-1200.webp 1200w" sizes="(min-width: 1000px) 640px, (min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="{esc(w["plate_alt"])}" loading="lazy" decoding="async"></a>

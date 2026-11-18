@@ -939,8 +939,7 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
 /* in the book */
 .book .page.modern { background: none; }   /* no ruling */
 .book .page-v.modern .kicker, .book .page-r.modern .parts h3, .book .modern .details dt, .book .modern .epigraph cite { font-size: max(.8em, calc(13.5px / var(--z, 1))); }
-.book .page-v.modern h2:not(.rubric) { margin-top: .2em; font-size: 2em; line-height: 1.08; }
-.book .page-v.modern .versal { font-size: 2.3em; top: -.18em; }
+.book .page-v.modern h2:not(.rubric) { margin-top: .25em; font-size: 2.1em; font-weight: 500; line-height: 1.05; letter-spacing: -.012em; }
 .book .page-v.modern .what { margin-top: .55em; font-size: 1.1em; line-height: 1.5; }
 .book .page-v.modern .plate-fig { margin: auto 0 0; padding-top: 1.1em; }
 .book .page-v.modern .plate { padding: 0; box-shadow: 0 1px 2px rgba(60, 40, 10, .2), 0 14px 26px -18px rgba(60, 40, 10, .5); }
@@ -948,7 +947,11 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
 .book .page-v.modern .epigraph { margin: .8em 0 0; padding: 0; text-align: left; line-height: 1.5; }
 .book .page-v.modern .epigraph p { font-size: max(.9em, calc(14px / var(--z, 1))); line-height: 1.5; text-wrap: pretty; }
 .book .page-v.modern .epigraph cite { margin-top: 0; }
-.book .page-v.blue.modern::before, .book .page-v.red.modern::before { top: calc(var(--mt) + var(--u) * 6.6); }
+/* with no initial above it, the ivy runs from the head of the text, level with the label, as a border */
+.book .page-v.blue.modern::before, .book .page-v.red.modern::before {
+  top: calc(var(--mt) + var(--u) * .2);
+  height: min(calc(var(--ph) - var(--mt) - var(--mb) - var(--u) * .6), calc(var(--vw) * 1275 / 170 * 1.25));
+}
 .book .page-v.modern.tight .plate-fig { width: 82%; }
 .book .page-r.modern .parts li { padding: .26em 0; font-size: max(.94em, calc(15px / var(--z, 1))); }
 .book .page-r.modern .details { margin-top: 1.3em; }
@@ -957,3 +960,16 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
 .book .page-r.modern.tight .parts li { padding: .14em 0; }
 .book .page-r.modern.tight .details, .book .page-r.modern.tight .go { margin-top: .9em; }
 .book .page-r.modern.tight .parts h3 { margin-bottom: .2em; }
+
+/* the title plain, at the size of a heading and no larger: no initial */
+.modern h2 { letter-spacing: -.012em; }
+/* the page's furniture in the same small capitals as its labels, quieter */
+.face.modern .folnum, .face.modern .catch, .modern .score-hear {
+  font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
+  letter-spacing: .08em; font-weight: 500;
+}
+.face.modern .catch { color: var(--muted); }
+.face.modern .catch:hover, .face.modern .catch:focus-visible { color: var(--ink); }
+.face.modern .folnum { color: var(--muted); }
+.face.modern .catch.next::after, .face.modern .catch.prev::before { color: var(--muted); }
+.modern > .leafnum { font-family: var(--text); font-variant-caps: all-small-caps; letter-spacing: .08em; font-weight: 500; color: var(--muted); }

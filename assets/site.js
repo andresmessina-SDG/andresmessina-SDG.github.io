@@ -524,6 +524,9 @@
     // foliation, catchwords and corners
     spreads.forEach((s, k) => {
       const rf = rectoFace(k), vf = versoFace(k);
+      // a face takes its page's setting, so that its foliation and catchwords are set to match
+      rf.classList.toggle('modern', s.r.classList.contains('modern'));
+      vf.classList.toggle('modern', s.v.classList.contains('modern'));
       rf.append(el('span', 'folnum', { 'aria-hidden': 'true' }));
       rf.lastChild.textContent = ROMAN[k];
       if (k < N) {
