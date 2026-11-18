@@ -28,8 +28,8 @@ styles in `assets/site.css`: the zoom grows as the square root of the
 window's height; the pages fill the window, shaped anywhere from a book of
 hours' 2:3 to a squarish 0.88; the text is a 36th of the page's width, so a
 line holds about 66 to 70 characters, and every other size is a step of a
-minor third from it, never less than 15px on the screen, and the small
-capitals never less than 13; the margins widen from the gutter outward and
+minor third from it, never less than 15px on the screen, the small
+capitals never less than 13.5 and a work's contents 15; the margins widen from the gutter outward and
 from the head down, as a manuscript's do. The reader's own zoom (Ctrl +) is
 kept: the type is set as it would be at their 100% and grows with the zoom,
 and where the pages can no longer hold it the book is laid aside for the
@@ -47,8 +47,12 @@ page, what the work holds, set as a list in one, two or three columns
 where the page has room, or run on after red and blue pilcrows where it
 has not; where a work gives each of its parts an address (the church
 history's ages, the codex's questions, the worldviews' paintings), each
-item opens its own. The window's title names the open folio.
-At the foot of every right page is a line of Bach's chorale; with the organ
+item opens its own. The spread has one initial, the versal of the work's
+title; the text across from it opens with a line of small capitals, and
+ends with the way into the work, in red. The window's title names the open folio.
+At the foot of every right page is a line of Bach's chorale, its words put
+plainly into English or Spanish beside it where the staff leaves room, and
+a word that it can be pressed to be heard; with the organ
 music drawn out (top right), each line sounds, in his four parts, as the
 book opens to it, so that the whole book plays the whole strophe. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.

@@ -103,6 +103,13 @@ def chorale(k: int) -> str:
     return svg
 
 
+def gloss(k: int, t: dict) -> str:
+    """Beside each staff, its words put plainly into the page's language, and (once site.js has made the
+    staff an instrument) a word that it can be heard."""
+    return (f'\n<p class="score-gloss"><span class="score-say">{esc(t["chorale_gloss"][k - 1])}</span>'
+            f'<span class="score-hear" aria-hidden="true">{esc(t["hear"])}</span></p>')
+
+
 def works_html(t: dict) -> str:
     """Each work is a folio: on the left page its title, its miniature and a verse beneath it; on the right
     its text and its line of the chorale."""
@@ -134,7 +141,7 @@ def works_html(t: dict) -> str:
 {links}
     </p>
     <div class="score">
-{indent(chorale(i + 2), 6)}
+{indent(chorale(i + 2) + gloss(i + 2, t), 6)}
     </div>
   </div>
 </article>""")
@@ -157,7 +164,14 @@ def within_html(items: list, at: str = "", ids: list | None = None) -> str:
             item = num[2]
         else:
             mark = f'<span class="pil {colour}" aria-hidden="true">¶</span>'
-        text = esc(item)
+        # an age's years are set apart from its name, so that a list can give them a line of their own
+        when = re.match(r"(.+), ((?:de )?\d[\d–]*(?:–today| a hoy)?)$", item)
+        if when:
+            text = f'{esc(when[1])}<span class="when"><span class="sep">, </span>{esc(when[2])}</span>'
+        else:
+            text = esc(item)
+        # and a compound is never broken at its own hyphen (Neo-|paganism): a word joiner holds it
+        text = re.sub(r"(?<=\w)-(?=\w)", "-\u2060", text)
         if ids:
             text = f'<a href="{esc(at.format(ids[k]))}">{text}</a>'
         out.append(f'<span class="it">{mark}\u00a0{text}</span>')
@@ -347,7 +361,7 @@ def main() -> None:
                   # site.js from the head, fetched first: on a slow line the book waits on it
                   "head_script": f'<script src="/assets/site.js?v={v}" defer fetchpriority="high"></script>\n',
                   "langs": langs_nav(t),
-                  "chorale_1": indent(chorale(1), 10), "chorale_7": indent(chorale(7), 10),
+                  "chorale_1": indent(chorale(1) + gloss(1, t), 10), "chorale_7": indent(chorale(7) + gloss(7, t), 10),
                   "motif": motif, "sdg": sdg, "evening": evening,
                   "verse_html": lord(verses[0][lang]), "verse_ref": verses[0][f"{lang}_ref"],
                   "kalendar_js": kalendar_js(verses, t), "ui": ui_json(t),

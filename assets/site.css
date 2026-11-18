@@ -165,6 +165,16 @@ h1 {
 .score[role="button"] { cursor: pointer; }
 .score[role="button"]:hover .score-staff { fill: var(--gilt); }
 .score[role="button"]:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; }
+/* beside each staff (or beneath it, where the page is narrow) its words in the page's language; and,
+   once the staff can be played, a word to say so, inked red when a pointer rests on the staff */
+.score { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; }
+.score-notes { flex: none; }
+.score-gloss { flex: 1 1 10rem; max-width: 17rem; margin: 0; display: grid; gap: 3px; font-size: 0.9rem; line-height: 1.35; color: var(--muted); }
+.score-say { font-style: italic; text-wrap: balance; }
+.score-hear { display: none; font-family: var(--rubric); font-size: .92em; letter-spacing: .06em; white-space: nowrap; color: var(--muted); transition: color .2s ease; }
+.score-hear::before { content: "◎\00a0"; content: "◎\00a0" / ""; font-family: var(--text); }
+.score[role="button"] .score-hear { display: block; }
+.score[role="button"]:hover .score-hear, .score[role="button"]:focus-visible .score-hear { color: var(--vermilion); }
 
 /* ---------- The works ---------- */
 .work { position: relative; margin-top: 72px; padding: 0 0 0 calc(var(--ini-col) + var(--ini-gap)); }
@@ -215,9 +225,11 @@ h1 {
 .what { margin: 14px 0 0; text-wrap: pretty; }
 .facts { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 2px 20px; font-size: 0.95rem; color: var(--muted); }
 .go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; }
-.go a { text-decoration: none; color: var(--ink); transition: color .2s ease; }
-.go a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--gilt); }
-.go a:hover { color: var(--vermilion); }
+/* the way into the work, the one thing on its page to be done: rubricated, as a scribe reddened what
+   the reader was to find first, and not to be taken for the running feet, which are set in ink */
+.go a { text-decoration: none; color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .45); text-decoration-thickness: 1px; text-underline-offset: .22em; transition: color .2s ease; }
+.go a::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--vermilion); }
+.go a:hover { color: #8E2914; text-decoration-line: underline; }
 /* what a work holds, run on as a manuscript runs its text: each item after a paragraph mark, red and blue in turn */
 .within { margin: 22px 0 0; }
 .within p { margin: 6px 0 0; font-size: 1rem; line-height: 1.6; text-wrap: pretty; }
@@ -225,6 +237,7 @@ h1 {
 .within .pil.r { color: var(--vermilion); }
 .within .pil.b { color: var(--lapis); }
 .within .pil.num { font-family: var(--rubric); font-size: .9em; letter-spacing: .04em; }
+.within .when { color: var(--muted); white-space: nowrap; }   /* an age's years, quieter than its name, and never parted */
 /* an item that opens its own place in the work is underlined faintly, so that it is known for a link
    among items that are not; a pointer or the keyboard inks it red */
 .within a { color: inherit; text-decoration: underline; text-decoration-color: rgba(104, 94, 80, .42); text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
@@ -656,7 +669,7 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .book .page > * { flex-shrink: 0; }
 /* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
    each on the text block's edge, a third of the way into its margin */
-.folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13px / var(--z, 1))); letter-spacing: .07em; line-height: 1.2; }
+.folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13.5px / var(--z, 1))); letter-spacing: .07em; line-height: 1.2; }
 .folnum { position: absolute; z-index: 2; top: calc(var(--mt) * .42); right: var(--mo); color: var(--vermilion); }
 .catch {
   position: absolute; z-index: 2; bottom: calc(var(--mb) * .36); padding: 4px 2px; border: 0; background: none; cursor: pointer;
@@ -751,11 +764,12 @@ html.thumbable .thumbs.slim {
    1.2^3  1.728 a work's title
    1.2^5  2.488 the maker's name                                 versals and lombards: deep enough to
    hang two lines of their own text, the cap height of the letter matching the lines it spans */
-/* (and on a short screen no smaller than can be read there: small capitals 13px on the screen at the
-   least, other small text 14px; --z is the book's zoom) */
+/* (and on a short screen no smaller than reads easily there: small capitals 13.5px on the screen at
+   the least, other small text 14.5px, a work's contents 15px unless its page is tight; --z is the
+   book's zoom) */
 .book .rubric, .book .kind, .book .subtitle, .book .cred-title, .book .cred-link, .book .verse cite, .book .epigraph cite,
-.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13px / var(--z, 1))); letter-spacing: .07em; }
-.book .cred-fields, .book .cred-degrees, .book .facts, .book .bach { font-size: max(.833em, calc(14px / var(--z, 1))); }
+.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13.5px / var(--z, 1))); letter-spacing: .07em; }
+.book .cred-fields, .book .cred-degrees, .book .facts, .book .bach { font-size: max(.833em, calc(14.5px / var(--z, 1))); }
 .book .kal-names .kal-ad { font-size: max(.833em, calc(12.5px / var(--z, 1))); }
 .book .page .score, .book .motif-play .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
 
@@ -786,7 +800,11 @@ html.thumbable .thumbs.slim {
 .book .kalendar .contents { margin-top: auto; padding-top: 1.4em; }
 .book .contents ol { margin-top: .5em; gap: 0; }
 .book .contents a { font-size: 1em; padding: .2em 0; }
-.book .page .score { margin-top: auto; padding-top: .9em; }
+/* in the book the gloss never adds to the page's depth: it takes what room the staff leaves beside it,
+   and where that is too narrow to hold a phrase, it is left out */
+.book .page .score { margin-top: auto; padding-top: .9em; column-gap: 1.1em; flex-wrap: nowrap; width: auto; }
+.book .page .score-gloss { flex: 1 1 0; min-width: 0; max-width: calc(var(--u) * 13 / var(--sz, 1)); container-type: inline-size; font-size: calc(max(var(--u) * .82, 13.5px / var(--z, 1)) / var(--sz, 1)); }
+@container (max-width: 10.5em) { .score-say, .score[role="button"] .score-hear { display: none; } }
 .book .page .score-notes { max-width: none; }
 
 /* a work: on the verso its title, its miniature the width of the text, and a verse of Scripture centred
@@ -803,29 +821,33 @@ html.thumbable .thumbs.slim {
 .book .page-v .epigraph p { font-size: 1.12em; line-height: 1.5; text-wrap: balance; }
 .book .page-v .epigraph p::before { content: none; }
 .book .page-v .epigraph cite { margin-top: .6em; }
-/* the Metz ivy down the middle of the outer margin, beneath the versal */
+/* the Metz ivy down the middle of the outer margin, beneath the versal, and as a border runs, down to
+   the foot of the text: the spray (the top 85% of its scan; below is bare vellum) is drawn out to the
+   depth of the text block, by no more than a quarter, which the eye does not take for stretching in
+   ivy; and it keeps a clear space from the plate's gilt rule */
 .book .page-v.blue::before, .book .page-v.red::before {
-  content: ""; position: absolute; top: calc(var(--mt) + var(--u) * 5.2); left: calc(var(--mo) * .14); width: calc(var(--mo) * .72);
-  aspect-ratio: 170 / 1503; max-height: calc(var(--ph) - var(--mt) - var(--mb) - var(--u) * 5.2);
-  background: url("/assets/book/vine.webp") center top / 100% auto no-repeat;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%);
+  --vw: calc(var(--mo) * .64);
+  content: ""; position: absolute; top: calc(var(--mt) + var(--u) * 5.2); left: calc(var(--mo) * .12); width: var(--vw);
+  height: min(calc(var(--ph) - var(--mt) - var(--mb) - var(--u) * 5.6), calc(var(--vw) * 1275 / 170 * 1.25));
+  background: url("/assets/book/vine.webp") center top / 100% calc(100% * 1503 / 1275) no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 88%, transparent 100%);
 }
 .book .page-r .what { margin-top: .1em; font-size: 1.25em; line-height: 1.55; }
-/* the first letter of the text, a lombard in the work's colour, two lines deep */
-.book .page-r .what::first-letter { initial-letter: 2; -webkit-initial-letter: 2; margin-right: .06em; font-weight: 500; color: var(--c); }
-/* where initial-letter is not known, the same two-line drop by hand, close against the rest of its word */
-@supports not ((initial-letter: 2) or (-webkit-initial-letter: 2)) {
-  .book .page-r .what::first-letter { float: left; margin: .1em .03em 0 -.02em; font-size: 3.2em; line-height: .78; }
-}
+/* the spread has one initial, the versal of the title, and the text across from it opens as a printed
+   book's does after one: its first line in small capitals, the first letter in the work's colour */
+.book .page-r .what::first-line { font-family: var(--rubric); letter-spacing: .03em; }
+.book .page-r .what::first-letter { color: var(--c); }
 /* the smaller text of a page set justified, with words broken where the language allows, as a scribe
    ruled a text block true; the larger text of a recto and of the maker's page is left ragged, since at
    that size a short measure justified opens rivers between the words */
 .book .colophon .bach, .book .within p {
   text-align: justify; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 6 3 2;
 }
+/* (but a run-on list of names is left ragged: its long names, few to a line, would be spaced apart) */
+.book .within:not(.listed) p { text-align: left; }
 .book .within { margin-top: 1.5em; }
-.book .within p { margin-top: .35em; font-size: .94em; line-height: 1.6; }
+.book .within p { margin-top: .35em; font-size: max(.94em, calc(15px / var(--z, 1))); line-height: 1.6; }
 /* where the page has room (site.js tries), a work's contents are set as a list, one to a line, in one
    column, or two of equal width, or three each as wide as its longest item; each hangs from its pilcrow */
 .book .within.listed p { text-align: left; -webkit-hyphens: manual; hyphens: manual; line-height: 1.45; }
@@ -840,7 +862,7 @@ html.thumbable .thumbs.slim {
 .book .within.listed .num { display: inline-block; width: 2.2em; text-indent: 0; text-align: right; margin-right: .1em; }
 .book .page-r.tight .within p { font-size: .87em; line-height: 1.5; }
 .book .page-r .facts { margin-top: 1.3em; }
-.book .page-r .go { margin-top: 1.1em; font-size: .9em; }
+.book .page-r .go { margin-top: 1.2em; font-size: max(1em, calc(15px / var(--z, 1))); letter-spacing: .06em; }
 
 /* the colophon, and the last page: the final line of the chorale, and the signature in the middle */
 .book .colophon { margin: 0; gap: .8em; }
@@ -851,7 +873,8 @@ html.thumbable .thumbs.slim {
 .book .colophon.tight .bach { font-size: .92em; line-height: 1.5; }
 .book .colophon .foot-links { margin-top: .6em; }
 .book .finis { margin: 0; align-items: center; }
-.book .finis .score { margin: 0 auto; padding: 0; }
+.book .finis .score { margin: 0 auto; padding: 0; width: fit-content; flex-direction: column; row-gap: .5em; }
+.book .finis .score-gloss { flex: none; max-width: none; container-type: normal; text-align: center; }
 .book .finis .signature { margin: auto 0; align-items: center; text-align: center; }
 .book .finis .sdg { font-size: 3.6em; }
 .book .finis .sdg-gloss { margin-top: .8em; }

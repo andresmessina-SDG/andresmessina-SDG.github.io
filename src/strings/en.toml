@@ -39,6 +39,17 @@ organ = "Organ music"
 fullscreen = "Read full screen"
 organ_hint = "Play each page’s line of the chorale as you turn to it"
 play_line = "Play this line"
+hear = "Hear it in four parts"
+# each line of Luther's words, put plainly into English beside its staff
+chorale_gloss = [
+  "A mighty fortress is our God,",
+  "a good defense and weapon.",
+  "He helps us free from every need",
+  "that has now befallen us.",
+  "The old evil foe is now in deadly earnest;",
+  "great might and much cunning are his cruel armor;",
+  "on earth is not his equal.",
+]
 turn_next = "Turn the page"
 turn_prev = "Turn back"
 folio = "Folio"
@@ -134,7 +145,7 @@ within_ids = [
   "christian", "judaism", "islam", "deism", "mtd", "naturalism", "humanism", "nihilism", "existentialism", "postmodernism", "marxism",
   "individualism", "transhumanism", "new-age", "neo-paganism", "hindu-monism", "buddhism", "taoism", "confucianism", "animism", "platonism", "gnosticism",
 ]
-facts = ["English", "22 worldviews · 4 acts"]
+facts = ["22 worldviews · 4 acts"]
 links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
 
 [[works]]
@@ -165,7 +176,7 @@ within = [
 ]
 within_at = "https://andresmessina-sdg.github.io/church-history/{}/"
 within_ids = ["apostolic", "ante-nicene", "nicene", "early-middle-ages", "high-middle-ages", "late-middle-ages", "reformation", "awakening", "missions", "global"]
-facts = ["English", "From Pentecost to today"]
+facts = ["From Pentecost to today"]
 links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
 
 [[works]]
@@ -183,19 +194,19 @@ epigraph_ref = "Hebrews 11:16"
 what = "Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles."
 short = "Pilgrim"
 within = [
-  "Bethlehem: where it began",
-  "Galilee: “Who am I?” riddles",
-  "The Creed Hall: what Christians believe",
-  "The Lamp Room: a memory match",
-  "The Three Roads: the branches of Christianity",
-  "The Caravan Road: an arcade review",
-  "The Road of Years: a timeline",
-  "The Copyist’s Desk: spot the mistake",
-  "The Scriptorium: key words",
-  "The Scroll Library: fill in the scroll",
-  "The Great Gate: the final trial",
+  "I Bethlehem: where it began",
+  "II Galilee: “Who am I?” riddles",
+  "III The Creed Hall: what Christians believe",
+  "IV The Lamp Room: a memory match",
+  "V The Three Roads: the branches of Christianity",
+  "VI The Caravan Road: an arcade review",
+  "VII The Road of Years: a timeline",
+  "VIII The Copyist’s Desk: spot the mistake",
+  "IX The Scriptorium: key words",
+  "X The Scroll Library: fill in the scroll",
+  "XI The Great Gate: the final trial",
 ]
-facts = ["English", "11 stations · 33 stars"]
+facts = ["11 stations · 33 stars"]
 links = [{ label = "Begin the journey", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
 
 [[works]]
