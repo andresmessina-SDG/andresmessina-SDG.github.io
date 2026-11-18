@@ -565,7 +565,7 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
     calc(var(--sun, 0) * -6px) 8px 16px rgba(0, 0, 0, .3);
 }
 /* a hand on a page turns it, so the book's text is not for selecting; touch moves reach the page, pinching stays the reader's */
-.block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 4);
+.block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 8);
   -webkit-user-select: none; user-select: none; touch-action: pinch-zoom; }
 /* the fore-edges: as many leaves as are left on either side, seen edge on */
 /* edged red under gold, as Bibles and prayer books are: burnished gold over the fore-edge, the red
@@ -597,6 +597,16 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .sheet.fixed-l { left: 0; }
 .sheet.fixed-r, .sheet.leaf { left: var(--pw); }
 .sheet.leaf { transform-origin: 0 50%; transform-style: preserve-3d; will-change: transform; }
+/* the outer part of a leaf in motion, on a hinge of its own at the fold (site.js bends it): the leaf's
+   faces are cut at the fold, and copies of them are carried on two panels there, the front's and the
+   back's, each showing only its own part of its page and only from its own side */
+.hinge { position: absolute; top: 0; left: calc(var(--pw) * .55); width: calc(var(--pw) * .45); height: var(--ph);
+  transform-origin: 0 50%; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none; }
+.hinge[hidden] { display: none; }
+.hinge > .face, .hinge > .face.back { inset: 0 auto 0 0; width: var(--pw); clip-path: none; transform: none; }
+.hinge.f > .face { left: calc(var(--pw) * -.55); }
+.sheet.leaf > .face.recto.cut { clip-path: polygon(0 1.1%, 3% .45%, 9% .1%, 18% 0, 55.3% 0, 55.3% 100%, 18% 100%, 9% 99.9%, 3% 99.55%, 0 98.9%); }
+.sheet.leaf > .face.verso.cut { clip-path: polygon(44.7% 0, 82% 0, 91% .1%, 97% .45%, 100% 1.1%, 100% 98.9%, 97% 99.55%, 91% 99.9%, 82% 100%, 44.7% 100%); }
 .face {
   position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   background-color: #FAF6EE;

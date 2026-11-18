@@ -513,9 +513,12 @@
     for (let j = 0; j < N; j++) {
       const sheet = el('div', 'sheet leaf');
       const front = face(spreads[j].r, 'recto'), back = face(spreads[j + 1].v, 'verso', true);
-      sheet.append(front, back);
+      // the outer part's two sides, each a panel of its own on the fold (see bend, below)
+      const hingeF = el('div', 'hinge f', { 'aria-hidden': 'true' }), hingeB = el('div', 'hinge b', { 'aria-hidden': 'true' });
+      hingeF.hidden = hingeB.hidden = true;
+      sheet.append(front, back, hingeF, hingeB);
       block.append(sheet);
-      leaves.push({ sheet, front, back, a: 0 });
+      leaves.push({ sheet, front, back, hingeF, hingeB, a: 0, bent: null });
     }
     // which face shows each page: the verso of spread k, and the recto
     const versoFace = (k) => (k === 0 ? fL : leaves[k - 1].back);
@@ -581,6 +584,8 @@
   function unbuild() {
     if (!book) return;
     Organ.stop();
+    // (the keys are the document's, so their listener goes with the book, or a book bound again would hear each key twice)
+    document.removeEventListener('keydown', book.onKey);
     const { spreads, stage } = book;
     const cur = book.cur;
     for (const s of spreads) {
@@ -662,17 +667,64 @@
   }
   const hashFor = (k) => (k === 0 ? location.pathname + location.search : `#${book.spreads[k].id}`);
 
+  // A leaf is paper, not board: as it turns it bows. Its outer part (beyond 55% of its width) is laid on a
+  // hinge of its own and bent ahead of the rest as the leaf rises, then lets it trail as the leaf falls,
+  // the most at a quarter and three quarters of the turn and not at all at rest. The same bend serves a
+  // turn forward or back, a hand dragging the leaf and a corner lifted under the pointer.
+  const BEND = 20;
+  const bendAt = (a) => BEND * Math.sin(2 * Math.PI * a / 180);
+  // while a leaf is off the page its outer part is drawn by a copy of its two faces, cut at the fold; the
+  // copy is only seen, never read or pressed, and is let go when the leaf lies down again
+  function bend(L, on) {
+    if (on === !!L.bent) return;
+    if (!on) {
+      for (const h of [L.hingeF, L.hingeB]) { h.replaceChildren(); h.hidden = true; }
+      L.front.classList.remove('cut'); L.back.classList.remove('cut');
+      L.bent = null;
+      return;
+    }
+    const copy = (f) => {
+      const c = f.cloneNode(true);
+      c.classList.add('copy');
+      c.setAttribute('inert', '');
+      for (const v of c.querySelectorAll('video')) v.remove();
+      for (const e of c.querySelectorAll('[id]')) e.removeAttribute('id');
+      for (const i of c.querySelectorAll('img[loading]')) i.loading = 'eager';
+      return c;
+    };
+    const fc = copy(L.front), bc = copy(L.back);
+    L.hingeF.replaceChildren(fc); L.hingeB.replaceChildren(bc);
+    L.hingeF.hidden = L.hingeB.hidden = false;
+    L.front.classList.add('cut'); L.back.classList.add('cut');
+    L.bent = { fShade: fc.querySelector(':scope > .shade'), bShade: bc.querySelector(':scope > .shade') };
+  }
+  // the darkening of a face turned from the lamp: none flat, the most edge on
+  const shadeFor = (a, front) => (front ? (a > 0 && a < 90 ? (a / 90) * 0.6 : 0) : (a > 90 && a < 180 ? ((180 - a) / 90) * 0.6 : 0));
   function setAngle(j, a) {
     const L = book.leaves[j];
     L.a = a;
+    // (a corner only lifted under the pointer stays flat, and so stays to be pressed; it bends once it turns)
+    const moving = a > 0.01 && a < 179.99 && (book.busy || !!book.drag);
+    bend(L, moving);
+    const b = moving ? bendAt(a) : 0;
     L.sheet.style.transform = a ? `rotateY(${-a}deg)` : '';
+    if (L.bent) {
+      // the front of the outer part turns on the fold; its back is the same panel turned over about its middle
+      L.hingeF.style.transform = `rotateY(${-b}deg)`;
+      L.hingeB.style.transform = `rotateY(${-b}deg) translateX(50%) rotateY(180deg) translateX(-50%)`;
+      L.bent.fShade.style.opacity = shadeFor(a + b, true);
+      L.bent.bShade.style.opacity = shadeFor(a + b, false);
+    }
+    // a leaf in motion lies above the leaves at rest; on the right the earlier above the later, on the
+    // left the later above the earlier, as they lie in the book
+    if (L.active) L.sheet.style.zIndex = a + b / 2 < 90 ? 300 - j : 300 + j;
     const lift = Math.sin(a * Math.PI / 180);
     const [shadeF, shadeB, castBelow, castBehind] = overlays(j);
-    shadeF.style.opacity = a < 90 ? (a / 90) * 0.85 : 0;
-    shadeB.style.opacity = a > 90 ? ((180 - a) / 90) * 0.85 : 0;
+    shadeF.style.opacity = shadeFor(a, true);
+    shadeB.style.opacity = shadeFor(a, false);
     // the shadow it casts on the page it is leaving, or the one it is coming down on
-    castBelow.style.opacity = a > 0 && a < 90 ? lift * 0.9 : 0;
-    castBehind.style.opacity = a >= 90 && a < 180 ? lift * 0.9 : 0;
+    castBelow.style.opacity = a > 0 && a < 90 ? lift * 0.75 : 0;
+    castBehind.style.opacity = a >= 90 && a < 180 ? lift * 0.75 : 0;
   }
   // the light across leaf j and the shadows it casts: on the page below it and the page behind it
   function overlays(j) {
@@ -695,7 +747,8 @@
     // unturned leaves on the right, the first on top; turned ones on the left, the last on top;
     // a leaf in motion above them all
     book.leaves.forEach((L, j) => {
-      L.sheet.style.zIndex = active.includes(j) ? 300 + active.indexOf(j) : (L.a >= 90 ? 100 + j : 100 - j);
+      L.active = active.includes(j);
+      L.sheet.style.zIndex = L.active ? (L.a + bendAt(L.a) / 2 < 90 ? 300 - j : 300 + j) : (L.a >= 90 ? 100 + j : 100 - j);
     });
   }
   function edges() {
@@ -719,14 +772,29 @@
     arrive(false);
   }
 
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  // a cubic Bézier easing, as CSS has them
+  function bezier(x1, y1, x2, y2) {
+    const at = (t, p1, p2) => 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;
+    return (x) => {
+      if (x <= 0 || x >= 1) return x;
+      let lo = 0, hi = 1, t = x;
+      for (let i = 0; i < 24; i++) { t = (lo + hi) / 2; if (at(t, x1, x2) < x) lo = t; else hi = t; }
+      return at(t, y1, y2);
+    };
+  }
+  // a leaf is lifted briskly, crosses fast, and settles slowly on the other side
+  const ease = bezier(0.42, 0, 0.18, 1);
+  const easeOut = bezier(0.2, 0.7, 0.3, 1);
+  // a leaf has one motion at a time: a new one (a click on a corner still lifting under the pointer)
+  // takes over from where the last has brought it, and a motion stops if the book is laid aside
   function animate(j, from, to, ms, curve, done) {
-    const t0 = performance.now();
-    const step = (now) => {
-      const t = Math.min(1, (now - t0) / ms);
+    const t0 = performance.now(), L = book.leaves[j], token = {};
+    L.motion = token;
+    const step = () => {
+      if (!book || book.leaves[j] !== L || L.motion !== token) return;
+      const t = Math.min(1, (performance.now() - t0) / ms);
       setAngle(j, from + (to - from) * curve(t));
-      if (t < 1) requestAnimationFrame(step); else done();
+      if (t < 1) requestAnimationFrame(step); else { L.motion = null; done(); }
     };
     requestAnimationFrame(step);
   }
@@ -735,8 +803,9 @@
   function go(k, opts = {}) {
     if (!book) return;
     k = Math.max(0, Math.min(book.N, k));
-    if (book.busy) { book.queued = [k, opts]; return; }
+    if (book.busy) { if (k !== book.target) book.queued = [k, opts]; return; }
     if (k === book.cur) return;
+    book.target = k;
     Organ.stop();
     const from = book.cur;
     const fwd = k > from;
@@ -750,13 +819,16 @@
     book.busy = true;
     for (const f of book.block.querySelectorAll('.face')) f.setAttribute('inert', '');
     // the faces that will show partway through a riffle are uncovered as the leaves pass
-    const ms = js.length > 1 ? 640 : 860, gap = js.length > 1 ? 120 : 0;
+    // one leaf in about three quarters of a second; a riffle fans its leaves a little apart, so that the
+    // whole of a long jump takes not much more than a single turn
+    const ms = js.length > 1 ? 620 : 760, gap = js.length > 1 ? Math.min(110, 480 / (js.length - 1)) : 0;
     stack(js);
     let left = js.length;
     js.forEach((j, i) => {
       setTimeout(() => {
+        if (!book) return;
         const a0 = book.leaves[j].a;
-        animate(j, a0, fwd ? 180 : 0, ms * (fwd ? (180 - a0) / 180 : a0 / 180) + 120, ease, () => {
+        animate(j, a0, fwd ? 180 : 0, ms * (fwd ? (180 - a0) / 180 : a0 / 180) + 80, ease, () => {
           if (--left) return;
           book.cur = k;
           book.busy = false;
@@ -830,7 +902,8 @@
       const t = e.target;
       if (t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
       if ((e.key === 'f' || e.key === 'F') && canFull) { e.preventDefault(); toggleFull(); return; }
-      const k = book.cur;
+      // (keys pressed while a leaf is turning count on from where the book is going)
+      const k = book.queued ? book.queued[0] : book.busy ? book.target : book.cur;
       const keys = { ArrowRight: k + 1, ArrowDown: k + 1, PageDown: k + 1, ArrowLeft: k - 1, ArrowUp: k - 1, PageUp: k - 1, Home: 0, End: book.N };
       if (e.key === ' ' && !(t.closest && t.closest('a, button, [role="button"]'))) { e.preventDefault(); go(e.shiftKey ? k - 1 : k + 1, { replace: true }); return; }
       if (!(e.key in keys)) return;

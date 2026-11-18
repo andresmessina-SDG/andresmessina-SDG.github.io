@@ -35,7 +35,7 @@ kept: the type is set as it would be at their 100% and grows with the zoom,
 and where the pages can no longer hold it the book is laid aside for the
 leaves on the desk (below); a page that would otherwise spill sets its
 smaller text a size smaller first. F, or the button above the book, reads it
-full screen. Its leaves turn by the arrow keys, Page Up and Down, Home and End,
+full screen. A leaf turning bows as paper does, its outer part leading as it lifts and trailing as it falls (`bend()` in `assets/site.js`). Its leaves turn by the arrow keys, Page Up and Down, Home and End,
 the wheel or a trackpad, a hand dragging a page, its corners, or the
 catchword at its foot; a thumb index of vellum tabs down its left edge
 turns straight to any folio; each spread has its own address
