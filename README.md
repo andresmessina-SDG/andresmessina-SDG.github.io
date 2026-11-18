@@ -41,15 +41,21 @@ catchword at its foot; a thumb index of vellum tabs down its left edge
 turns straight to any folio; each spread has its own address
 (`/#worldviews`). Turning a page keeps the address in step without adding to
 the history, so that Back leaves the book in one press; a jump by the
-contents, the thumb index or a link is a step that Back retraces. The left page of each work carries
-its miniature, which plays its clip as the book opens to it; the right
-page, what the work holds, set as a list in one, two or three columns
-where the page has room, or run on after red and blue pilcrows where it
-has not; where a work gives each of its parts an address (the church
-history's ages, the codex's questions, the worldviews' paintings), each
-item opens its own. The spread has one initial, the versal of the work's
-title; the text across from it opens with a line of small capitals, and
-ends with the way into the work, in red. The window's title names the open folio.
+contents, the thumb index or a link is a step that Back retraces.
+
+The pages are set as a modern book is, in the old materials: one family,
+EB Garamond, its labels in the face's own small capitals with lining
+figures; one accent, red, for what can be pressed; no ruling, initials or
+paragraph marks. The left page of each work carries a label (*No. 2 ·
+Animated watercolor*), the title, what the work is, and its picture, which
+plays its clip as the book opens to it, with the verse beneath it as its
+caption. The right page sets what the work holds as a numbered table, each
+part's name and, at the right, its task or its years: in one column, or two
+where the list is long, or run on as an index where even two will not go
+(`fitWithin()` in `assets/site.js` tries each); where a work gives each part
+an address (the church history's ages, the codex's questions, the
+worldviews' paintings), each opens its own. Beneath it, the work's
+particulars in a row (`details` in the strings) and the way in. The window's title names the open folio.
 At the foot of every right page is a line of Bach's chorale, its words put
 plainly into English or Spanish beside it where the staff leaves room, and
 a word that it can be pressed to be heard; with the organ
@@ -57,8 +63,8 @@ music drawn out (top right), each line sounds, in his four parts, as the
 book opens to it, so that the whole book plays the whole strophe. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
-The book is made as books were: its leaves ruled faintly around the text
-block, as a scribe ruled them before writing; edged red under gold; a
+The book is made as books were: its paper the real parchment of
+`assets/book/` quietened to a fine warm white (`tools/paper.py`); edged red under gold; a
 headband of red and gold silk at the head and tail of the spine; the lower
 outer corners a shade darker where readers' thumbs turn them; and a
 colophon that says what it is set in and when it was bound. The build ties
@@ -89,12 +95,12 @@ another, but without the shade.
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
 | `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the leather boards, the oak desk, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py` prepares them from the originals. |
-| `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; versals washed with colour, staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
+| `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
 | `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ. Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
 | `src/sdg.svg` | S.D.G. as paths with the pen strokes that write it, gilded with the real gold in `assets/book/gold.webp`; drawn by `tools/quill.py` from the page's own EB Garamond. |
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. Beside them, `<id>.mp4` is the short silent clip that plays over a plate while a pointer rests on it (fetched only then, and never on touch screens), recorded from each work's own site by `tools/record-clips.js`. Scriptura has no clip, since its plate is a desktop app. |
-| `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
+| `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
 | `tools/check.js` | Checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |

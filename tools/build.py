@@ -166,10 +166,18 @@ def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
     clip = f' data-clip="/assets/works/{w["clip"]}.mp4"' if "clip" in w else ""
     links = "\n".join(f'      <a href="{esc(l["href"])}">{esc(l["label"])}</a>' for l in w["links"])
     rows = []
+    ids, at = w.get("within_ids"), w.get("within_at", "")
     for k, item in enumerate(w["within"]):
-        m = re.match(r"(?:[IVXLC]+ )?(.+?)(?:: (.+))?$", item)
+        item = re.sub(r"^[IVXLC]+ ", "", item)                        # the table numbers its rows itself
+        # a part's name, and on the right what it is (a station's task) or when (an age's years)
+        m = (re.match(r"(.+), ((?:de )?\d[\d–]*(?:–today| a hoy)?)$", item) or re.match(r"(.+?): (.+)$", item)
+             or re.match(r"(.+)()$", item))
+        first = m[1].replace(" ", "\u00a0", 1) if len(m[1].split(" ")) > 2 else m[1]   # no first word alone at a line end
+        name = re.sub(r"(?<=\w)-(?=\w)", "-\u2060", esc(first))
+        if ids:
+            name = f'<a href="{esc(at.format(ids[k]))}">{name}</a>'
         what = f'<span class="st-what">{esc(m[2])}</span>' if m[2] else ""
-        rows.append(f'        <li><span class="st-n" aria-hidden="true">{k + 1:02d}</span><span class="st-name">{esc(m[1])}</span>{what}</li>')
+        rows.append(f'        <li><span class="st-n" aria-hidden="true">{k + 1:02d}</span><span class="st-name">{name}</span>{what}</li>')
     details = "\n".join(f'      <div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>' for k, v in w["details"])
     hid = f'{w["id"]}-parts'
     return f"""<article class="folio work {colour} modern" id="{w["id"]}" data-name="{esc(w["name"])}"{title_lang}>
@@ -185,7 +193,7 @@ def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
   <div class="page page-r {colour} modern">
     <div class="parts">
       <h3 id="{hid}">{esc(w["within_title"])}</h3>
-      <ol aria-labelledby="{hid}">
+      <ol aria-labelledby="{hid}" style="--rows:{-(-len(rows) // 2)}">
 {chr(10).join(rows)}
       </ol>
     </div>
@@ -254,7 +262,7 @@ def contents_html(t: dict) -> str:
     for i, (wid, v, rest, tl) in enumerate(rows):
         lang = f' lang="{tl}"' if tl else ""
         colour = "blue" if i % 2 == 0 else "red"
-        out.append(f'<li class="{colour}"><a href="#{wid}"{lang}><span class="c-v">{esc(v)}</span>{esc(rest)}'
+        out.append(f'<li class="{colour}"><a href="#{wid}"{lang}><span class="c-name">{esc(v)}{esc(rest)}</span>'
                    f'<span class="c-dots" aria-hidden="true"></span><span class="c-fol" aria-hidden="true">{ROMAN[i + 1]}</span></a></li>')
     return indent("\n".join(out), 12)
 

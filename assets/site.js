@@ -620,7 +620,7 @@
     const fits = (p) => p.scrollHeight <= p.clientHeight + 1;
     for (const s of book.spreads) {
       s.v.classList.remove('tight');
-      const w = s.r.querySelector('.within');
+      const w = s.r.querySelector('.within'), parts = s.r.querySelector('.parts');
       const p = w && w.querySelector('p'), items = w ? [...p.querySelectorAll('.it')] : [];
       // three columns are narrow: they are taken only if every item still keeps to one line
       const unbroken = () => { const h = items.map((it) => it.getBoundingClientRect().height); return Math.max(...h) < Math.min(...h) * 1.5; };
@@ -634,6 +634,17 @@
             p.style.setProperty('--rows', Math.ceil(items.length / Math.max(1, cols)));
             if (fits(s.r) && (cols < 3 || unbroken())) break;
           }
+        }
+        // a work's parts as a table: in one column, or two (down the first, then the second); only where
+        // neither will go even a size smaller are they run on as a paragraph, each after its number
+        if (parts) {
+          const forms = tight ? ['', 'two', 'run'] : ['', 'two'];
+          for (const form of forms) {
+            parts.classList.remove('two', 'run');
+            if (form) parts.classList.add(form);
+            if (fits(s.r)) break;
+          }
+          if (!tight && !fits(s.r)) continue;
         }
         if (fits(s.r)) break;
       }

@@ -26,7 +26,7 @@ bach_play = "Hear his name"
 materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding and the oak beneath."
 materials_link = "Where each comes from"
 # the colophon proper: how the book was made; {year} is the year it was built, in roman numerals
-imprint = "Set in EB Garamond, Georg Duffner’s revival of the romans of Claude Garamont and the italics of Robert Granjon, with its headings in IM Fell English, Igino Marini’s revival of the types Bishop John Fell bought for the press at Oxford around 1670. Bound in the year of our Lord {year}."
+imprint = "Set in EB Garamond, Georg Duffner’s revival of the romans of Claude Garamont and the italics of Robert Granjon, with Octavio Pardo’s completion of its small capitals and figures, in which its headings are set. Bound in the year of our Lord {year}."
 support = "Support the work"
 source = "Source on GitHub"
 
@@ -102,6 +102,9 @@ links = [
   { label = "Visit", href = "https://andresmessina-sdg.github.io/scriptura/" },
   { label = "Install on Linux", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
+layout = "modern"
+within_title = "What it holds"
+details = [["Platform", "Linux"], ["Languages", "English · Español · Русский"], ["Internet", "Not needed"], ["Cost", "Free"]]
 
 [[works]]
 id = "worldviews"
@@ -148,6 +151,9 @@ within_ids = [
 ]
 facts = ["22 worldviews · 4 acts"]
 links = [{ label = "Watch the paintings", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
+layout = "modern"
+within_title = "The twenty-two worldviews"
+details = [["Worldviews", "22"], ["Acts", "4"], ["Language", "English"], ["Cost", "Free"]]
 
 [[works]]
 id = "church-history"
@@ -179,6 +185,9 @@ within_at = "https://andresmessina-sdg.github.io/church-history/{}/"
 within_ids = ["apostolic", "ante-nicene", "nicene", "early-middle-ages", "high-middle-ages", "late-middle-ages", "reformation", "awakening", "missions", "global"]
 facts = ["From Pentecost to today"]
 links = [{ label = "Follow the river", href = "https://andresmessina-sdg.github.io/church-history/" }]
+layout = "modern"
+within_title = "The ten ages"
+details = [["Ages", "10"], ["From", "Pentecost to today"], ["Language", "English"], ["Cost", "Free"]]
 
 [[works]]
 id = "pilgrims-road"
@@ -258,3 +267,6 @@ within_ids = [
 ]
 facts = ["English · Español · Русский", "7 visions · 22 questions"]
 links = [{ label = "Open the codex", href = "https://andresmessina-sdg.github.io/revelation-explainer/" }]
+layout = "modern"
+within_title = "The twenty-two questions"
+details = [["Visions", "7"], ["Questions", "22"], ["Languages", "English · Español · Русский"], ["Cost", "Free"]]

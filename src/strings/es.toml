@@ -26,7 +26,7 @@ bach_play = "Escuchar su nombre"
 materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino, la piel de su encuadernación y el roble debajo."
 materials_link = "De dónde viene cada uno"
 # el colofón propiamente dicho: cómo se hizo el libro; {year} es el año en que se construyó, en números romanos
-imprint = "Compuesto en EB Garamond, la reconstrucción de Georg Duffner de las romanas de Claude Garamont y las cursivas de Robert Granjon, con los títulos en IM Fell English, la de Igino Marini de los tipos que el obispo John Fell compró para la imprenta de Oxford hacia 1670. Encuadernado en el año del Señor {year}."
+imprint = "Compuesto en EB Garamond, la reconstrucción de Georg Duffner de las romanas de Claude Garamont y las cursivas de Robert Granjon, con la compleción de Octavio Pardo de sus versalitas y cifras, en las que van los títulos. Encuadernado en el año del Señor {year}."
 support = "Apoyar el trabajo"
 source = "Código en GitHub"
 
@@ -102,6 +102,9 @@ links = [
   { label = "Visitar", href = "https://andresmessina-sdg.github.io/scriptura/es/" },
   { label = "Instalar en Linux", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
+layout = "modern"
+within_title = "Lo que contiene"
+details = [["Plataforma", "Linux"], ["Idiomas", "English · Español · Русский"], ["Internet", "No hace falta"], ["Precio", "Gratis"]]
 
 [[works]]
 id = "worldviews"
@@ -111,7 +114,7 @@ versal = "W"
 rest = "orldviews in Motion"
 name = "Worldviews in Motion"
 href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/"
-kind = "Acuarela animada, en inglés"
+kind = "Acuarela animada"
 plate = "worldviews"
 plate_alt = "El teísmo cristiano pintado en acuarela: el Dios trino sobre el mundo, unido a él por una cruz roja sobre la que se carga el pecado del hombre, sobre una línea de la historia desde la Creación hasta la Nueva Creación."
 epigraph = "… llevando cautivo todo pensamiento a la obediencia a Cristo."
@@ -149,6 +152,9 @@ within_ids = [
 ]
 facts = ["22 cosmovisiones · 4 actos"]
 links = [{ label = "Ver las pinturas", href = "https://andresmessina-sdg.github.io/Worldviews-in-Motion/" }]
+layout = "modern"
+within_title = "Las veintidós cosmovisiones"
+details = [["Cosmovisiones", "22"], ["Actos", "4"], ["Idioma", "Inglés"], ["Precio", "Gratis"]]
 
 [[works]]
 id = "church-history"
@@ -158,7 +164,7 @@ versal = "A"
 rest = " History of the Christian Church"
 name = "A History of the Christian Church"
 href = "https://andresmessina-sdg.github.io/church-history/"
-kind = "Sitio web, en inglés"
+kind = "Sitio web"
 plate = "church-history"
 plate_alt = "El río de la historia de la iglesia: una sola corriente desde Pentecostés que se divide en la Iglesia del Oriente, las iglesias ortodoxas y el Occidente latino, y más allá las ramas de la Reforma."
 epigraph = "Teniendo en derredor nuestro tan grande nube de testigos … corramos con paciencia la carrera que tenemos por delante."
@@ -181,6 +187,9 @@ within_at = "https://andresmessina-sdg.github.io/church-history/{}/"
 within_ids = ["apostolic", "ante-nicene", "nicene", "early-middle-ages", "high-middle-ages", "late-middle-ages", "reformation", "awakening", "missions", "global"]
 facts = ["Desde Pentecostés hasta hoy"]
 links = [{ label = "Seguir el río", href = "https://andresmessina-sdg.github.io/church-history/" }]
+layout = "modern"
+within_title = "Las diez épocas"
+details = [["Épocas", "10"], ["Desde", "Pentecostés hasta hoy"], ["Idioma", "Inglés"], ["Precio", "Gratis"]]
 
 [[works]]
 id = "pilgrims-road"
@@ -190,7 +199,7 @@ versal = "T"
 rest = "he Pilgrim’s Road"
 name = "The Pilgrim’s Road"
 href = "https://andresmessina-sdg.github.io/the-pilgrims-road/"
-kind = "Juego para el aula, en inglés"
+kind = "Juego para el aula"
 plate = "pilgrims-road"
 plate_alt = "El mapa de The Pilgrim’s Road: un camino dorado que pasa por las estaciones bajo un cielo nocturno, desde Belén."
 epigraph = "Pero anhelaban una mejor, esto es, celestial; por lo cual Dios no se avergüenza de llamarse Dios de ellos; porque les ha preparado una ciudad."
@@ -261,3 +270,6 @@ within_ids = [
 ]
 facts = ["English · Español · Русский", "7 visiones · 22 preguntas"]
 links = [{ label = "Abrir el códice", href = "https://andresmessina-sdg.github.io/revelation-explainer/?lang=es" }]
+layout = "modern"
+within_title = "Las veintidós preguntas"
+details = [["Visiones", "7"], ["Preguntas", "22"], ["Idiomas", "English · Español · Русский"], ["Precio", "Gratis"]]

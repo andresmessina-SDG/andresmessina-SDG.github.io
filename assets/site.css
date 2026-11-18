@@ -12,7 +12,6 @@
 @font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-cyrillic-used.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
 @font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-@font-face { font-family: "IM Fell English SC"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/fonts/im-fell-english-sc-roman-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 
 :root {
   color-scheme: light;
@@ -27,7 +26,7 @@
   --gold-leaf: linear-gradient(to bottom, #F0DA94 0%, #C9A045 42%, #A27A28 70%, #7C5B19 100%);
 
   --text: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --rubric: "IM Fell English SC", "EB Garamond", Georgia, serif;
+  --rubric: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;   /* set in its small capitals (below) */
 
   --measure: 37rem;
   --hero-ini: 136px;
@@ -105,7 +104,7 @@ h1 {
   font-weight: 400; font-size: clamp(2.6rem, 8.2vw, 4.75rem); line-height: 0.98; letter-spacing: -0.012em;
   text-wrap: balance;
 }
-.subtitle { text-wrap: balance; line-height: 1.3; margin: 14px 0 0; font-family: var(--rubric); font-size: 1.0625rem; letter-spacing: 0.06em; color: var(--vermilion); }
+.subtitle { text-wrap: balance; line-height: 1.3; margin: 14px 0 0; font-family: var(--rubric); font-size: 1.0625rem; letter-spacing: 0.08em; color: var(--muted); }
 
 .lede { margin: 44px 0 0; font-size: 1.3125rem; line-height: 1.55; text-wrap: pretty; }
 /* ---------- The maker: a gilt-ringed medallion and the credentials beside it ---------- */
@@ -118,41 +117,37 @@ h1 {
 .portrait img { display: block; box-sizing: border-box; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--vellum); object-fit: cover; }
 .creds { min-width: 0; }
 .creds p { margin: 0; text-wrap: pretty; }
-.cred-title { font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; color: var(--vermilion); line-height: 1.3; }
+.cred-title { font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.07em; color: var(--ink); line-height: 1.3; }
 .cred-fields { margin-top: 3px !important; font-size: 1.02rem; line-height: 1.4; }
 .cred-degrees { margin-top: 2px !important; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
 .cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: 0.05em; }
 .cred-fields .kept, .cred-degrees .kept { white-space: nowrap; }
 .cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; }
 
-/* a rubric: a heading written in red, as the scribe left them for the rubricator */
-.rubric { font-weight: 400; line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: 1rem; letter-spacing: 0.08em; color: var(--vermilion); }
-.rubric::before { content: "¶ "; content: "¶ " / ""; }
+/* a heading over a part of a page: a quiet label in small capitals */
+.rubric { line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: .9rem; letter-spacing: 0.09em; color: var(--muted); }
 
 /* ---------- The kalendar: today's date, a red-letter day, the day's verse, and the contents ---------- */
 .kalendar { margin-top: 64px; }
 .kal-date { display: flex; align-items: center; gap: 14px; margin: 14px 0 0; }
 .kal-date[hidden] { display: none; }
-.kal-num { font-size: 3.4rem; line-height: .8; font-weight: 500; color: var(--lapis); font-variant-numeric: lining-nums; }
+.kal-num { font-size: 3.4rem; line-height: .8; font-weight: 500; color: var(--ink); font-variant-numeric: lining-nums; }
 .kal-date.red .kal-num { color: var(--vermilion); }
 .kal-names { display: grid; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; line-height: 1.25; color: var(--ink); }
 .kal-names .kal-ad { color: var(--muted); font-size: .85rem; }
 .kal-feast { margin: 8px 0 0; font-style: italic; color: var(--vermilion); }
 .verse { margin: 18px 0 0; padding: 0; }
 .verse p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.125rem; text-wrap: pretty; }
-.verse p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--vermilion); }
 .lord { font-variant-caps: small-caps; }
-.verse cite, .epigraph cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--vermilion); }
+.verse cite, .epigraph cite { display: block; margin-top: 6px; font-style: normal; font-family: var(--rubric); font-size: 0.9rem; letter-spacing: 0.08em; color: var(--muted); }
 
 .contents { margin-top: 40px; }
-.contents ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 2px; }
-.contents a { display: flex; align-items: baseline; gap: 2px; padding: 3px 0; text-decoration: none; font-size: 1.1rem; transition: color .2s ease; }
+.contents ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; border-top: 1px solid rgba(120, 88, 50, .2); }
+.contents li { border-bottom: 1px solid rgba(120, 88, 50, .2); }
+.contents a { display: flex; align-items: baseline; gap: 0; padding: 5px 0; text-decoration: none; font-size: 1.1rem; transition: color .2s ease; }
 .contents a:hover { color: var(--vermilion); }
-.contents .c-v { font-weight: 600; font-size: 1.3em; line-height: 0; }
-.contents .blue .c-v { color: var(--lapis); }
-.contents .red .c-v { color: var(--vermilion); }
-.contents .c-dots { flex: 1; min-width: 24px; margin: 0 8px; border-bottom: 1.5px dotted var(--rule); transform: translateY(-.28em); }
-.contents .c-fol { font-family: var(--rubric); font-size: .9rem; letter-spacing: .06em; color: var(--vermilion); }
+.contents .c-dots { flex: 1; min-width: 24px; margin-left: 8px; }
+.contents .c-fol { font-family: var(--rubric); font-size: .9rem; letter-spacing: .08em; color: var(--muted); }
 
 /* ---------- Staves: Bach's chorale, a line to each folio, engraved by tools/engrave.py ---------- */
 .score { margin: 26px 0 0; width: fit-content; max-width: 100%; border-radius: 3px; }
@@ -221,7 +216,6 @@ h1 {
 .kind { margin: 8px 0 0; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; color: var(--muted); }
 .epigraph { margin: 22px 0 0; padding: 0; }
 .epigraph p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.0625rem; text-wrap: pretty; }
-.epigraph p::before { content: "¶ "; content: "¶ " / ""; font-style: normal; color: var(--c); }
 .what { margin: 14px 0 0; text-wrap: pretty; }
 .facts { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 2px 20px; font-size: 0.95rem; color: var(--muted); }
 .go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; }
@@ -326,7 +320,7 @@ h1 {
   /* each leaf's number in its head, at the outer corner, as the book numbers its leaves */
   html.leaves .leafnum {
     position: absolute; z-index: 2; top: 16px; right: calc(50% - 50vw + max(18px, env(safe-area-inset-right, 0px)));
-    font-family: var(--rubric); font-size: .9rem; letter-spacing: .07em; line-height: 1; color: var(--vermilion);
+    font-family: var(--rubric); font-size: .9rem; letter-spacing: .08em; line-height: 1; color: var(--muted);
   }
   html.leaves .anchor { height: 0; }
   html.leaves main > .work { margin-top: 0; }
@@ -649,16 +643,6 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 }
 .book .page-v { padding: var(--mt) var(--mi) var(--mb) var(--mo); }
 .book .page-r { padding: var(--mt) var(--mo) var(--mb) var(--mi); }
-/* the ruling: before he wrote, a scribe ruled each leaf in drypoint or a faint lead, a line down
-   either side of the text block and across its head and foot, each run from edge to edge of the page */
-.book .page {
-  --ruled: rgba(120, 88, 50, .11);
-  background:
-    linear-gradient(var(--ruled), var(--ruled)) var(--rl) 0 / 1px 100% no-repeat,
-    linear-gradient(var(--ruled), var(--ruled)) var(--rr) 0 / 1px 100% no-repeat,
-    linear-gradient(var(--ruled), var(--ruled)) 0 calc(var(--mt) - var(--u) * .35) / 100% 1px no-repeat,
-    linear-gradient(var(--ruled), var(--ruled)) 0 calc(var(--ph) - var(--mb) + var(--u) * .2) / 100% 1px no-repeat;
-}
 .book .page-v { --rl: calc(var(--mo) - 3px); --rr: calc(var(--pw) - var(--mi) + 2px); }
 .book .page-r { --rl: calc(var(--mi) - 3px); --rr: calc(var(--pw) - var(--mo) + 2px); }
 /* where a hand takes hold of a leaf to turn it, in its outer margin, the pointer is a hand */
@@ -837,7 +821,6 @@ html.thumbable .thumbs.slim {
 .book .page-r .what { margin-top: .1em; font-size: 1.25em; line-height: 1.55; }
 /* the spread has one initial, the versal of the title, and the text across from it opens as a printed
    book's does after one: its first line in small capitals, the first letter in the work's colour */
-.book .page-r .what::first-line { font-family: var(--rubric); letter-spacing: .03em; }
 .book .page-r .what::first-letter { color: var(--c); }
 /* the smaller text of a page set justified, with words broken where the language allows, as a scribe
    ruled a text block true; the larger text of a recto and of the maker's page is left ragged, since at
@@ -912,11 +895,24 @@ html.thumbable .thumbs.slim {
 .modern .parts { margin: 44px 0 0; }
 .book .page-r.modern .parts { margin: 0; }
 .modern .parts h3 { margin: 0 0 6px; font-size: .9rem; color: var(--muted); }
-.modern .parts ol { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid rgba(120, 88, 50, .2); }
+.modern .parts ol { margin: 0; padding: 0; list-style: none; border-top: 1px solid rgba(120, 88, 50, .2); }
 .modern .parts li {
   display: grid; grid-template-columns: 2em auto 1fr; column-gap: .7em; align-items: baseline;
-  padding: .32em 0; border-top: 1px solid rgba(120, 88, 50, .2); line-height: 1.35;
+  padding: .32em 0; border-bottom: 1px solid rgba(120, 88, 50, .2); line-height: 1.35;
 }
+.modern .st-name a { color: inherit; text-decoration: none; transition: color .2s ease; }
+.modern .st-name a:hover { color: var(--vermilion); }
+.modern .st-name a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+.modern .parts li:has(a) .st-name::after { content: "\00a0›"; content: "\00a0›" / ""; color: var(--muted); opacity: .55; }
+/* two columns, down the first and then the second */
+.modern .parts.two ol { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 6), auto); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.8em; }
+/* run on, as an index runs: each part after its number */
+.modern .parts.run ol { display: block; border: 0; padding-top: .2em; line-height: 1.55; text-wrap: pretty; }
+.modern .parts.run li { display: inline; padding: 0; border: 0; }
+.modern .parts.run li { margin-right: .55em; }   /* (a margin after, so that no line begins indented) */
+.modern .parts.run .st-n { margin-right: .3em; }
+.modern .parts.run .st-what { margin-left: .4em; }
+.modern .parts.run li:has(a) .st-name::after { content: none; }
 .modern .st-n { font-variant-numeric: lining-nums tabular-nums; font-size: .85em; color: var(--vermilion); }
 .modern .st-name { color: var(--ink); }
 .modern .st-what { text-align: right; color: var(--muted); }
@@ -952,7 +948,10 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
   top: calc(var(--mt) + var(--u) * .2);
   height: min(calc(var(--ph) - var(--mt) - var(--mb) - var(--u) * .6), calc(var(--vw) * 1275 / 170 * 1.25));
 }
-.book .page-v.modern.tight .plate-fig { width: 82%; }
+/* a verso short for its words: the summary a size smaller and closer, before the picture is made smaller */
+.book .page-v.modern.tight .what { font-size: 1em; line-height: 1.45; }
+.book .page-v.modern.tight .epigraph { margin-top: .6em; }
+.book .page-v.modern.tight .plate-fig { width: 92%; padding-top: .8em; }
 .book .page-r.modern .parts li { padding: .26em 0; font-size: max(.94em, calc(15px / var(--z, 1))); }
 .book .page-r.modern .details { margin-top: 1.3em; }
 .book .page-r.modern .details dd { font-size: max(.94em, calc(15px / var(--z, 1))); }
@@ -968,8 +967,21 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
   font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
   letter-spacing: .08em; font-weight: 500;
 }
-.face.modern .catch { color: var(--muted); }
-.face.modern .catch:hover, .face.modern .catch:focus-visible { color: var(--ink); }
-.face.modern .folnum { color: var(--muted); }
-.face.modern .catch.next::after, .face.modern .catch.prev::before { color: var(--muted); }
+.book .catch, .book .folnum { color: var(--muted); }
+.book .catch:hover, .book .catch:focus-visible { color: var(--ink); }
+.book .catch.next::after, .book .catch.prev::before { color: var(--muted); }
 .modern > .leafnum { font-family: var(--text); font-variant-caps: all-small-caps; letter-spacing: .08em; font-weight: 500; color: var(--muted); }
+/* on the desk, a long table in two columns */
+html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 6), auto); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 1.8em; }
+.book .page-r.modern.tight .parts li { font-size: max(.88em, calc(14px / var(--z, 1))); line-height: 1.3; }
+
+/* ---------- one family: wherever the labels' face is set, it is EB Garamond's own small capitals,
+   with lining figures, a little heavier so as to stand at the size of the text's lower case ---------- */
+.langs, .organ, .skip, .subtitle, .cred-title, .cred-link, .rubric, .kal-names, .verse cite, .epigraph cite,
+.contents .c-fol, .score-hear, .kind, .go, .within .pil.num, .foot-links, .motif-play, .leafnum,
+.folnum, .catch, .thumb span {
+  font-variant-caps: all-small-caps; font-variant-numeric: lining-nums; font-weight: 500;
+}
+.jj { font-variant-caps: normal; font-weight: 500; }   /* J.J., as Bach wrote it, in capitals */
+/* the tabs' names, a little closer set in the book, so that the longest keeps within its tab */
+.book .thumb span { letter-spacing: .012em; font-size: max(calc(var(--u) * .7), calc(12px / var(--z, 1))); }
