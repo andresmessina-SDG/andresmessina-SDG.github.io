@@ -596,6 +596,7 @@
     if (thumbs) { main.before(thumbs); slimThumbs(); }
     stage.remove();
     root.classList.remove('bound');
+    root.style.removeProperty('--book-r');
     if (themeColor) themeColor.setAttribute('content', PAGE);
     document.title = TITLE;
     unmark();
@@ -616,6 +617,8 @@
     b.style.setProperty('--sz', g.sz.toFixed(3));
     b.style.setProperty('--z', g.z.toFixed(3));
     book.stage.style.paddingLeft = `${Math.round(SIDE + THUMBS * g.z)}px`;
+    // the controls above the book end where the book does
+    root.style.setProperty('--book-r', `${Math.max(14, Math.round(window.innerWidth - b.getBoundingClientRect().right))}px`);
     fitWithin();
   }
 

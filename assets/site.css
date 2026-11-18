@@ -65,10 +65,12 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .jj span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
 .head-tools { display: flex; align-items: baseline; gap: 10px; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
-.langs a { color: var(--muted); text-decoration: none; padding: 4px 8px; transition: color .2s ease; }
-.langs a:hover { color: var(--ink); }
-.langs a[aria-current="page"] { color: var(--vermilion); }
-.langs span { color: var(--rule); }
+/* the languages: a choice of two, the one in use marked by a ground of its own */
+.langs a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; transition: color .2s ease, background-color .2s ease; }
+.langs a:hover { color: var(--ink); background: rgba(90, 70, 45, .06); }
+.langs a[aria-current="page"] { color: var(--ink); background: #FFFDF8; box-shadow: 0 0 0 .5px rgba(90, 70, 45, .25), 0 1px 2px rgba(60, 44, 28, .2); }
+.langs span { display: none; }
+.langs a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 1px; }
 
 /* the organ stop: drawn out, each page's line of the chorale sounds as the book opens to it */
 .organ {
@@ -77,11 +79,14 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 }
 .organ[hidden] { display: none; }
 .organ:hover { color: var(--ink); }
-.organ .stop { width: 17px; height: 17px; overflow: visible; }
-.organ .stop circle { fill: none; stroke: var(--gilt); stroke-width: 1.2; }
-.organ .stop .knob { fill: var(--vellum-edge); stroke: var(--muted); stroke-width: 1; transition: fill .25s ease, transform .25s ease; transform-origin: 10px 10px; }
-.organ[aria-pressed="true"] { color: var(--vermilion); }
-.organ[aria-pressed="true"] .knob { fill: var(--vermilion); stroke: #7A2414; transform: scale(1.18); }
+/* the organ: a switch, off to the left, on to the right and red */
+.organ .stop { width: 24px; height: 14px; overflow: visible; }
+.organ .stop .track { fill: none; stroke: currentColor; stroke-width: 1.1; opacity: .75; transition: fill .2s ease, stroke .2s ease, opacity .2s ease; }
+.organ .stop .knob { fill: currentColor; transition: transform .22s cubic-bezier(.3, .7, .3, 1), fill .2s ease; }
+.organ[aria-pressed="true"] { color: var(--ink); }
+.organ[aria-pressed="true"] .track { fill: var(--vermilion); stroke: var(--vermilion); opacity: 1; }
+.organ[aria-pressed="true"] .knob { fill: #FFFDF8; transform: translateX(10px); }
+@media (prefers-reduced-motion: reduce) { .organ .stop .knob { transition: none; } }
 .organ:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 30; padding: 6px 12px; background: var(--vellum); color: var(--ink); font-family: var(--rubric); letter-spacing: 0.05em; border: 1px solid var(--rule); }
@@ -515,12 +520,28 @@ html.bound .leaf { max-width: none; padding: 0; }
 /* the controls, in a narrow band of desk above the book */
 html.bound .head {
   position: fixed; z-index: 15; top: 0; left: 0; right: 0; height: 36px; align-items: center;
-  padding: 0 max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
-  justify-content: flex-end; pointer-events: none;
+  padding: 0 max(14px, var(--book-r, 14px), env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
+  justify-content: flex-end; pointer-events: none;   /* its right end over the book's (site.js sets --book-r) */
 }
 html.bound .head > * { pointer-events: auto; }
-html.bound .head-tools { align-items: center; gap: 4px; }
-html.bound .langs, html.bound .organ { font-size: 14px; }
+/* over the book, the controls on a strip of the paper: the full page, the organ and the language, each
+   kept apart from the next by a hairline */
+html.bound .head-tools {
+  align-items: center; gap: 0; padding: 2px; border-radius: 999px;
+  background: rgba(250, 247, 240, .9) url("/assets/book/paper.webp") 0 0 / 360px auto;
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .12), 0 8px 18px -10px rgba(60, 44, 28, .4);
+}
+html.bound .langs, html.bound .organ { font-size: 13.5px; }
+html.bound .fs, html.bound .organ, html.bound .langs a { height: 24px; box-sizing: border-box; border-radius: 999px; }
+html.bound .fs { width: 32px; }
+html.bound .organ { padding: 0 11px 0 10px; gap: 8px; }
+html.bound .organ:hover, html.bound .fs:hover { background: rgba(90, 70, 45, .07); }
+html.bound .langs { align-items: center; gap: 2px; padding: 0 1px; }
+html.bound .langs a { display: inline-flex; align-items: center; padding: 0 11px; }
+html.bound .head-tools > .organ:not([hidden]), html.bound .head-tools > .langs { position: relative; margin-left: 7px; }
+html.bound .head-tools > .organ:not([hidden])::before, html.bound .head-tools > .langs::before {
+  content: ""; position: absolute; left: -4px; top: 5px; bottom: 5px; width: 1px; background: rgba(90, 70, 45, .2);
+}
 html.bound .folio { display: none; }
 
 /* reading full screen: the browser's own bars go, and only the book is left */
@@ -543,10 +564,7 @@ html.bound .folio { display: none; }
               radial-gradient(ellipse 125% 115% at 45% 40%, transparent 55%, rgba(80, 58, 36, .16) 100%);
 }
 html.bound .langs a, html.bound .organ, html.bound .fs { color: #5F5345; }
-html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover { color: var(--ink); }
-html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: var(--vermilion); }
-html.bound .langs span { color: #9C8B73; }
-html.bound .organ .stop .knob { fill: #F3EDE0; stroke: #5F5345; }
+html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover, html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: var(--ink); }
 .book {
   --pw: 680px; --ph: 830px; --board: 13px; --u: 18px; --mi: 42px; --mo: 75px; --mt: 60px; --mb: 83px;
   position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
