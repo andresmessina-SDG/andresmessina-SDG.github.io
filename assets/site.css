@@ -875,7 +875,7 @@ html.thumbable .thumbs.slim {
 .book .colophon .promise { font-size: 1.25em; line-height: 1.45; }
 .book .colophon .bach { font-size: 1em; line-height: 1.6; }
 .book .colophon .motif-play { font-size: .9em; }
-.book .colophon.tight { gap: .6em; }
+.book .colophon.tight { gap: .5em; }
 .book .colophon.tight .bach { font-size: .92em; line-height: 1.5; }
 .book .colophon .foot-links { margin-top: .6em; }
 .book .finis { margin: 0; align-items: center; }

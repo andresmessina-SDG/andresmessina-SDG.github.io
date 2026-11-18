@@ -21,7 +21,7 @@ linkedin = "LinkedIn"
 works_label = "The works"
 sdg_gloss = "Soli Deo Gloria · To God alone be the glory"
 promise = "All five are free. None of them asks for an account or tracks you."
-bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This book borrows his habit, and its staves carry his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302, a line to each page; press one to hear it in his four parts. His name is a tune as well: in German, B is B\u00a0flat and H is B\u00a0natural."
+bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This book borrows his habit, and its staves carry his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302, a line to each page with Frederick Hedge’s English beside it; press one to hear it in his four parts, on a real organ. His name is a tune as well: in German, B is B\u00a0flat and H is B\u00a0natural."
 bach_play = "Hear his name"
 materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment of its paper, the cloth of its binding and the oak beneath."
 materials_link = "Where each comes from"
@@ -41,14 +41,14 @@ organ_hint = "Play each page’s line of the chorale as you turn to it"
 play_line = "Play this line"
 hear = "Hear it in four parts"
 number = "No."
-# each line of Luther's words, put plainly into English beside its staff
+# each line of Luther's words beside its staff, in Frederick H. Hedge's English (1853), made to be sung to this tune
 chorale_gloss = [
   "A mighty fortress is our God,",
-  "a good defense and weapon.",
-  "He helps us free from every need",
-  "that has now befallen us.",
-  "The old evil foe is now in deadly earnest;",
-  "great might and much cunning are his cruel armor;",
+  "a bulwark never failing;",
+  "our helper he, amid the flood",
+  "of mortal ills prevailing.",
+  "For still our ancient foe doth seek to work us woe;",
+  "his craft and power are great, and, armed with cruel hate,",
   "on earth is not his equal.",
 ]
 turn_next = "Turn the page"

@@ -36,7 +36,7 @@ try { ({ chromium } = require('playwright')); } catch (e) {
 const ROOT = path.resolve(__dirname, '..');
 const BUDGET_KB = { desk: 850, phone: 1000 };   // a first visit, with text as served compressed
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.webp': 'image/webp', '.png': 'image/png',
-  '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain' };
+  '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg', '.json': 'application/json', '.ico': 'image/x-icon', '.xml': 'application/xml', '.txt': 'text/plain' };
 
 function serve() {
   const server = http.createServer((req, res) => {

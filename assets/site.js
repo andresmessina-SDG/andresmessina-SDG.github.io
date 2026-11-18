@@ -21,12 +21,34 @@
 
 
   // ---------------------------------------------------------------------------------------------
-  // The organ: a small principal chorus in a stone room, made in the browser. It plays what a staff
-  // carries in its data-play attribute (from tools/engrave.py): every voice as [start, length, MIDI
-  // note] in beats, and the times at which each of its written notes sounds, to light them.
+  // The organ: a real one, the open stop of a pipe organ sampled in the room it stands in (VSCO 2:
+  // Community Edition, CC0; assets/organ/, made by tools/organ-assets.py). Its pipes are fetched only
+  // when music is near (a pointer on a staff, the organ drawn out) and played at the pitch each note
+  // asks; when a note is let go, the pipe's own release into that room follows. Until they have come, a
+  // small principal chorus made in the browser stands in for them. It plays what a staff carries in its
+  // data-play attribute (from tools/engrave.py): every voice as [start, length, MIDI note] in beats,
+  // and the times at which each of its written notes sounds, to light them.
   const Organ = (() => {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     let ctx = null, out = null, wave = null, current = null;
+    // the pipes: fetched as soon as they may be wanted, decoded once there is a hand to wake the sound
+    let fetched = null, pipes = null, decoding = null, pipesOut = null;
+    function fetchPipes() {
+      if (fetched || !Ctx || !window.fetch) return;
+      fetched = fetch('/assets/organ/pipes.json').then((r) => r.json()).then((info) =>
+        Promise.all(info.pipes.map((n) => fetch(`/assets/organ/${String(n).padStart(2, '0')}.mp3`).then((r) => {
+          if (!r.ok) throw new Error(r.status);
+          return r.arrayBuffer();
+        }).then((b) => [info.base + n, b]))).then((files) => ({ info, files }))).catch(() => null);
+    }
+    function decodePipes() {
+      fetchPipes();
+      if (decoding || !fetched) return;
+      decoding = fetched.then((got) => got && Promise.all(got.files.map(([m, b]) =>
+        new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)).then((buf) => [m, buf]))).then((bufs) => {
+        pipes = { info: got.info, bufs: new Map(bufs), keys: bufs.map(([m]) => m) };
+      })).catch(() => { pipes = null; });
+    }
     function room() {
       ctx = new Ctx();
       const len = Math.floor(ctx.sampleRate * 3.2);
@@ -45,6 +67,9 @@
       out.connect(dry).connect(limit);
       out.connect(verb).connect(wet).connect(limit);
       limit.connect(ctx.destination);
+      // the real pipes carry their room in them, and go straight to the limiter
+      pipesOut = ctx.createGain(); pipesOut.gain.value = 0.5;
+      pipesOut.connect(limit);
       const real = new Float32Array(9), imag = new Float32Array(9);
       [0, 1, 0.55, 0.3, 0.34, 0.07, 0.14, 0, 0.1].forEach((v, i) => { imag[i] = v; });
       wave = ctx.createPeriodicWave(real, imag);
@@ -80,7 +105,37 @@
       nodes.push(n);
       nodes.push(env);
     }
+    // a note on the real organ: the pipe nearest its pitch, retuned to it, speaking for as long as the
+    // note is held, and then its release into the room
+    function sounded(midi, at, len, level, nodes) {
+      const { info, bufs, keys } = pipes;
+      const near = keys.reduce((a, b) => (Math.abs(b - midi) < Math.abs(a - midi) ? b : a));
+      const buf = bufs.get(near), rate = Math.pow(2, (midi - near) / 12);
+      const held = Math.min(len * rate, info.head - 0.06);           // in the pipe's own time
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(level, at);
+      env.gain.setValueAtTime(level, at + held / rate);
+      env.gain.linearRampToValueAtTime(0, at + held / rate + 0.06);
+      env.connect(pipesOut);
+      const speak = ctx.createBufferSource();
+      speak.buffer = buf; speak.playbackRate.value = rate;
+      speak.connect(env);
+      speak.start(at, 0, held + 0.08);
+      // the release: taken from just before the key was let go, faded in under the sustain's fading out
+      const rel = ctx.createGain();
+      const r0 = at + held / rate - 0.02;
+      rel.gain.setValueAtTime(0, r0);
+      rel.gain.linearRampToValueAtTime(level, r0 + 0.06);
+      rel.connect(pipesOut);
+      const ring = ctx.createBufferSource();
+      ring.buffer = buf; ring.playbackRate.value = rate;
+      ring.connect(rel);
+      ring.start(r0, info.head + info.gap);
+      nodes.push(speak, ring, env, rel);
+    }
+    let waiting = null;
     function stop() {
+      waiting = null;
       if (!current) return;
       const c = current;
       current = null;
@@ -103,10 +158,28 @@
       stop();
       if (!ctx) room();
       if (ctx.state === 'suspended') ctx.resume();
+      decodePipes();
+      // the first time, the pipes are given a moment to be ready, so that a line is not begun on one
+      // organ and heard next on another
+      if (!pipes && decoding) {
+        const token = {};
+        waiting = token;
+        Promise.race([decoding, new Promise((r) => setTimeout(r, 1000))]).then(() => { if (waiting === token) { waiting = null; begin(data, lightsFor, done); } });
+        return;
+      }
+      begin(data, lightsFor, done);
+    }
+    function begin(data, lightsFor, done) {
       const beat = data.beat, t0 = ctx.currentTime + 0.08;
       const voices = new Set(data.events.map((e) => e[0])).size > data.lights.length ? 0.6 : 1;
       const c = { nodes: [], timers: [], lights: [], done };
-      for (const [s, l, m] of data.events) pipe(m, t0 + s * beat, Math.max(0.08, l * beat - 0.03), 0.5 * voices, c.nodes);
+      for (const [s, l, m] of data.events) {
+        const at = t0 + s * beat, len = Math.max(0.08, l * beat - 0.03);
+        if (pipes) {
+          sounded(m, at, len, voices, c.nodes);
+          if (m < 52) sounded(m - 12, at, len, voices * 0.35, c.nodes);   // a 16' under the bass
+        } else pipe(m, at, len, 0.5 * voices, c.nodes);
+      }
       data.lights.forEach((s, i) => {
         c.timers.push(setTimeout(() => {
           c.lights.forEach((e) => e.classList.remove('lit'));
@@ -115,10 +188,17 @@
         }, (0.08 + s * beat) * 1000));
       });
       const end = Math.max(...data.events.map(([s, l]) => s + l)) * beat;
-      c.timers.push(setTimeout(() => { if (current === c) stop(); }, (0.08 + end + 0.4) * 1000));
+      // the line is over when its last chord has died away in the room (the real pipes' release), and
+      // then let go without cutting anything short
+      const ring = pipes ? pipes.info.tail : 0.4;
+      c.timers.push(setTimeout(() => {
+        if (current !== c) return;
+        current = null; c.lights.forEach((e) => e.classList.remove('lit')); c.done();
+      }, (0.08 + end + ring) * 1000));
+      c.timers.push(setTimeout(() => c.lights.forEach((e) => e.classList.remove('lit')), (0.08 + end + 0.1) * 1000));
       current = c;
     }
-    return { ok: !!Ctx, play, stop };
+    return { ok: !!Ctx, play, stop, fetchPipes, wake: () => { if (!Ctx) return; if (!ctx) room(); if (ctx.state === 'suspended') ctx.resume(); decodePipes(); } };
   })();
 
   // every staff is an instrument: press it to hear its line in Bach's four parts
@@ -135,6 +215,8 @@
       score.tabIndex = 0;
       score.setAttribute('aria-label', `${UI.play_line || 'Play'}: ${svg.getAttribute('aria-label') || ''}`);
       score.addEventListener('click', () => playStaff(score));
+      score.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
+      score.addEventListener('focus', Organ.fetchPipes, { once: true });
       score.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playStaff(score); }
       });
@@ -145,6 +227,7 @@
       motif.hidden = false;
       const svg = motif.querySelector('svg.motif');
       const notes = motif.querySelectorAll('.motif .n'), letters = motif.querySelectorAll('.motif-letters text');
+      motif.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
       motif.addEventListener('click', () => {
         motif.classList.add('playing');
         Organ.play(svg, (i) => [notes[i], letters[i]].filter(Boolean), () => motif.classList.remove('playing'));
@@ -1003,9 +1086,11 @@
   const organBtn = document.querySelector('.organ');
   const organOn = () => organBtn && organBtn.getAttribute('aria-pressed') === 'true';
   if (organBtn && Organ.ok) {
-    if (store.get('organ') === '1') organBtn.setAttribute('aria-pressed', 'true');
+    if (store.get('organ') === '1') { organBtn.setAttribute('aria-pressed', 'true'); Organ.fetchPipes(); }
+    organBtn.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
     organBtn.addEventListener('click', () => {
       const on = !organOn();
+      if (on) Organ.wake();
       organBtn.setAttribute('aria-pressed', String(on));
       store.set('organ', on ? '1' : '0');
       if (on && book) { const score = book.spreads[book.cur].r.querySelector('.score'); if (score) playStaff(score); }

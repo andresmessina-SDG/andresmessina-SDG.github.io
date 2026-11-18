@@ -56,9 +56,11 @@ where the list is long, or run on as an index where even two will not go
 an address (the church history's ages, the codex's questions, the
 worldviews' paintings), each opens its own. Beneath it, the work's
 particulars in a row (`details` in the strings) and the way in. The window's title names the open folio.
-At the foot of every right page is a line of Bach's chorale, its words put
-plainly into English or Spanish beside it where the staff leaves room, and
-a word that it can be pressed to be heard; with the organ
+At the foot of every right page is a line of Bach's chorale, Luther's words
+beside it where the staff leaves room in Frederick Hedge's English or Juan
+Bautista Cabrera's Spanish (each made to be sung to the tune), and a word
+that it can be pressed to be heard, on a real pipe organ, sampled in its
+room, its pipes fetched only when music is near; with the organ
 music drawn out (top right), each line sounds, in his four parts, as the
 book opens to it, so that the whole book plays the whole strophe. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
@@ -105,6 +107,7 @@ another, but without the shade.
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. Beside them, `<id>.mp4` is the short silent clip that plays over a plate while a pointer rests on it (fetched only then, and never on touch screens), recorded from each work's own site by `tools/record-clips.js`. Scriptura has no clip, since its plate is a desktop app. |
 | `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
+| `tools/organ-assets.py` | Makes the organ's pipes, `assets/organ/`, from the open stop of the pipe organ in VSCO 2: Community Edition (CC0): for each note the chorale needs, the pipe's speech, its sustain and its release into the room. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
 | `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |

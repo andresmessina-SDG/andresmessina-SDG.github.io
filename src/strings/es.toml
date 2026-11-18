@@ -21,7 +21,7 @@ linkedin = "LinkedIn"
 works_label = "Las obras"
 sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
-bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si\u00a0bemol y H es si\u00a0natural."
+bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página, con la letra castellana de Juan Bautista Cabrera; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si\u00a0bemol y H es si\u00a0natural."
 bach_play = "Escuchar su nombre"
 materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino de su papel, la tela de su encuadernación y el roble debajo."
 materials_link = "De dónde viene cada uno"
@@ -41,15 +41,15 @@ organ_hint = "Tocar la línea del coral de cada página al pasar a ella"
 play_line = "Escuchar esta línea"
 hear = "Oírla a cuatro voces"
 number = "N.º"
-# cada línea de las palabras de Lutero, puesta llanamente en español junto a su pentagrama
+# cada línea de las palabras de Lutero junto a su pentagrama, en la versión de Juan Bautista Cabrera, hecha para cantarse con esta melodía
 chorale_gloss = [
   "Castillo fuerte es nuestro Dios,",
-  "buena defensa y buenas armas.",
-  "Nos libra de toda angustia",
-  "que ahora nos ha alcanzado.",
-  "El antiguo enemigo maligno va ahora en serio;",
-  "gran poder y mucha astucia son su cruel armadura;",
-  "en la tierra no hay quien se le iguale.",
+  "defensa y buen escudo.",
+  "Con su poder nos librará",
+  "en este trance agudo.",
+  "Con furia y con afán acósanos Satán;",
+  "por armas deja ver astucia y gran poder;",
+  "cual él no hay en la tierra.",
 ]
 turn_next = "Pasar la página"
 turn_prev = "Volver la página"
