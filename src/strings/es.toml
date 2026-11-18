@@ -40,6 +40,7 @@ fullscreen = "Leer a pantalla completa"
 organ_hint = "Tocar la línea del coral de cada página al pasar a ella"
 play_line = "Escuchar esta línea"
 hear = "Oírla a cuatro voces"
+number = "N.º"
 # cada línea de las palabras de Lutero, puesta llanamente en español junto a su pentagrama
 chorale_gloss = [
   "Castillo fuerte es nuestro Dios,",
@@ -211,6 +212,9 @@ within = [
 ]
 facts = ["11 estaciones · 33 estrellas"]
 links = [{ label = "Comenzar el viaje", href = "https://andresmessina-sdg.github.io/the-pilgrims-road/" }]
+layout = "modern"
+within_title = "Las once estaciones"
+details = [["Estaciones", "11"], ["Estrellas", "33"], ["Idioma", "Inglés"], ["Precio", "Gratis"]]
 
 [[works]]
 id = "revelation"

@@ -55,7 +55,7 @@ TIES = [
     (re.compile(r"(?<=[^\W\d_]) (?=\d+[:.,]\d)"), "\u00a0"),
     (re.compile(r"(?<=[A-Z][A-Z]) (?=\d)"), "\u00a0"),
 ]
-UNTIED = {"href", "path", "lang", "locale", "id", "clip", "plate", "title_lang", "within_at", "description", "title"}
+UNTIED = {"layout", "href", "path", "lang", "locale", "id", "clip", "plate", "title_lang", "within_at", "description", "title"}
 
 
 def tie(value, key: str = ""):
@@ -123,6 +123,9 @@ def works_html(t: dict) -> str:
     items = []
     for i, w in enumerate(t["works"]):
         colour = "blue" if i % 2 == 0 else "red"
+        if w.get("layout") == "modern":
+            items.append(modern_work(t, w, i, colour))
+            continue
         facts = "".join(f"<span>{esc(f)}</span>" for f in w["facts"])
         title_lang = f' lang="{w["title_lang"]}"' if "title_lang" in w else ""
         clip = f' data-clip="/assets/works/{w["clip"]}.mp4"' if "clip" in w else ""
@@ -153,6 +156,50 @@ def works_html(t: dict) -> str:
   </div>
 </article>""")
     return indent("\n\n".join(items), 4)
+
+
+def modern_work(t: dict, w: dict, i: int, colour: str) -> str:
+    """A work set as a modern book sets it (a prototype, on the work whose strings ask for it): on the
+    left page a label, the title, what the work is, its picture and the verse beneath as a caption; on
+    the right its parts as a numbered table, its particulars, the way in and its line of the chorale."""
+    title_lang = f' lang="{w["title_lang"]}"' if "title_lang" in w else ""
+    clip = f' data-clip="/assets/works/{w["clip"]}.mp4"' if "clip" in w else ""
+    links = "\n".join(f'      <a href="{esc(l["href"])}">{esc(l["label"])}</a>' for l in w["links"])
+    rows = []
+    for k, item in enumerate(w["within"]):
+        m = re.match(r"(?:[IVXLC]+ )?(.+?)(?:: (.+))?$", item)
+        what = f'<span class="st-what">{esc(m[2])}</span>' if m[2] else ""
+        rows.append(f'        <li><span class="st-n" aria-hidden="true">{k + 1:02d}</span><span class="st-name">{esc(m[1])}</span>{what}</li>')
+    details = "\n".join(f'      <div><dt>{esc(k)}</dt><dd>{esc(v)}</dd></div>' for k, v in w["details"])
+    hid = f'{w["id"]}-parts'
+    return f"""<article class="folio work {colour} modern" id="{w["id"]}" data-name="{esc(w["name"])}"{title_lang}>
+  <div class="page page-v {colour} modern">
+    <p class="kicker"><span class="kicker-n">{esc(t["number"])}\u00a0{i + 1}</span> <span class="kind">{esc(w["kind"])}</span></p>
+    <h2{title_lang}><a href="{esc(w["href"])}"><span class="versal">{esc(w["versal"])}</span>{esc(w["rest"])}</a></h2>
+    <p class="what">{esc(w["what"])}</p>
+    <figure class="plate-fig">
+      <a class="plate" href="{esc(w["href"])}"{clip}><img src="/assets/works/{w["plate"]}-1200.webp" srcset="/assets/works/{w["plate"]}-640.webp 640w, /assets/works/{w["plate"]}-1200.webp 1200w" sizes="(min-width: 1000px) 640px, (min-width: 640px) 37rem, calc(100vw - 90px)" width="1200" height="675" alt="{esc(w["plate_alt"])}" loading="lazy" decoding="async"></a>
+      <figcaption class="epigraph"><p>{lord(w["epigraph"])}</p> <cite>{esc(w["epigraph_ref"])}</cite></figcaption>
+    </figure>
+  </div>
+  <div class="page page-r {colour} modern">
+    <div class="parts">
+      <h3 id="{hid}">{esc(w["within_title"])}</h3>
+      <ol aria-labelledby="{hid}">
+{chr(10).join(rows)}
+      </ol>
+    </div>
+    <dl class="details">
+{details}
+    </dl>
+    <p class="go">
+{links}
+    </p>
+    <div class="score">
+{indent(chorale(i + 2) + gloss(i + 2, t), 6)}
+    </div>
+  </div>
+</article>"""
 
 
 def within_html(items: list, at: str = "", ids: list | None = None) -> str:

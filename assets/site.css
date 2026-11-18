@@ -882,3 +882,77 @@ html.thumbable .thumbs.slim {
 .book .colophon .materials, .book .colophon .imprint { font-size: max(.833em, calc(13.5px / var(--z, 1))); }
 /* the colophon proper, how the book was made and of what, at the foot of its page */
 .book .colophon .imprint { margin-top: auto; }
+
+/* ---------- Prototype: a work set as a modern book sets it (the Pilgrim's Road) ----------
+   the same vellum, ivy and initial; the type as a contemporary art book or catalogue would set it:
+   EB Garamond's own small capitals and lining figures for labels in place of Fell, one accent (red,
+   for what can be pressed), a numbered table for the parts, the particulars in a row, the verse as
+   the picture's caption, and no ruling */
+.modern .kicker, .modern .parts h3, .modern .details dt, .modern .epigraph cite, .modern .go {
+  font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
+  letter-spacing: .09em; font-weight: 500;
+}
+.modern .kicker { margin: 0; color: var(--muted); font-size: .9rem; }
+.modern .kicker .kind { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
+.modern .kicker-n { color: var(--ink); margin-right: .35em; }
+.modern .kicker-n::after { content: "\00a0·"; content: "\00a0·" / ""; color: var(--muted); }
+.modern h2 { margin-top: 6px; }
+.modern .what { margin-top: 12px; font-size: 1.125rem; line-height: 1.5; color: var(--ink); }
+.modern .plate-fig { margin: 22px 0 0; }
+.modern .plate { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: 0 1px 2px rgba(60, 40, 10, .18), 0 16px 30px -22px rgba(60, 40, 10, .55); }
+.modern .plate img { border: 0; }
+.modern .plate video { left: 0; top: 0; width: 100%; height: 100%; }
+.modern .epigraph { margin: 12px 0 0; padding: 0; max-width: 32em; text-align: left; line-height: 1.5; }
+.modern .epigraph p { display: inline; font-size: .95rem; line-height: 1.5; color: var(--muted); }
+.modern .epigraph p::before { content: none; }
+.modern .epigraph cite { display: inline; margin-left: .4em; font-style: normal; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+.modern .epigraph cite::before { content: "—\00a0"; content: "—\00a0" / ""; letter-spacing: 0; }
+
+.modern .parts { margin: 44px 0 0; }
+.book .page-r.modern .parts { margin: 0; }
+.modern .parts h3 { margin: 0 0 6px; font-size: .9rem; color: var(--muted); }
+.modern .parts ol { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid rgba(120, 88, 50, .2); }
+.modern .parts li {
+  display: grid; grid-template-columns: 2em auto 1fr; column-gap: .7em; align-items: baseline;
+  padding: .32em 0; border-top: 1px solid rgba(120, 88, 50, .2); line-height: 1.35;
+}
+.modern .st-n { font-variant-numeric: lining-nums tabular-nums; font-size: .85em; color: var(--vermilion); }
+.modern .st-name { color: var(--ink); }
+.modern .st-what { text-align: right; color: var(--muted); }
+.modern .details { margin: 22px 0 0; display: flex; flex-wrap: wrap; gap: 8px 2.2em; }
+.modern .details div { display: grid; gap: 1px; }
+.modern .details dt { font-size: .8rem; color: var(--muted); }
+.modern .details dd { margin: 0; font-variant-numeric: lining-nums; color: var(--ink); }
+.modern .go { margin-top: 22px; font-size: 1.05rem; }
+.modern .go a::after { content: "\00a0\00a0→"; content: "\00a0\00a0→" / ""; letter-spacing: 0; }
+/* on a narrow leaf a part's description goes beneath its name */
+@media (max-width: 520px) {
+  .modern .parts li { grid-template-columns: 2em 1fr; }
+  .modern .st-what { grid-column: 2; text-align: left; font-size: .95em; }
+  .modern .details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 1.5em; }
+}
+/* on the desk, the work's summary at the size of the book's, not the desk's lead */
+html.leaves.spread .modern .what { font-size: 1.3rem; line-height: 1.5; }
+html.leaves.spread .modern .epigraph p { line-height: 1.55; }
+
+/* in the book */
+.book .page.modern { background: none; }   /* no ruling */
+.book .page-v.modern .kicker, .book .page-r.modern .parts h3, .book .modern .details dt, .book .modern .epigraph cite { font-size: max(.8em, calc(13.5px / var(--z, 1))); }
+.book .page-v.modern h2:not(.rubric) { margin-top: .2em; font-size: 2em; line-height: 1.08; }
+.book .page-v.modern .versal { font-size: 2.3em; top: -.18em; }
+.book .page-v.modern .what { margin-top: .55em; font-size: 1.1em; line-height: 1.5; }
+.book .page-v.modern .plate-fig { margin: auto 0 0; padding-top: 1.1em; }
+.book .page-v.modern .plate { padding: 0; box-shadow: 0 1px 2px rgba(60, 40, 10, .2), 0 14px 26px -18px rgba(60, 40, 10, .5); }
+.book .page-v.modern .plate video { left: 0; top: 0; width: 100%; height: 100%; }
+.book .page-v.modern .epigraph { margin: .8em 0 0; padding: 0; text-align: left; line-height: 1.5; }
+.book .page-v.modern .epigraph p { font-size: max(.9em, calc(14px / var(--z, 1))); line-height: 1.5; text-wrap: pretty; }
+.book .page-v.modern .epigraph cite { margin-top: 0; }
+.book .page-v.blue.modern::before, .book .page-v.red.modern::before { top: calc(var(--mt) + var(--u) * 6.6); }
+.book .page-v.modern.tight .plate-fig { width: 82%; }
+.book .page-r.modern .parts li { padding: .26em 0; font-size: max(.94em, calc(15px / var(--z, 1))); }
+.book .page-r.modern .details { margin-top: 1.3em; }
+.book .page-r.modern .details dd { font-size: max(.94em, calc(15px / var(--z, 1))); }
+.book .page-r.modern .go { margin-top: 1.3em; font-size: max(.95em, calc(15px / var(--z, 1))); letter-spacing: .09em; }
+.book .page-r.modern.tight .parts li { padding: .14em 0; }
+.book .page-r.modern.tight .details, .book .page-r.modern.tight .go { margin-top: .9em; }
+.book .page-r.modern.tight .parts h3 { margin-bottom: .2em; }
