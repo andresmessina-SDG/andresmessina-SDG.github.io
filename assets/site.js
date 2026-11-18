@@ -470,7 +470,9 @@
 
   function face(page, side, back) {
     const f = el('div', `face ${side}${back ? ' back' : ''}`);
-    f.append(el('div', 'shade'), el('div', 'cast'));
+    f.shade = el('div', 'shade');
+    f.cast = el('div', 'cast');
+    f.append(f.shade, f.cast);
     if (page) f.append(page);
     return f;
   }
@@ -651,15 +653,31 @@
     L.a = a;
     L.sheet.style.transform = a ? `rotateY(${-a}deg)` : '';
     const lift = Math.sin(a * Math.PI / 180);
-    L.front.querySelector('.shade').style.opacity = a < 90 ? (a / 90) * 0.85 : 0;
-    L.back.querySelector('.shade').style.opacity = a > 90 ? ((180 - a) / 90) * 0.85 : 0;
+    const [shadeF, shadeB, castBelow, castBehind] = overlays(j);
+    shadeF.style.opacity = a < 90 ? (a / 90) * 0.85 : 0;
+    shadeB.style.opacity = a > 90 ? ((180 - a) / 90) * 0.85 : 0;
     // the shadow it casts on the page it is leaving, or the one it is coming down on
+    castBelow.style.opacity = a > 0 && a < 90 ? lift * 0.9 : 0;
+    castBehind.style.opacity = a >= 90 && a < 180 ? lift * 0.9 : 0;
+  }
+  // the light across leaf j and the shadows it casts: on the page below it and the page behind it
+  function overlays(j) {
+    const L = book.leaves[j];
     const below = j + 1 < book.N ? book.leaves[j + 1].front : book.fR;
     const behind = j > 0 ? book.leaves[j - 1].back : book.fL;
-    below.querySelector('.cast').style.opacity = a > 0 && a < 90 ? lift * 0.9 : 0;
-    behind.querySelector('.cast').style.opacity = a >= 90 && a < 180 ? lift * 0.9 : 0;
+    return [L.front.shade, L.back.shade, below.cast, behind.cast];
+  }
+  // While leaves turn, their light and shadows are laid on layers of their own, so that the pages under
+  // them are not drawn again at every step of the turn; at rest they go back into their pages, which
+  // keeps the book's memory small.
+  function lifting(js, on) {
+    for (const j of js) for (const o of overlays(j)) o.style.willChange = on ? 'opacity' : '';
   }
   function stack(active = []) {
+    // the leaves in motion have their light and shadows lifted (above); the rest are let down
+    if (book.lifted) lifting(book.lifted, false);
+    lifting(active, true);
+    book.lifted = active;
     // unturned leaves on the right, the first on top; turned ones on the left, the last on top;
     // a leaf in motion above them all
     book.leaves.forEach((L, j) => {

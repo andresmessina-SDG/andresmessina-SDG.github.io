@@ -28,9 +28,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "book"
 
 
-def save(img, name, q=82):
+def save(img, name, q=82, aq=100):
     OUT.mkdir(parents=True, exist_ok=True)
-    img.save(OUT / name, "WEBP", quality=q, method=6)
+    img.save(OUT / name, "WEBP", quality=q, alpha_quality=aq, method=6)
     print(f"wrote assets/book/{name} {img.size} {(OUT / name).stat().st_size // 1024} KB")
 
 
@@ -90,7 +90,12 @@ def main(src):
     W, H = m.size
     col = m.crop((int(W * 0.745), int(H * 0.035), int(W * 0.875), int(H * 0.86)))
     col = to_alpha(lift(col))
-    save(col.resize((170, round(170 * col.height / col.width)), Image.LANCZOS), "vine.webp", 72)   # shown at most about 160px wide
+    col = col.resize((170, round(170 * col.height / col.width)), Image.LANCZOS)   # shown at most about 160px wide
+    # the faintest of what was lifted (the vellum's own grain, never the paint) is let go, and the rest
+    # kept at a weight a page can carry: 110 KB, not 260, with nothing lost to the eye
+    a = np.asarray(col).copy()
+    a[a[..., 3] < 16] = 0
+    save(Image.fromarray(a, "RGBA"), "vine.webp", 72, 65)
 
     # parchment: the smooth (hair) side of a medieval leaf, a little lighter, made to tile
     p = Image.open(s / "perg2.jpg").convert("RGB")
@@ -107,7 +112,8 @@ def main(src):
 
     # the boards: worn oxblood calf
     lt = Image.open(s / "bible1.jpg").convert("RGB")
-    save(lt.resize((720, round(720 * lt.height / lt.width)), Image.LANCZOS), "leather.webp", 74)
+    # (only a band of it shows round the pages, and the spines of the folded thumb index: 540px will do)
+    save(lt.resize((540, round(540 * lt.height / lt.width)), Image.LANCZOS), "leather.webp", 62)
 
     # the desk: oak, darkened and warmed as old furniture is
     o = Image.open(s / "oak.png").convert("RGB")

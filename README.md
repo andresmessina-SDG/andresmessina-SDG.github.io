@@ -90,8 +90,9 @@ another, but without the shade.
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
 | `src/sdg.svg` | S.D.G. as paths with the pen strokes that write it, gilded with the real gold in `assets/book/gold.webp`; drawn by `tools/quill.py` from the page's own EB Garamond. |
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. Beside them, `<id>.mp4` is the short silent clip that plays over a plate while a pointer rests on it (fetched only then, and never on touch screens), recorded from each work's own site by `tools/record-clips.js`. Scriptura has no clip, since its plate is a desktop app. |
-| `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. |
+| `assets/fonts/` | EB Garamond and IM Fell English SC, served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
+| `tools/check.js` | Checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
 | `favicon.ico`, `apple-touch-icon.png`, `assets/icon-192.png`, `assets/og-*.png` | Icons and share images, drawn by `tools/render-images.js` from the real initial, parchment and gold. |
 
@@ -101,6 +102,15 @@ After changing anything in `src/` or `assets/`:
 
 ```bash
 python3 tools/build.py
+```
+
+Then check it (needs Node with Playwright and Chromium; with axe-core
+installed it also runs an accessibility scan). It prints each check and
+exits non-zero if any fails; name checks to run only those
+(`node tools/check.js zoom back`):
+
+```bash
+node tools/check.js
 ```
 
 After changing the initial or the share-image wording (needs Node with

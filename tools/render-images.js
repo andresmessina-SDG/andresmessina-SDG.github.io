@@ -32,7 +32,7 @@ const og = (lang) => {
   .sub{margin:18px 0 0;font-family:"IM Fell English SC";color:#B0361F;font-size:30px;letter-spacing:.05em}
   .staff{height:17px;margin:34px 0 0;position:relative;background:repeating-linear-gradient(to bottom,#D9CCB1 0 1px,transparent 1px 4px) no-repeat;background-size:100% 17px}
   .staff::after{content:"";position:absolute;right:0;top:0;width:8px;height:17px;background:linear-gradient(to right,#2A2420 0 1px,transparent 1px 3.5px,#2A2420 3.5px 8px)}
-  .works{margin:18px 0 0;font-family:"IM Fell English SC";font-size:22px;letter-spacing:.04em;color:#6F6556;line-height:1.45}
+  .works{margin:18px 0 0;font-family:"IM Fell English SC";font-size:22px;letter-spacing:.04em;color:#685E50;line-height:1.45}
   .works b{font-weight:400;color:#A27A28;padding:0 .35em}
   .sdg{margin:16px 0 0;text-align:right;font-weight:600;font-size:40px;letter-spacing:.14em;margin-right:-.14em;
     background:url("/assets/book/gold.webp") center / 160px 160px;-webkit-background-clip:text;background-clip:text;color:transparent;

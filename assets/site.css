@@ -4,11 +4,12 @@
    a line of Bach's chorale is ruled at the foot of every folio, and the last leads to S.D.G.
    Light only, by design. */
 
-/* EB Garamond and IM Fell English SC, served from this site (SIL Open Font License, see fonts/). */
+/* EB Garamond and IM Fell English SC, served from this site (SIL Open Font License, see fonts/). The roman
+   Cyrillic is cut to the letters the page sets (tools/build.py); any other falls to the next face. */
 @font-face { font-family: "EB Garamond"; font-style: italic; font-weight: 400; font-display: swap; src: url("/assets/fonts/eb-garamond-italic-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
 @font-face { font-family: "EB Garamond"; font-style: italic; font-weight: 400; font-display: swap; src: url("/assets/fonts/eb-garamond-italic-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "EB Garamond"; font-style: italic; font-weight: 400; font-display: swap; src: url("/assets/fonts/eb-garamond-italic-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-@font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-cyrillic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-cyrillic-used.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
 @font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400 600; font-display: swap; src: url("/assets/fonts/eb-garamond-roman-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: "IM Fell English SC"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/fonts/im-fell-english-sc-roman-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
@@ -18,7 +19,7 @@
   --vellum: #F7F2E6;
   --vellum-edge: #EFE6D2;
   --ink: #2A2420;
-  --muted: #6F6556;
+  --muted: #685E50;   /* 5:1 on the parchment, by day and by candle */
   --rule: #D9CCB1;
   --lapis: #23407A;
   --vermilion: #B0361F;
@@ -60,7 +61,7 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 
 /* ---------- Head of the score ---------- */
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #86631E; }   /* gilt, deep enough to read: 4.5:1 on the parchment */
+.jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #7E5D1B; }   /* gilt, deep enough to read: 4.8:1 on the parchment, by candle too */
 .jj span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
 .head-tools { display: flex; align-items: baseline; gap: 10px; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
@@ -226,9 +227,15 @@ h1 {
 .within .pil.num { font-family: var(--rubric); font-size: .9em; letter-spacing: .04em; }
 /* an item that opens its own place in the work is underlined faintly, so that it is known for a link
    among items that are not; a pointer or the keyboard inks it red */
-.within a { color: inherit; text-decoration: underline; text-decoration-color: rgba(111, 101, 86, .42); text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
+.within a { color: inherit; text-decoration: underline; text-decoration-color: rgba(104, 94, 80, .42); text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
 .within a:hover { color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .5); }
 .within a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
+/* under a finger, each is a fingertip tall at the least (24px, as WCAG asks), the text unmoved; and on the
+   leaves, where the page has the room, their lines a little further apart */
+@media (pointer: coarse) {
+  .within a { padding-block: 4px; }
+  html.leaves .within p { line-height: 1.75; }
+}
 
 /* ---------- The colophon, and the end of the score ---------- */
 .colophon { margin-top: 80px; display: grid; gap: 12px; }

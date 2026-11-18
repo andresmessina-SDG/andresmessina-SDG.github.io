@@ -125,10 +125,10 @@ def works_html(t: dict) -> str:
   </div>
   <div class="page page-r {colour}">
     <p class="what">{esc(w["what"])}</p>
-    <section class="within" aria-labelledby="{w["id"]}-within">
-      <h3 class="rubric" id="{w["id"]}-within">{esc(t["within"])}</h3>
+    <div class="within">
+      <h3 class="rubric">{esc(t["within"])}</h3>
       <p>{within_html(w["within"], w.get("within_at", ""), w.get("within_ids"))}</p>
-    </section>
+    </div>
     <p class="facts">{facts}</p>
     <p class="go">
 {links}
@@ -185,7 +185,7 @@ def contents_html(t: dict) -> str:
         lang = f' lang="{tl}"' if tl else ""
         colour = "blue" if i % 2 == 0 else "red"
         out.append(f'<li class="{colour}"><a href="#{wid}"{lang}><span class="c-v">{esc(v)}</span>{esc(rest)}'
-                   f'<span class="c-dots" aria-hidden="true"></span><span class="c-fol">{ROMAN[i + 1]}</span></a></li>')
+                   f'<span class="c-dots" aria-hidden="true"></span><span class="c-fol" aria-hidden="true">{ROMAN[i + 1]}</span></a></li>')
     return indent("\n".join(out), 12)
 
 
@@ -288,6 +288,35 @@ def head_links(t: dict, url: str, all_strings: dict) -> str:
     return "\n".join(lines)
 
 
+def cyrillic_cut(pages: list) -> None:
+    """EB Garamond's Cyrillic, cut to the letters the pages set: the full cut, kept beside it as the
+    source, is 25 KB for the six letters of «Русский». Needs fontTools and brotli (pip install fonttools
+    brotli); without them the cut already made is left as it is."""
+    used = sorted({c for page in pages for c in page if "\u0400" <= c <= "\u04ff"})
+    fonts = ROOT / "assets" / "fonts"
+    out = fonts / "eb-garamond-roman-cyrillic-used.woff2"
+    try:
+        from fontTools import subset
+    except ImportError:
+        print("fontTools is not installed: the Cyrillic cut is left as it is")
+        return
+    opts = subset.Options()
+    opts.flavor = "woff2"
+    opts.layout_features = ["*"]
+    font = subset.load_font(str(fonts / "eb-garamond-roman-cyrillic.woff2"), opts)
+    font.recalcTimestamp = False
+    cut = subset.Subsetter(opts)
+    cut.populate(unicodes=[ord(c) for c in used])
+    cut.subset(font)
+    tmp = out.with_suffix(".tmp")
+    subset.save_font(font, str(tmp), opts)
+    if out.exists() and out.read_bytes() == tmp.read_bytes():
+        tmp.unlink()
+    else:
+        tmp.replace(out)
+        print(f"wrote {out.relative_to(ROOT)} ({''.join(used)}, {out.stat().st_size // 1024} KB)")
+
+
 def version() -> str:
     h = hashlib.sha256()
     for p in sorted((ROOT / "assets").glob("site.*")):
@@ -353,6 +382,9 @@ def main() -> None:
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
         + "\n".join(urls) + "\n</urlset>\n", encoding="utf-8")
     print("wrote sitemap.xml")
+
+    cyrillic_cut([(ROOT / t["path"] / "index.html").read_text(encoding="utf-8") for t in strings.values()]
+                 + [(ROOT / "404.html").read_text(encoding="utf-8")])
 
 
 if __name__ == "__main__":
