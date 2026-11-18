@@ -644,6 +644,9 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .block.grab { cursor: grab; }
 .block.dragging, .block.dragging * { cursor: grabbing !important; }
 .book .page > :first-child { margin-top: 0; }
+/* nothing on a page is squeezed to make it fit: what will not go shows as spilling, and is set tighter
+   or the book laid aside (site.js) */
+.book .page > * { flex-shrink: 0; }
 /* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
    each on the text block's edge, a third of the way into its margin */
 .folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13px / var(--z, 1))); letter-spacing: .07em; line-height: 1.2; }
@@ -760,6 +763,9 @@ html.thumbable .thumbs.slim {
 .book .maker .byline { margin: 1.6em 0 auto; gap: 1em; }
 .book .maker .portrait { width: 4.6em; height: 4.6em; }
 .book .maker .creds p { line-height: 1.4; }
+/* where the maker's page is short for its words, the lede is set a size smaller and closer */
+.book .maker.tight .lede { margin-top: 1.4em; font-size: 1.12em; line-height: 1.45; }
+.book .maker.tight .byline { margin-top: 1.2em; }
 .book .maker .cred-fields { margin-top: .2em !important; }
 
 /* the kalendar, on the first recto: the day at the head, the contents in the middle, its line of the chorale at the foot */
