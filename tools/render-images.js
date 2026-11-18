@@ -24,7 +24,7 @@ const og = (lang) => {
   return `<!doctype html><html lang="${lang}"><meta charset="utf-8"><style>${fontFaces}
   html,body{margin:0}
   body{width:1200px;height:630px;box-sizing:border-box;padding:0 92px;display:grid;grid-template-columns:272px 1fr;gap:60px;align-items:center;
-    background:#F7F2E6 url("/assets/book/parchment.webp") 0 0 / 720px 720px;
+    background:#FAF6ED url("/assets/book/paper.webp") 0 0 / 720px 720px;
     color:#2A2420;font-family:"EB Garamond",serif}
   .ini img{width:272px;height:auto;display:block;border-radius:2px;box-shadow:0 0 0 .5px rgba(60,40,10,.3),0 2px 4px rgba(60,40,10,.3)}
   .jj{font-family:"IM Fell English SC";color:#A27A28;font-size:26px;letter-spacing:.1em;margin:0 0 22px}
