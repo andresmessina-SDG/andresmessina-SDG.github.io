@@ -94,6 +94,7 @@ def chorale(k: int) -> str:
     """Line k of the chorale (1 to 7), engraved by tools/engrave.py. After the last line's double bar
     stands Fine., as Bach wrote it at the end of his scores, before his S.D.Gl."""
     svg = (SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip()
+    svg = svg.replace('<svg class="score-notes"', f'<svg class="score-notes" data-line="{k}"', 1)   # its place in the strophe, for site.js
     if k == 7:
         m = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)" width="[\d.]+"', svg)
         w, h = float(m[1]), m[2]
@@ -288,7 +289,7 @@ def kalendar_js(verses: list, t: dict) -> str:
 
 def ui_json(t: dict) -> str:
     """The words site.js needs for the book's own controls, kept with the page's other words."""
-    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "opening_name", "colophon_name"]
+    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "organ_at", "opening_name", "colophon_name"]
     return esc(json.dumps({k: t[k] for k in keys}, ensure_ascii=False, separators=(",", ":")))
 
 

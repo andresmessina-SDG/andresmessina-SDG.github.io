@@ -151,10 +151,18 @@
       }
     }
     // play(svg, lightsFor, done): lightsFor(i) gives the elements to light for note i
-    function play(svg, lightsFor, done = () => {}) {
-      if (!Ctx || !svg || !svg.dataset.play) return;
-      let data;
-      try { data = JSON.parse(svg.dataset.play); } catch (e) { return; }
+    function play(svg, lightsFor, done = () => {}) { playAll([{ svg, lightsFor }], { done }); }
+    // playAll(lines, { done, onLine, whole }): the lines one after another as one piece, each [svg,
+    // lightsFor]; a breath between them, as a congregation takes one at each fermata; onLine(k) as
+    // line k begins. A whole piece is let alone by the turning of pages (see stopLine).
+    function playAll(lines, { done = () => {}, onLine = () => {}, whole = false } = {}) {
+      if (!Ctx) return;
+      const parts = [];
+      for (const l of lines) {
+        if (!l.svg || !l.svg.dataset.play) continue;
+        try { parts.push({ data: JSON.parse(l.svg.dataset.play), lightsFor: l.lightsFor }); } catch (e) {}
+      }
+      if (!parts.length) return;
       stop();
       if (!ctx) room();
       if (ctx.state === 'suspended') ctx.resume();
@@ -162,43 +170,51 @@
       // the first time, the pipes are given a moment to be ready, so that a line is not begun on one
       // organ and heard next on another
       if (!pipes && decoding) {
-        const token = {};
+        const token = { whole };
         waiting = token;
-        Promise.race([decoding, new Promise((r) => setTimeout(r, 1000))]).then(() => { if (waiting === token) { waiting = null; begin(data, lightsFor, done); } });
+        Promise.race([decoding, new Promise((r) => setTimeout(r, 1000))]).then(() => { if (waiting === token) { waiting = null; begin(parts, done, onLine, whole); } });
         return;
       }
-      begin(data, lightsFor, done);
+      begin(parts, done, onLine, whole);
     }
-    function begin(data, lightsFor, done) {
-      const beat = data.beat, t0 = ctx.currentTime + 0.08;
-      const voices = new Set(data.events.map((e) => e[0])).size > data.lights.length ? 0.6 : 1;
-      const c = { nodes: [], timers: [], lights: [], done };
-      for (const [s, l, m] of data.events) {
-        const at = t0 + s * beat, len = Math.max(0.08, l * beat - 0.03);
-        if (pipes) {
-          sounded(m, at, len, voices, c.nodes);
-          if (m < 52) sounded(m - 12, at, len, voices * 0.35, c.nodes);   // a 16' under the bass
-        } else pipe(m, at, len, 0.5 * voices, c.nodes);
-      }
-      data.lights.forEach((s, i) => {
-        c.timers.push(setTimeout(() => {
+    const BREATH = 0.45;
+    function begin(parts, done, onLine, whole) {
+      const t0 = ctx.currentTime + 0.08;
+      const c = { nodes: [], timers: [], lights: [], done, whole };
+      const at = (sec, f) => c.timers.push(setTimeout(f, sec * 1000));
+      let off = 0;
+      parts.forEach(({ data, lightsFor }, k) => {
+        const beat = data.beat;
+        const voices = new Set(data.events.map((e) => e[0])).size > data.lights.length ? 0.6 : 1;
+        for (const [s, l, m] of data.events) {
+          const when = t0 + off + s * beat, len = Math.max(0.08, l * beat - 0.03);
+          if (pipes) {
+            sounded(m, when, len, voices, c.nodes);
+            if (m < 52) sounded(m - 12, when, len, voices * 0.35, c.nodes);   // a 16' under the bass
+          } else pipe(m, when, len, 0.5 * voices, c.nodes);
+        }
+        at(0.08 + off, () => onLine(k));
+        data.lights.forEach((s, i) => at(0.08 + off + s * beat, () => {
           c.lights.forEach((e) => e.classList.remove('lit'));
           c.lights = lightsFor(i);
           c.lights.forEach((e) => e.classList.add('lit'));
-        }, (0.08 + s * beat) * 1000));
+        }));
+        const end = Math.max(...data.events.map(([s, l]) => s + l)) * beat;
+        at(0.08 + off + end + 0.1, () => c.lights.forEach((e) => e.classList.remove('lit')));
+        off += end + BREATH;
       });
-      const end = Math.max(...data.events.map(([s, l]) => s + l)) * beat;
-      // the line is over when its last chord has died away in the room (the real pipes' release), and
-      // then let go without cutting anything short
+      // the piece is over when its last chord has died away in the room (the real pipes' release), and
+      // is then let go without cutting anything short
       const ring = pipes ? pipes.info.tail : 0.4;
-      c.timers.push(setTimeout(() => {
+      at(0.08 + off - BREATH + ring, () => {
         if (current !== c) return;
         current = null; c.lights.forEach((e) => e.classList.remove('lit')); c.done();
-      }, (0.08 + end + ring) * 1000));
-      c.timers.push(setTimeout(() => c.lights.forEach((e) => e.classList.remove('lit')), (0.08 + end + 0.1) * 1000));
+      });
       current = c;
     }
-    return { ok: !!Ctx, play, stop, fetchPipes, wake: () => { if (!Ctx) return; if (!ctx) room(); if (ctx.state === 'suspended') ctx.resume(); decodePipes(); } };
+    // a page turned, or a layout changed: a single line stops; the whole chorale plays on
+    const stopLine = () => { if ((waiting && !waiting.whole) || (current && !current.whole)) stop(); };
+    return { ok: !!Ctx, play, playAll, stop, stopLine, playing: () => !!current || !!waiting, fetchPipes, wake: () => { if (!Ctx) return; if (!ctx) room(); if (ctx.state === 'suspended') ctx.resume(); decodePipes(); } };
   })();
 
   // every staff is an instrument: press it to hear its line in Bach's four parts
@@ -666,7 +682,7 @@
 
   function unbuild() {
     if (!book) return;
-    Organ.stop();
+    Organ.stopLine();
     // (the keys are the document's, so their listener goes with the book, or a book bound again would hear each key twice)
     document.removeEventListener('keydown', book.onKey);
     const { spreads, stage } = book;
@@ -685,7 +701,6 @@
     unmark();
     document.querySelectorAll('[inert]').forEach((e) => e.removeAttribute('inert'));
     book = null;
-    if (organBtn) organBtn.hidden = true;
     if (fsBtn) fsBtn.hidden = true;
     if (!printing) leavesOn();
     if (cur > 0) { const f = spreads[cur].folio, a = f.previousElementSibling; (a && a.classList.contains('anchor') ? a : f).scrollIntoView(); }
@@ -892,7 +907,7 @@
     if (book.busy) { if (k !== book.target) book.queued = [k, opts]; return; }
     if (k === book.cur) return;
     book.target = k;
-    Organ.stop();
+    Organ.stopLine();
     const from = book.cur;
     const fwd = k > from;
     const js = fwd ? range(from, k) : range(k, from).reverse();
@@ -955,10 +970,6 @@
     }
     const plate = s.v.querySelector('.plate[data-clip]');
     if (plate && turned) setTimeout(() => { if (book && book.cur === k) playClip(plate); }, 500);
-    if (organOn() && turned) {
-      const score = s.r.querySelector('.score');
-      if (score) setTimeout(() => { if (book && book.cur === k) playStaff(score); }, 350);
-    }
   }
 
   // lift a corner a little under the pointer, as a hand would
@@ -1041,7 +1052,7 @@
         block.classList.add('dragging');
         stack([j]);
         try { block.setPointerCapture(e.pointerId); } catch (err) {}
-        Organ.stop();
+        Organ.stopLine();
       }
       const d = book.drag;
       const x = (e.clientX - p.left) / p.width * 2;   // 0 at the left edge, 1 at the gutter, 2 at the right edge
@@ -1084,17 +1095,42 @@
 
   // ---- the organ stop ----
   const organBtn = document.querySelector('.organ');
-  const organOn = () => organBtn && organBtn.getAttribute('aria-pressed') === 'true';
+  // The organ: the chorale played through, all seven lines as one piece, from the line of the page the
+  // reader is at to the Fine. Turning pages leaves it playing; the staff that sounds lights when its page
+  // is open; beside the switch, the line it has come to. Pressing a staff plays that line alone instead.
+  const organAt = organBtn && el('span', 'organ-at', { 'aria-hidden': 'true' });
+  if (organAt) organBtn.append(organAt);
+  const staves = () => [...document.querySelectorAll('svg.score-notes[data-line]')]
+    .filter((v) => !v.closest('.copy, .nf')).sort((a, b) => a.dataset.line - b.dataset.line)
+    .filter((v, i, all) => i === 0 || v.dataset.line !== all[i - 1].dataset.line);
+  function lineHere() {
+    if (book) return book.cur;
+    // on the leaves: the folio that fills the upper half of the window
+    const folios = [...main.querySelectorAll(':scope > .folio')];
+    let k = 0;
+    folios.forEach((f, i) => { if (f.getBoundingClientRect().top < window.innerHeight * 0.5) k = i; });
+    return k;
+  }
+  function organState(on, k) {
+    organBtn.setAttribute('aria-pressed', String(on));
+    organBtn.classList.toggle('sounding', on);
+    if (organAt) organAt.textContent = on && k != null ? (UI.organ_at || '{k}/{n}').replace('{k}', k + 1).replace('{n}', 7) : '';
+  }
+  function playChorale() {
+    const all = staves();
+    const from = Math.min(lineHere(), all.length - 1);
+    const lines = all.slice(from).map((svg) => { const notes = svg.querySelectorAll('.n'); return { svg, lightsFor: (i) => (notes[i] ? [notes[i]] : []) }; });
+    organState(true, from);
+    Organ.playAll(lines, { whole: true, onLine: (i) => organState(true, from + i), done: () => organState(false) });
+  }
   if (organBtn && Organ.ok) {
-    if (store.get('organ') === '1') { organBtn.setAttribute('aria-pressed', 'true'); Organ.fetchPipes(); }
+    organBtn.hidden = false;
     organBtn.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
+    organBtn.addEventListener('focus', Organ.fetchPipes, { once: true });
     organBtn.addEventListener('click', () => {
-      const on = !organOn();
-      if (on) Organ.wake();
-      organBtn.setAttribute('aria-pressed', String(on));
-      store.set('organ', on ? '1' : '0');
-      if (on && book) { const score = book.spreads[book.cur].r.querySelector('.score'); if (score) playStaff(score); }
-      else Organ.stop();
+      if (organBtn.getAttribute('aria-pressed') === 'true') { Organ.stop(); organState(false); return; }
+      Organ.wake();
+      playChorale();
     });
   }
 
@@ -1123,7 +1159,7 @@
     const g = geometry();
     const crowded = tooFull && tooFull.f === g.f && window.innerWidth < tooFull.w + 40 && window.innerHeight < tooFull.h + 16;
     const want = !printing && main && wideEnough.matches && g.ok && !crowded;
-    if (want && !book) { build(); if (organBtn && Organ.ok) organBtn.hidden = false; if (fsBtn && canFull) fsBtn.hidden = false; }
+    if (want && !book) { build(); if (fsBtn && canFull) fsBtn.hidden = false; }
     else if (!want && book) unbuild();
     else if (book) layout();
     if (book) { book.f = g.f; check(); }

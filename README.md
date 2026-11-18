@@ -60,9 +60,12 @@ At the foot of every right page is a line of Bach's chorale, Luther's words
 beside it where the staff leaves room in Frederick Hedge's English or Juan
 Bautista Cabrera's Spanish (each made to be sung to the tune), and a word
 that it can be pressed to be heard, on a real pipe organ, sampled in its
-room, its pipes fetched only when music is near; with the organ
-music drawn out (top right), each line sounds, in his four parts, as the
-book opens to it, so that the whole book plays the whole strophe. The last
+room, its pipes fetched only when music is near. The organ switch (top
+right over the book; in the lower corner on the leaves) plays the chorale
+through as one piece, from the line of the page the reader is at to the
+*Fine*, a breath at each fermata: turning pages leaves it playing, the staff
+that sounds lights when its page is open, and the switch shows the line it
+has come to. Pressing a staff plays that line alone. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
 The book is made as books were: its paper the real parchment of
