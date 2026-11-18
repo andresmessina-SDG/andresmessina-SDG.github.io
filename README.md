@@ -15,7 +15,8 @@ at the end.
 ## The book and the page
 
 `index.html` is one document, read in order, made of seven folios: the
-opening (the maker, and a kalendar with the day's verse and the contents),
+opening (the maker, his name spelled out beside a real historiated initial A,
+and a calendar with the day's verse and the contents),
 one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
 
@@ -27,13 +28,20 @@ styles in `assets/site.css`: the zoom grows as the square root of the
 window's height; the pages fill the window, shaped anywhere from a book of
 hours' 2:3 to a squarish 0.88; the text is a 36th of the page's width, so a
 line holds about 66 to 70 characters, and every other size is a step of a
-minor third from it; the margins widen from the gutter outward and from the
-head down, as a manuscript's do. F, or the button above the book, reads it
+minor third from it, never less than 15px on the screen, and the small
+capitals never less than 13; the margins widen from the gutter outward and
+from the head down, as a manuscript's do. The reader's own zoom (Ctrl +) is
+kept: the type is set as it would be at their 100% and grows with the zoom,
+and where the pages can no longer hold it the book is laid aside for the
+leaves on the desk (below); a page that would otherwise spill sets its
+smaller text a size smaller first. F, or the button above the book, reads it
 full screen. Its leaves turn by the arrow keys, Page Up and Down, Home and End,
 the wheel or a trackpad, a hand dragging a page, its corners, or the
 catchword at its foot; a thumb index of vellum tabs down its left edge
 turns straight to any folio; each spread has its own address
-(`/#worldviews`), and Back turns back. The left page of each work carries
+(`/#worldviews`). Turning a page keeps the address in step without adding to
+the history, so that Back leaves the book in one press; a jump by the
+contents, the thumb index or a link is a step that Back retraces. The left page of each work carries
 its miniature, which plays its clip as the book opens to it; the right
 page, what the work holds, set as a list in one, two or three columns
 where the page has room, or run on after red and blue pilcrows where it
@@ -41,7 +49,7 @@ has not; where a work gives each of its parts an address (the church
 history's ages, the codex's questions, the worldviews' paintings), each
 item opens its own. The window's title names the open folio.
 At the foot of every right page is a line of Bach's chorale; with the organ
-stop drawn out (top right), each line sounds, in his four parts, as the
+music drawn out (top right), each line sounds, in his four parts, as the
 book opens to it, so that the whole book plays the whole strophe. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
@@ -58,7 +66,12 @@ page, a folio to a leaf, as the church history's eras are: each leaf holds
 still at its foot for a moment's scrolling, then the next rises over it and
 the one beneath dims. Each work's line of the chorale is at the foot of its
 leaf, and the thumb index is folded to slim spines of calf at the left
-edge, drawn out by a touch. Without JavaScript, and on paper, it is simply
+edge, drawn out by a touch, and drawn out for a moment once a visit as the
+page opens, so that it is known for what it is. On a window wide but too
+short for the book (a laptop whose screen is scaled up, from 1000px wide),
+the leaves lie on the oak desk instead: each a sheet with the desk at either
+side and its two pages side by side as in the book, under the same lettered
+tabs of vellum as the book's, the type the book's at the reader's zoom. Without JavaScript, and on paper, it is simply
 one long page. Nothing moves for readers who ask for stillness: the book
 still binds, and its leaves turn at once; the leaves still lie one over
 another, but without the shade.

@@ -166,7 +166,7 @@ def within_html(items: list, at: str = "", ids: list | None = None) -> str:
 
 def thumbs_html(t: dict) -> str:
     """The thumb index: a tab for each folio, as a Bible's thumb index has one for each book."""
-    rows = [("opening", t["kalendar"], t["kalendar"], None)]
+    rows = [("opening", t["opening_name"], t["opening_name"], None)]
     rows += [(w["id"], w["short"], w["name"], w.get("title_lang")) for w in t["works"]]
     rows.append(("colophon", t["colophon_name"], t["colophon_name"], None))
     out = []
@@ -210,7 +210,7 @@ def kalendar_js(verses: list, t: dict) -> str:
 
 def ui_json(t: dict) -> str:
     """The words site.js needs for the book's own controls, kept with the page's other words."""
-    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "kalendar", "colophon_name"]
+    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "opening_name", "colophon_name"]
     return esc(json.dumps({k: t[k] for k in keys}, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -315,6 +315,8 @@ def main() -> None:
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,
                   "head_links": head_links(t, url, strings),
+                  # site.js from the head, fetched first: on a slow line the book waits on it
+                  "head_script": f'<script src="/assets/site.js?v={v}" defer fetchpriority="high"></script>\n',
                   "langs": langs_nav(t),
                   "chorale_1": indent(chorale(1), 10), "chorale_7": indent(chorale(7), 10),
                   "motif": motif, "sdg": sdg, "evening": evening,
@@ -335,7 +337,7 @@ def main() -> None:
     values = {**{k: v_ for k, v_ in en.items() if isinstance(v_, str)},
               "page_title": f'{en["nf_title"]} · Andres Messina', "v": v,
               "description": en["nf_p"],
-              "head_links": '<meta name="robots" content="noindex">',
+              "head_links": '<meta name="robots" content="noindex">', "head_script": "",
               "nf_works": nf_works, "evening": evening, "chorale_7": indent(chorale(7), 6), "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
               "es_nf_h": es["nf_h"], "es_nf_p": es["nf_p"], "es_nf_home": es["nf_home"]}
     (ROOT / "404.html").write_text(render(head, values) + render(notfound, values), encoding="utf-8")

@@ -88,8 +88,10 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 
 /* ---------- The opening: gilded initial ---------- */
 .opening { position: relative; margin-top: clamp(48px, 9vw, 96px); padding-left: calc(var(--hero-ini) + var(--hero-gap)); min-height: calc(var(--hero-ini) + 12px); }
-/* the opening initial: an A cut from a thirteenth-century Italian Bible, on burnished gold (assets/book/initial-a.webp) */
-.initial { position: absolute; left: 0; top: 12px; width: var(--hero-ini); aspect-ratio: 560 / 627; }
+/* the opening initial: an A cut from a thirteenth-century Italian Bible, on burnished gold (assets/book/initial-a.webp).
+   A historiated initial reads as a picture before it reads as a letter, so it stands beside the name as a
+   miniature and the name is spelled out in full; until the picture comes, its place is held in vellum */
+.initial { position: absolute; left: 0; top: 12px; width: var(--hero-ini); aspect-ratio: 560 / 627; border-radius: 1.5px; background: var(--vellum-edge); box-shadow: inset 0 0 0 .5px rgba(60, 40, 10, .3); }
 .initial img { display: block; width: 100%; height: 100%; border-radius: 1.5px; box-shadow: 0 0 0 .5px rgba(60, 40, 10, .3), 0 1px 2px rgba(60, 40, 10, .25); }
 /* the light a pointer casts on its gold (site.js sets --gx and --gy) */
 .initial::after {
@@ -222,12 +224,11 @@ h1 {
 .within .pil.r { color: var(--vermilion); }
 .within .pil.b { color: var(--lapis); }
 .within .pil.num { font-family: var(--rubric); font-size: .9em; letter-spacing: .04em; }
-/* an item that opens its own place in the work reads as the others do, until a pointer or the keyboard comes to it */
-.within a { color: inherit; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
-.within a:hover { color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .45); }
+/* an item that opens its own place in the work is underlined faintly, so that it is known for a link
+   among items that are not; a pointer or the keyboard inks it red */
+.within a { color: inherit; text-decoration: underline; text-decoration-color: rgba(111, 101, 86, .42); text-decoration-thickness: 1px; text-underline-offset: .2em; transition: color .2s ease, text-decoration-color .2s ease; }
+.within a:hover { color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .5); }
 .within a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
-/* where there is no pointer to come to them, they are underlined faintly from the first */
-@media (hover: none) { .within a { text-decoration-color: rgba(111, 101, 86, .35); } }
 
 /* ---------- The colophon, and the end of the score ---------- */
 .colophon { margin-top: 80px; display: grid; gap: 12px; }
@@ -309,6 +310,65 @@ h1 {
   html.leaves .anchor { height: 0; }
   html.leaves main > .work { margin-top: 0; }
   html.leaves .colophon { margin-top: 0; }
+}
+
+/* ---------- Leaves on the desk ----------
+   Where the window is wide but too short for the book (a laptop whose screen is scaled up, a window
+   drawn short), or the reader's zoom asks for larger type than the book's pages hold, the leaves lie
+   on the desk instead: each a sheet with the oak at either side, its folio's two pages side by side as
+   in the book's spreads, and the thumb index standing out from under the sheets at the left, lettered.
+   The first sheet carries the page's head (site.js sets --cap, how far above its folio the head
+   begins). Its type is the book's at the reader's zoom, 20px at the least (site.js sets --desk-u),
+   and everything on the desk is measured from it. */
+@media screen {
+  html.leaves.spread { font-size: calc(var(--desk-u, 20px) * .8); background: #3B2516 url("/assets/book/oak.webp") 50% 0 / 900px 900px fixed; }
+  html.leaves.spread body { background: none; padding: 0; font-size: 1.25rem; }
+  html.leaves.spread .leaf { max-width: none; padding: 28px 40px 0 136px; }
+  html.leaves.spread .head, html.leaves.spread main > .folio { box-sizing: border-box; width: min(73.75rem, 100%); margin-left: auto; margin-right: auto; }
+  html.leaves.spread .head { position: relative; z-index: 1; padding: 40px 72px 0 104px; }
+  html.leaves.spread main > .folio {
+    --leaf-head: 64px;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(44px, 4.5vw, 76px); align-items: start;
+    padding: var(--leaf-head) 72px 88px 104px;
+  }
+  html.leaves.spread main > .anchor:first-child + .folio { padding-top: 8px; }
+  html.leaves.spread main > .folio::after {
+    left: 0; right: 0; border-radius: 2px;
+    box-shadow: 0 0 0 .5px rgba(40, 20, 5, .4), 0 -14px 26px -18px rgba(0, 0, 0, .6), 0 10px 28px rgba(0, 0, 0, .4);
+  }
+  html.leaves.spread main > .anchor:first-child + .folio::after { content: ""; top: calc(-1 * var(--cap, 0px)); }
+  html.leaves.spread main > .folio > .shade { left: 0; right: 0; }
+  html.leaves.spread .leafnum { top: 24px; right: 30px; }
+  /* the two pages, as the book has them: the maker beside the kalendar, a work's title and miniature
+     beside what it holds, the colophon beside S.D.G. */
+  html.leaves.spread .opening { margin-top: 44px; padding-left: calc(var(--hero-ini) + var(--hero-gap)); min-height: calc(var(--hero-ini) + 12px); --hero-ini: 124px; --hero-gap: 20px; }
+  html.leaves.spread .initial { left: 0; right: auto; top: 10px; }
+  html.leaves.spread h1 { font-size: 3.5rem; }
+  html.leaves.spread .kalendar { margin-top: 44px; }
+  html.leaves.spread .what { margin-top: 0; font-size: 1.5625rem; line-height: 1.5; }
+  html.leaves.spread .work::before { left: calc(104px - var(--ini-gap) - 44px); }
+  html.leaves.spread .finis .signature { margin-top: 44px; }
+
+  /* the thumb index: tabs of vellum lettered in ink, as in the book, their inner ends under the sheets */
+  html.leaves.spread .thumbs.slim { z-index: auto; left: calc(28px + max(0px, (100% - 176px - 73.75rem) / 2)); gap: 6px; }
+  html.leaves.spread .thumbs.slim .thumb {
+    width: 128px; height: auto; padding: 8px 30px 8px 16px; justify-content: flex-start;
+    border-radius: 8px 0 0 8px; transform: translateX(10px); filter: brightness(.86) saturate(.9);
+    background: #F1E7D0 url("/assets/book/parchment.webp") calc(var(--k) * -97px) calc(var(--k) * -61px) / 360px auto;
+    box-shadow:
+      inset 3px 0 0 var(--tab), inset 4px 0 1px rgba(40, 20, 5, .25),
+      inset 0 1px 0 rgba(255, 252, 240, .7), inset 0 -1px 0 rgba(90, 60, 25, .25),
+      inset -22px 0 12px -10px rgba(40, 20, 5, .5), -2px 2px 4px rgba(0, 0, 0, .45);
+  }
+  html.leaves.spread .thumbs.slim .thumb::after { display: none; }
+  html.leaves.spread .thumbs.slim .thumb span {
+    opacity: 1; font-size: .85rem; color: var(--ink); background: none; filter: none;
+    -webkit-background-clip: border-box; background-clip: border-box;
+  }
+  html.leaves.spread .thumbs.slim .thumb[aria-current="true"] { transform: none; filter: none; }
+  html.leaves.spread .thumbs.slim .thumb[aria-current="true"] span { color: var(--vermilion); }
+  html.leaves.spread .thumbs.slim .thumb:hover, html.leaves.spread .thumbs.slim .thumb:focus-visible { transform: translateX(4px); filter: none; }
+  html.leaves.spread .thumbs.slim .thumb[aria-current="true"]:hover { transform: translateX(-3px); }
 }
 
 /* ---------- Wide: the initials hang in the margin ---------- */
@@ -482,7 +542,7 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
   background:
     linear-gradient(to right, transparent calc(50% - 10px), rgba(10, 4, 2, .55) 50%, transparent calc(50% + 10px)),
     radial-gradient(ellipse 85% 75% at 46% 42%, rgba(255, 220, 190, .08), rgba(15, 6, 3, .35) 100%),
-    url("/assets/book/leather.webp") center / cover;
+    url("/assets/book/leather.webp") center / cover #4A2416;   /* (the calf's own colour, until its skin comes) */
   box-shadow:
     inset 0 0 0 1px rgba(15, 6, 3, .5), inset 0 1.5px 1px rgba(255, 215, 185, .18),
     0 1px 2px rgba(0, 0, 0, .55),
@@ -586,7 +646,7 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 .book .page > :first-child { margin-top: 0; }
 /* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
    each on the text block's edge, a third of the way into its margin */
-.folnum, .catch { font-family: var(--rubric); font-size: calc(var(--u) * .75); letter-spacing: .07em; line-height: 1.2; }
+.folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13px / var(--z, 1))); letter-spacing: .07em; line-height: 1.2; }
 .folnum { position: absolute; z-index: 2; top: calc(var(--mt) * .42); right: var(--mo); color: var(--vermilion); }
 .catch {
   position: absolute; z-index: 2; bottom: calc(var(--mb) * .36); padding: 4px 2px; border: 0; background: none; cursor: pointer;
@@ -642,7 +702,7 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
     -2px 2px 4px rgba(0, 0, 0, .45);
   transform: translateX(8px); filter: brightness(.86) saturate(.9);
 }
-.book .thumb span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: calc(var(--u) * .74); color: var(--ink); }
+.book .thumb span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: max(calc(var(--u) * .74), calc(12.5px / var(--z, 1))); color: var(--ink); }
 .book .thumb[aria-current="true"] { transform: none; filter: none; }
 .book .thumb[aria-current="true"] span { color: var(--vermilion); }
 .book .thumb:hover, .book .thumb:focus-visible { transform: translateX(2px); filter: none; }
@@ -681,9 +741,12 @@ html.thumbable .thumbs.slim {
    1.2^3  1.728 a work's title
    1.2^5  2.488 the maker's name                                 versals and lombards: deep enough to
    hang two lines of their own text, the cap height of the letter matching the lines it spans */
+/* (and on a short screen no smaller than can be read there: small capitals 13px on the screen at the
+   least, other small text 14px; --z is the book's zoom) */
 .book .rubric, .book .kind, .book .subtitle, .book .cred-title, .book .cred-link, .book .verse cite, .book .epigraph cite,
-.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: .75em; letter-spacing: .07em; }
-.book .cred-fields, .book .cred-degrees, .book .facts, .book .bach, .book .kal-names .kal-ad { font-size: .833em; }
+.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13px / var(--z, 1))); letter-spacing: .07em; }
+.book .cred-fields, .book .cred-degrees, .book .facts, .book .bach { font-size: max(.833em, calc(14px / var(--z, 1))); }
+.book .kal-names .kal-ad { font-size: max(.833em, calc(12.5px / var(--z, 1))); }
 .book .page .score, .book .motif-play .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
 
 /* the maker, on the first verso: the name and the lede gathered in the middle of the page, under J.J. */
@@ -703,7 +766,7 @@ html.thumbable .thumbs.slim {
 .book .kalendar { margin: 0; }
 .book .kal-date { margin-top: .9em; gap: .7em; }
 .book .kal-num { font-size: 3.2em; }
-.book .kal-names { font-size: .8em; }
+.book .kal-names { font-size: max(.8em, calc(13px / var(--z, 1))); }
 .book .kal-feast { margin-top: .35em; }
 .book .kalendar .verse { margin-top: 1em; }
 .book .kalendar .verse p { font-size: .94em; line-height: 1.5; }
@@ -762,6 +825,7 @@ html.thumbable .thumbs.slim {
 /* numerals hang in a column of their own, ranged right */
 .book .within.listed .it:has(.num) { padding-left: 2.3em; text-indent: -2.3em; }
 .book .within.listed .num { display: inline-block; width: 2.2em; text-indent: 0; text-align: right; margin-right: .1em; }
+.book .page-r.tight .within p { font-size: .87em; line-height: 1.5; }
 .book .page-r .facts { margin-top: 1.3em; }
 .book .page-r .go { margin-top: 1.1em; font-size: .9em; }
 
@@ -770,6 +834,8 @@ html.thumbable .thumbs.slim {
 .book .colophon .promise { font-size: 1.25em; line-height: 1.45; }
 .book .colophon .bach { font-size: 1em; line-height: 1.6; }
 .book .colophon .motif-play { font-size: .9em; }
+.book .colophon.tight { gap: .6em; }
+.book .colophon.tight .bach { font-size: .92em; line-height: 1.5; }
 .book .colophon .foot-links { margin-top: .6em; }
 .book .finis { margin: 0; align-items: center; }
 .book .finis .score { margin: 0 auto; padding: 0; }
@@ -777,6 +843,6 @@ html.thumbable .thumbs.slim {
 .book .finis .sdg { font-size: 3.6em; }
 .book .finis .sdg-gloss { margin-top: .8em; }
 .book .finis .fleuron { width: 3.4em; margin: 0 auto; }
-.book .colophon .materials, .book .colophon .imprint { font-size: .833em; }
+.book .colophon .materials, .book .colophon .imprint { font-size: max(.833em, calc(13.5px / var(--z, 1))); }
 /* the colophon proper, how the book was made and of what, at the foot of its page */
 .book .colophon .imprint { margin-top: auto; }

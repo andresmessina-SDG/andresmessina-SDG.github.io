@@ -1,2 +1,5 @@
 tools/.cache/
 __pycache__/
+# screenshots and other scratch output never belong at the root of the site
+/*.png
+!/apple-touch-icon.png

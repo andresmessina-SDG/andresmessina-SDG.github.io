@@ -79,6 +79,8 @@ def main(src):
     a = Image.open(s / "initA1.jpg").convert("RGB")
     a = a.crop((82, 86, 1204, 1342))
     save(a.resize((560, round(560 * a.height / a.width)), Image.LANCZOS), "initial-a.webp", 86)
+    # and the size the page shows it at (the share images and icons are drawn from the larger)
+    save(a.resize((320, round(320 * a.height / a.width)), Image.LANCZOS), "initial-a-320.webp", 86)
     # its gold, behind the prophet's shoulder
     g = Image.open(s / "initA1.jpg").convert("RGB").crop((715, 190, 945, 395))
     save(g.resize((256, 256), Image.LANCZOS), "gold.webp", 88)

@@ -7,7 +7,7 @@ printed on, so that they can lie on this page instead.
 
 | File | What it is | Source | Licence |
 |---|---|---|---|
-| `initial-a.webp` | The opening initial A: a 13th-century initial on burnished gold, cut from an Italian Bible, with a seated prophet | Cleveland Museum of Art, 1954.131.7, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Italy,_13th_century_-_Historiated_Initial_(A)_Excised_from_a_Bible_-_1954.131.7_-_Cleveland_Museum_of_Art.tif) | CC0 |
+| `initial-a.webp`, `initial-a-320.webp` | The opening initial A: a 13th-century initial on burnished gold, cut from an Italian Bible, with a seated prophet (the smaller is the size the page shows it at; the share images are drawn from the larger) | Cleveland Museum of Art, 1954.131.7, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Italy,_13th_century_-_Historiated_Initial_(A)_Excised_from_a_Bible_-_1954.131.7_-_Cleveland_Museum_of_Art.tif) | CC0 |
 | `gold.webp` | A patch of that initial's burnished gold, which gilds S.D.G. | as above | CC0 |
 | `vine.webp` | Gilded ivy, painted flowers and hairline stems from the border of a Book of Hours (Use of Metz), France, 15th century, fol. 27r | Cleveland Museum of Art, 1942.1514.27.a, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Book_of_Hours_(Use_of_Metz)_Fol._27r,_Decorated_Initials.tif) | Public domain |
 | `parchment.webp` | The smooth (hair) side of a medieval parchment leaf, made to tile | Membeth, [Pergament.2.jpg](https://commons.wikimedia.org/wiki/File:Pergament.2.jpg) | CC0 |

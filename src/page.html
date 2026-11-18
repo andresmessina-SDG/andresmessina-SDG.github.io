@@ -2,13 +2,14 @@
 <script>
   // The book is bound before the page is first drawn, so that it is never seen unbound. Where site.js
   // will bind it (a window at least 960 by 644: see geometry() there), the desk is laid at once, the
-  // page is kept from sight until the book is ready, and the book's materials are fetched early. If
-  // site.js never comes, the page shows itself after five seconds.
+  // page is kept from sight until the book is ready, and the desk and the vellum are fetched early (not
+  // the calf of the boards, which would only slow site.js and the type on a slow line; the boards are
+  // coloured as calf until it comes). If site.js never comes, the page shows itself after five seconds.
   (() => {
     const root = document.documentElement;
     if (!matchMedia('screen and (min-width: 960px) and (min-height: 644px)').matches) return;
     root.classList.add('binding');
-    for (const f of ['oak', 'leather', 'parchment']) {
+    for (const f of ['oak', 'parchment']) {
       const l = document.createElement('link');
       l.rel = 'preload'; l.as = 'image'; l.href = `/assets/book/${f}.webp`;
       document.head.append(l);
@@ -41,13 +42,13 @@
        below becomes a spread, its .page-v the left page and its .page-r the right. -->
   <main id="main" data-ui='{{{ui}}}'>
 
-    <div class="folio" id="opening" data-name="{{kalendar}}">
+    <div class="folio" id="opening" data-name="{{opening_name}}">
       <section class="page page-v maker" aria-labelledby="name">
         <div class="opening">
           <div class="initial" aria-hidden="true">
-            <img src="/assets/book/initial-a.webp" width="560" height="627" alt="" decoding="async">
+            <img src="/assets/book/initial-a-320.webp" srcset="/assets/book/initial-a-320.webp 320w, /assets/book/initial-a.webp 560w" sizes="152px" width="560" height="627" alt="" decoding="async">
           </div>
-          <h1 id="name"><span class="sr">A</span>ndres Messina</h1>
+          <h1 id="name">Andres Messina</h1>
           <p class="subtitle">{{subtitle}}</p>
         </div>
 
@@ -121,6 +122,5 @@
   </main>
   <p class="sr" aria-live="polite" id="turned"></p>
 </div>
-<script src="/assets/site.js?v={{v}}" defer></script>
 </body>
 </html>

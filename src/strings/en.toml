@@ -12,7 +12,7 @@ skip = "Skip to the works"
 jj_gloss = "Jesu, juva · Jesus, help"
 langs_label = "Language"
 subtitle = "Works on Scripture and the church"
-lede = "I am a Christian who loves to learn and build to the glory of God. I work hard to curate an edifying and aesthetically excellent experience that helps others learn about Scripture, Christianity and the history of the church."
+lede = "I am a Christian who loves to learn and build to the glory of God. These are five free works I have made for reading Scripture and learning the church’s story: a Bible study app, a series of watercolors, a history, a game and a guide to Revelation."
 portrait_alt = "Portrait of Andres Messina"
 cred_title = "Humanities & Social Science Expert"
 cred_fields = "Theology · Philosophy · Economics · International Law"
@@ -30,11 +30,12 @@ imprint = "Set in EB Garamond, Georg Duffner’s revival of the romans of Claude
 support = "Support the work"
 source = "Source on GitHub"
 
-# The book: its kalendar, contents and controls
-kalendar = "Kalendar"
+# The book: its kalendar, contents and controls; the opening is named for its contents, the first thing sought there
+kalendar = "Calendar"
+opening_name = "Contents"
 colophon_name = "Colophon"
 contents = "Contents"
-organ = "Organ"
+organ = "Organ music"
 fullscreen = "Read full screen"
 organ_hint = "Play each page’s line of the chorale as you turn to it"
 play_line = "Play this line"
@@ -87,7 +88,7 @@ within = [
 facts = ["English · Español · Русский", "Free · Works offline"]
 links = [
   { label = "Visit", href = "https://andresmessina-sdg.github.io/scriptura/" },
-  { label = "Install", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
+  { label = "Install on Linux", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
 
 [[works]]

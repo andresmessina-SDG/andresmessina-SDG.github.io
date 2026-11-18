@@ -12,7 +12,7 @@ skip = "Saltar a las obras"
 jj_gloss = "Jesu, juva · Jesús, ayúdame"
 langs_label = "Idioma"
 subtitle = "Obras sobre las Escrituras y la iglesia"
-lede = "Soy un cristiano al que le encanta aprender y construir para la gloria de Dios. Me esfuerzo por ofrecer una experiencia edificante y de excelencia estética que ayude a otros a aprender sobre las Escrituras, el cristianismo y la historia de la iglesia."
+lede = "Soy un cristiano al que le encanta aprender y construir para la gloria de Dios. Estas son cinco obras gratuitas que he hecho para leer las Escrituras y conocer la historia de la iglesia: una aplicación de estudio bíblico, una serie de acuarelas, una historia, un juego y una guía del Apocalipsis."
 portrait_alt = "Retrato de Andres Messina"
 cred_title = "Experto en Humanidades y Ciencias Sociales"
 cred_fields = "Teología · Filosofía · Economía · Derecho Internacional"
@@ -32,9 +32,10 @@ source = "Código en GitHub"
 
 # El libro: su calendario, su índice y sus mandos
 kalendar = "Calendario"
+opening_name = "Índice"
 colophon_name = "Colofón"
 contents = "Índice"
-organ = "Órgano"
+organ = "Música de órgano"
 fullscreen = "Leer a pantalla completa"
 organ_hint = "Tocar la línea del coral de cada página al pasar a ella"
 play_line = "Escuchar esta línea"
@@ -87,7 +88,7 @@ within = [
 facts = ["English · Español · Русский", "Gratis · Funciona sin conexión"]
 links = [
   { label = "Visitar", href = "https://andresmessina-sdg.github.io/scriptura/es/" },
-  { label = "Instalar", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
+  { label = "Instalar en Linux", href = "https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref" },
 ]
 
 [[works]]

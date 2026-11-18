@@ -268,9 +268,21 @@
     root.classList.add('thumbable');
     thumbs.classList.add('slim');      // the leaves (below) tell it which folio is open
   }
+  // Folded, the spines do not say what they are; so once in a visit they are drawn out for a moment
+  // as the page opens, and folded again.
+  function hintThumbs() {
+    if (!thumbs || still.matches || root.classList.contains('spread') || !thumbs.classList.contains('slim')) return;
+    try { if (sessionStorage.getItem('thumbs-shown')) return; sessionStorage.setItem('thumbs-shown', '1'); } catch (e) { return; }
+    setTimeout(() => {
+      if (!thumbs.classList.contains('slim') || root.classList.contains('spread') || window.scrollY > 40) return;
+      thumbs.classList.add('open');
+      setTimeout(() => thumbs.classList.remove('open'), 1700);
+    }, 900);
+  }
   if (thumbs) {
     thumbs.addEventListener('click', (e) => {
       if (!thumbs.classList.contains('slim')) return;           // in the book, onLink turns to it
+      if (root.classList.contains('spread')) return;            // lettered on the desk: a click goes straight there
       const a = e.target.closest('.thumb');
       if (!a) return;
       if (!thumbs.classList.contains('open')) { e.preventDefault(); thumbs.classList.add('open'); return; }
@@ -290,6 +302,7 @@
   // foot in view (site.css lays the leaves; here each is given that height); its folio number stands
   // at its head, and the thumb index follows it. Links to a folio go to where its leaf begins.
   let leaves = null;
+  const onDesk = window.matchMedia('(min-width: 1000px)');
   function leavesOn() {
     if (leaves || !main || book) return;
     const folios = [...main.querySelectorAll(':scope > .folio')];
@@ -307,7 +320,16 @@
       made.push(anchor, shade, num);
     });
     let raf = 0, cur = -1;
-    const layout = () => { for (const f of folios) f.style.top = `${Math.min(0, window.innerHeight - f.offsetHeight)}px`; };
+    // on a wide window the leaves lie on the desk, two pages to a sheet (site.css); the first sheet
+    // reaches up to take in the page's head
+    const head = document.querySelector('.head');
+    const layout = () => {
+      root.classList.toggle('spread', onDesk.matches);
+      // the type on the desk is the book's at the reader's zoom, and never less than 20px
+      if (onDesk.matches) { const g = geometry(); root.style.setProperty('--desk-u', `${Math.max(20, g.u * g.z).toFixed(1)}px`); }
+      for (const f of folios) f.style.top = `${Math.min(0, window.innerHeight - f.offsetHeight)}px`;
+      if (head) folios[0].style.setProperty('--cap', `${folios[0].previousElementSibling.offsetTop - head.offsetTop}px`);
+    };
     const look = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
@@ -369,7 +391,9 @@
         cancelAnimationFrame(raf);
         made.forEach((e) => e.remove());
         folios.forEach((f) => { f.style.top = ''; f.classList.remove('deep'); });
-        root.classList.remove('leaves');
+        folios[0].style.removeProperty('--cap');
+        root.classList.remove('leaves', 'spread');
+        root.style.removeProperty('--desk-u');
         leaves = null;
       },
     };
@@ -386,14 +410,18 @@
 
   // The book's measures, from the window (site.css explains each as it uses it). The book fills the
   // window but for a band of 36px above it for the controls and 10px of desk round the rest.
-  //  - Zoom: the square root of the window's height over 900, so text grows more slowly than the
-  //    window does: about 15px on screen at 720 high, 19 at 900, 21 at 1080, 24 at 1440.
+  //  - Zoom: the square root of the window's height over 900, so the book grows more slowly than the
+  //    window does.
   //  - Pages: as tall as the window allows, and as wide, but no wider than a squarish codex (0.88 of
   //    their height) and no narrower than a book of hours (2:3); never less than 740 by 494 in the
   //    book's own pixels, the room their contents need; where that cannot be had at a zoom of 0.78
-  //    or more (text of 13px on screen), the page stays a page.
+  //    or more, the page stays a page.
   //  - Type: the page's width over 36, which sets about 66 to 70 characters a line; from 17 up to 20,
-  //    or up to 22 on screens taller than 1080, which are read from further off.
+  //    or up to 22 on screens taller than 1080, which are read from further off. On the screen that is
+  //    about 16px at 720 high, 18 at 900, 21 at 1080, 24 at 1440, and never less than 15.
+  //  - The reader's own zoom (Ctrl +) is kept: the type is set as it would be in the window at their
+  //    zoom of 100%, so the larger the zoom, the larger the type on its page; where the pages can no
+  //    longer hold it, the book is laid aside for the leaves (see decide()).
   //  - Margins: inner 6.2% of the width and outer 11% at the least; where a line would run past 31
   //    units the text block stops there, and the width to spare goes one part to the gutter and two
   //    to the outer margin, as the canon of manuscript margins has it; head 7.2% and foot 10% of the
@@ -401,20 +429,43 @@
   //  - The thumb index stands 42 of the book's pixels out from its left board, and the desk gives it room.
   const TOP = 36, SIDE = 10, FOOT = 10, BOARD = 13, EDGE = 12, THUMBS = 42;
   const MIN_PH = 740, TALLEST = 2 / 3, WIDEST = 0.88, MIN_PW = Math.ceil(MIN_PH * TALLEST);
-  function geometry() {
-    const aw = window.innerWidth - 2 * SIDE, ah = window.innerHeight - TOP - FOOT;
-    let z = Math.min(1.4, Math.max(0.8, Math.sqrt(window.innerHeight / 900)));
+  function measure(W, H) {
+    const aw = W - 2 * SIDE, ah = H - TOP - FOOT;
+    let z = Math.min(1.4, Math.max(0.8, Math.sqrt(H / 900)));
     z = Math.min(z, ah / (MIN_PH + 2 * BOARD), aw / (2 * MIN_PW + 2 * BOARD + 2 * EDGE + THUMBS));
     let ph = ah / z - 2 * BOARD;
     let pw = (aw / z - 2 * BOARD - 2 * EDGE - THUMBS) / 2;
     pw = Math.min(pw, ph * WIDEST);
     ph = Math.min(ph, pw / TALLEST);
-    const most = Math.min(22, Math.max(20, 20 + (window.innerHeight - 1080) / 180));
+    const most = Math.min(22, Math.max(20, 20 + (H - 1080) / 180));
     const u = Math.min(most, Math.max(17, pw / 36));
+    return { z, pw, ph, u };
+  }
+  // The reader's zoom. Chromium keeps the window's outer width in the screen's pixels while its inner
+  // width shrinks as the page is zoomed, so the one over the other is the zoom; it is taken only when it
+  // is one of the browser's zoom steps and leaves the screen a pixel ratio that screens have (a panel
+  // open beside the page would otherwise read as zoom). Elsewhere the zoom is not told, and is 1.
+  const STEPS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+  const SCREENS = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3, 3.5, 4];
+  function readerZoom() {
+    const raw = window.outerWidth / window.innerWidth;
+    if (!/Chrome\//.test(navigator.userAgent) || !(raw > 0) || !isFinite(raw)) return 1;
+    const f = STEPS.reduce((a, b) => (Math.abs(b - raw) < Math.abs(a - raw) ? b : a));
+    if (Math.abs(f - raw) > 0.04 * f) return 1;
+    const dpr = window.devicePixelRatio / f;
+    return SCREENS.some((d) => Math.abs(d - dpr) < 0.03) ? f : 1;
+  }
+  function geometry() {
+    const W = window.innerWidth, H = window.innerHeight, f = readerZoom();
+    const g = measure(W, H);
+    const at100 = f === 1 ? g : measure(W * f, H * f);
+    const z = g.z;
+    const u = Math.max(15, at100.u * at100.z) / z;
+    const { pw, ph } = g;
     const block = Math.min(pw * (1 - 0.062 - 0.11), 31 * u);
     const mi = Math.max(pw * 0.062, (pw - block) / 3), mo = pw - block - mi;
     const mt = ph * 0.072, mb = ph * 0.1;
-    return { ok: z >= 0.78, z, pw, ph, u, mi, mo, mt, mb, sz: u / 14 };
+    return { ok: z >= 0.78, z, f, pw, ph, u, mi, mo, mt, mb, sz: u / 14 };
   }
 
   function face(page, side, back) {
@@ -476,9 +527,9 @@
       if (k < N) {
         const c = el('button', 'catch next', { type: 'button', 'aria-label': `${UI.turn_next || 'Next'}: ${spreads[k + 1].name}` });
         c.textContent = spreads[k + 1].name;
-        c.addEventListener('click', () => go(k + 1, { push: true, focus: 'next' }));
+        c.addEventListener('click', () => go(k + 1, { replace: true, focus: 'next' }));
         const corner = el('button', 'corner next', { type: 'button', tabindex: '-1', 'aria-hidden': 'true' });
-        corner.addEventListener('click', () => go(k + 1, { push: true }));
+        corner.addEventListener('click', () => go(k + 1, { replace: true }));
         corner.addEventListener('pointerenter', () => peek(k, 10));
         corner.addEventListener('pointerleave', () => peek(k, 0));
         rf.append(c, corner);
@@ -486,9 +537,9 @@
       if (k > 0) {
         const c = el('button', 'catch prev', { type: 'button', 'aria-label': `${UI.turn_prev || 'Back'}: ${spreads[k - 1].name}` });
         c.textContent = spreads[k - 1].name;
-        c.addEventListener('click', () => go(k - 1, { push: true, focus: 'prev' }));
+        c.addEventListener('click', () => go(k - 1, { replace: true, focus: 'prev' }));
         const corner = el('button', 'corner prev', { type: 'button', tabindex: '-1', 'aria-hidden': 'true' });
-        corner.addEventListener('click', () => go(k - 1, { push: true }));
+        corner.addEventListener('click', () => go(k - 1, { replace: true }));
         corner.addEventListener('pointerenter', () => peek(k - 1, 170));
         corner.addEventListener('pointerleave', () => peek(k - 1, 180));
         vf.append(c, corner);
@@ -553,6 +604,7 @@
     b.style.zoom = g.z;
     for (const k of ['pw', 'ph', 'u', 'mi', 'mo', 'mt', 'mb']) b.style.setProperty(`--${k}`, `${g[k].toFixed(1)}px`);
     b.style.setProperty('--sz', g.sz.toFixed(3));
+    b.style.setProperty('--z', g.z.toFixed(3));
     book.stage.style.paddingLeft = `${Math.round(SIDE + THUMBS * g.z)}px`;
     fitWithin();
   }
@@ -560,19 +612,27 @@
   // A work's contents run on in a paragraph; where its page has room for them as a list, one to a
   // line, they are set so, in one column or else in two, whichever the page holds without spilling.
   function fitWithin() {
+    const fits = (p) => p.scrollHeight <= p.clientHeight + 1;
     for (const s of book.spreads) {
+      s.v.classList.remove('tight');
       const w = s.r.querySelector('.within');
-      if (!w) continue;
-      const p = w.querySelector('p'), items = [...p.querySelectorAll('.it')];
-      const fits = () => s.r.scrollHeight <= s.r.clientHeight + 1;
+      const p = w && w.querySelector('p'), items = w ? [...p.querySelectorAll('.it')] : [];
       // three columns are narrow: they are taken only if every item still keeps to one line
       const unbroken = () => { const h = items.map((it) => it.getBoundingClientRect().height); return Math.max(...h) < Math.min(...h) * 1.5; };
-      for (const [cls, cols] of [[['listed'], 1], [['listed', 'cols'], 2], [['listed', 'cols', 'three'], 3], [[], 0]]) {
-        w.classList.remove('listed', 'cols', 'three');
-        w.classList.add(...cls);
-        p.style.setProperty('--rows', Math.ceil(items.length / Math.max(1, cols)));
-        if (fits() && (cols < 3 || unbroken())) break;
+      // and where even the paragraph will not go, the page's smaller text is set a size smaller
+      for (const tight of [false, true]) {
+        s.r.classList.toggle('tight', tight);
+        if (w) {
+          for (const [cls, cols] of [[['listed'], 1], [['listed', 'cols'], 2], [['listed', 'cols', 'three'], 3], [[], 0]]) {
+            w.classList.remove('listed', 'cols', 'three');
+            w.classList.add(...cls);
+            p.style.setProperty('--rows', Math.ceil(items.length / Math.max(1, cols)));
+            if (fits(s.r) && (cols < 3 || unbroken())) break;
+          }
+        }
+        if (fits(s.r)) break;
       }
+      if (!fits(s.v)) s.v.classList.add('tight');
     }
   }
 
@@ -649,7 +709,10 @@
     const from = book.cur;
     const fwd = k > from;
     const js = fwd ? range(from, k) : range(k, from).reverse();
+    // a turn of the page keeps the address in step without adding to the history, so that Back leaves the
+    // book in one press; a jump (the contents, the thumb index, a link) is a step that Back retraces
     if (opts.push) history.pushState({ spread: k }, '', hashFor(k));
+    else if (opts.replace) history.replaceState({ spread: k }, '', hashFor(k));
     stopClip(book.spreads[from].v.querySelector('.plate'));
     if (still.matches) { open(k); focusAfter(opts.focus); return; }
     book.busy = true;
@@ -737,10 +800,10 @@
       if ((e.key === 'f' || e.key === 'F') && canFull) { e.preventDefault(); toggleFull(); return; }
       const k = book.cur;
       const keys = { ArrowRight: k + 1, ArrowDown: k + 1, PageDown: k + 1, ArrowLeft: k - 1, ArrowUp: k - 1, PageUp: k - 1, Home: 0, End: book.N };
-      if (e.key === ' ' && !(t.closest && t.closest('a, button, [role="button"]'))) { e.preventDefault(); go(e.shiftKey ? k - 1 : k + 1, { push: true }); return; }
+      if (e.key === ' ' && !(t.closest && t.closest('a, button, [role="button"]'))) { e.preventDefault(); go(e.shiftKey ? k - 1 : k + 1, { replace: true }); return; }
       if (!(e.key in keys)) return;
       e.preventDefault();
-      go(keys[e.key], { push: true });
+      go(keys[e.key], { replace: true });
     };
     document.addEventListener('keydown', book.onKey);
 
@@ -754,7 +817,7 @@
       quietAt = now;
       if (spent || book.busy) return;
       acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (Math.abs(acc) > 60) { spent = true; go(book.cur + Math.sign(acc), { push: true }); }
+      if (Math.abs(acc) > 60) { spent = true; go(book.cur + Math.sign(acc), { replace: true }); }
     }, { passive: false });
 
     // a hand on the page: the leaf's edge follows the pointer across the spread
@@ -814,7 +877,7 @@
         book.busy = false;
         if (complete) {
           book.cur = d.fwd ? d.j + 1 : d.j;
-          history.pushState({ spread: book.cur }, '', hashFor(book.cur));
+          history.replaceState({ spread: book.cur }, '', hashFor(book.cur));
           stack();
           arrive(true);
         } else stack();
@@ -852,27 +915,41 @@
   if (fsBtn && canFull) fsBtn.addEventListener('click', toggleFull);
 
   // ---- bind the book, or keep the page, as the window allows ----
+  // Every page must hold its text above its foot margin. Where one cannot (the reader's zoom has made the
+  // type too large for the window), the book is laid aside for the leaves, and is not bound again until
+  // the window grows or the zoom changes. What a page holds is known only once its type has come.
+  let tooFull = null;
+  const typeIn = () => !document.fonts || document.fonts.status === 'loaded';
+  const holds = () => book.spreads.every((s) => s.v.scrollHeight <= s.v.clientHeight + 1 && s.r.scrollHeight <= s.r.clientHeight + 1);
+  function check() {
+    if (!book || !typeIn() || holds()) return;
+    tooFull = { w: window.innerWidth, h: window.innerHeight, f: book.f };
+    unbuild();
+  }
   function decide() {
-    const want = !printing && main && wideEnough.matches && geometry().ok;
+    const g = geometry();
+    const crowded = tooFull && tooFull.f === g.f && window.innerWidth < tooFull.w + 40 && window.innerHeight < tooFull.h + 16;
+    const want = !printing && main && wideEnough.matches && g.ok && !crowded;
     if (want && !book) { build(); if (organBtn && Organ.ok) organBtn.hidden = false; if (fsBtn && canFull) fsBtn.hidden = false; }
     else if (!want && book) unbuild();
     else if (book) layout();
+    if (book) { book.f = g.f; check(); }
   }
   if (main && main.querySelector('.folio')) {
     decide();
-    if (!book) { scrollScribe(); slimThumbs(); leavesOn(); }
+    if (!book) { scrollScribe(); slimThumbs(); leavesOn(); hintThumbs(); }
     let raf = 0;
     window.addEventListener('resize', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(decide); });
     window.addEventListener('beforeprint', () => { printing = true; unbuild(); });
     window.addEventListener('afterprint', () => { printing = false; decide(); });
     // the type's own metrics decide what a page holds, so the contents are fitted again once it has come
-    if (document.fonts) document.fonts.ready.then(() => { if (book) fitWithin(); });
+    if (document.fonts) document.fonts.ready.then(() => { if (book) { fitWithin(); check(); } });
   }
   // the page was kept from sight while the book was bound (see the script at the head of src/page.html):
   // show it, once its type has come, so that the book does not reflow before the reader's eyes, or after
   // a moment at most
   const shown = () => root.classList.remove('binding');
-  if (book && document.fonts && document.fonts.status !== 'loaded') Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 600))]).then(shown);
+  if (book && !typeIn()) Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 600))]).then(() => { if (book) { fitWithin(); check(); } shown(); });
   else shown();
 
   // ---------------------------------------------------------------------------------------------
