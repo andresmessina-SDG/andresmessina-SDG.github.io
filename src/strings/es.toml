@@ -23,7 +23,7 @@ sdg_gloss = "Soli Deo Gloria · Solo a Dios sea la gloria"
 promise = "Las cinco son gratuitas. Ninguna pide una cuenta ni te rastrea."
 bach = "Bach encabezaba sus partituras con J.J., «Jesús, ayúdame», y las firmaba S.D.G., «solo a Dios la gloria». Este libro toma prestada su costumbre, y sus pentagramas llevan su arreglo del *Ein feste Burg ist unser Gott* de Lutero, BWV 302, una línea en cada página; pulsa una para oírla a cuatro voces. Su nombre también es una melodía: en alemán, B es si\u00a0bemol y H es si\u00a0natural."
 bach_play = "Escuchar su nombre"
-materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino, la piel de su encuadernación y el roble debajo."
+materials = "Sus materiales son reales: la A inicial de una Biblia del siglo XIII, la hiedra dorada de un libro de horas, el pergamino de su papel, la tela de su encuadernación y el roble debajo."
 materials_link = "De dónde viene cada uno"
 # el colofón propiamente dicho: cómo se hizo el libro; {year} es el año en que se construyó, en números romanos
 imprint = "Compuesto en EB Garamond, la reconstrucción de Georg Duffner de las romanas de Claude Garamont y las cursivas de Robert Granjon, con la compleción de Octavio Pardo de sus versalitas y cifras, en las que van los títulos. Encuadernado en el año del Señor {year}."

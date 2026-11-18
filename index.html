@@ -30,8 +30,8 @@
 <meta name="twitter:image:alt" content="A gilded initial A on a blue ground, beside the name Andres Messina and his five works.">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://andresmessina-sdg.github.io/#me","name":"Andres Messina","url":"https://andresmessina-sdg.github.io/","image":"https://andresmessina-sdg.github.io/assets/portrait.jpg","description":"I am a Christian who loves to learn and build to the glory of God. These are five free works I have made: a Bible study app with the Greek and Hebrew under every word; twenty-two worldviews, each painted in watercolor as an answer to four great questions; the church’s story from Pentecost to today, drawn as one river; a game that teaches students the story and beliefs of Christianity; and an illuminated guide to the Book of Revelation.","jobTitle":"Humanities & Social Science Expert","knowsLanguage":["es","en"],"knowsAbout":["Theology","Philosophy","Economics","International Law"],"sameAs":["https://www.linkedin.com/in/andresmessina/","https://github.com/andresmessina-SDG","https://ko-fi.com/andresmessina"]},{"@type":"WebPage","@id":"https://andresmessina-sdg.github.io/","url":"https://andresmessina-sdg.github.io/","name":"Andres Messina","description":"Works by Andres Messina for reading Scripture and learning the church’s story: Scriptura, Worldviews in Motion, A History of the Christian Church, The Pilgrim’s Road and Revelation: The Illuminated Codex.","inLanguage":"en","author":{"@id":"https://andresmessina-sdg.github.io/#me"},"about":{"@id":"https://andresmessina-sdg.github.io/#me"},"mainEntity":{"@type":"ItemList","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"SoftwareApplication","operatingSystem":"Linux","applicationCategory":"ReferenceApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"name":"Scriptura","url":"https://andresmessina-sdg.github.io/scriptura/","description":"Read two translations side by side, with the Greek and Hebrew under every word and how the church read each verse.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":2,"item":{"@type":"WebSite","name":"Worldviews in Motion","url":"https://andresmessina-sdg.github.io/Worldviews-in-Motion/","description":"The world’s major worldviews, each painted as one watercolor that answers four questions: where we came from, what went wrong, what puts it right and where it all ends. One question leads from each to the next, beginning and ending with Christian theism.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":3,"item":{"@type":"WebSite","name":"A History of the Christian Church","url":"https://andresmessina-sdg.github.io/church-history/","description":"The church from Pentecost to today, drawn as one river and told in the words of its own witnesses: Scripture, the fathers, the creeds and the Reformers.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":4,"item":{"@type":"LearningResource","learningResourceType":"game","name":"The Pilgrim’s Road","url":"https://andresmessina-sdg.github.io/the-pilgrims-road/","description":"Eleven stations from Bethlehem to the Great Gate. Students learn the story, beliefs and branches of Christianity through quizzes, riddles and puzzles.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}},{"@type":"ListItem","position":5,"item":{"@type":"WebSite","name":"Revelation: The Illuminated Codex","url":"https://andresmessina-sdg.github.io/revelation-explainer/","description":"A clear, hopeful guide to the Book of Revelation: seven visions of one age, and twenty-two of its most misunderstood questions, read in the light of all Scripture.","author":{"@id":"https://andresmessina-sdg.github.io/#me"}}}]}}]}</script>
 <link rel="preload" href="/assets/fonts/eb-garamond-roman-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=c1fcb0df4c">
-<script src="/assets/site.js?v=c1fcb0df4c" defer fetchpriority="high"></script>
+<link rel="stylesheet" href="/assets/site.css?v=27e088772a">
+<script src="/assets/site.js?v=27e088772a" defer fetchpriority="high"></script>
 <script>// Evening light: after sunset where the reader is, the vellum warms as if read by a candle.
 // Where is guessed from the browser's time zone alone (nothing is asked, sent or kept): a
 // city for the zones most readers come from, else a longitude from the zone's offset.
@@ -107,14 +107,14 @@
 <script>
   // The book is bound before the page is first drawn, so that it is never seen unbound. Where site.js
   // will bind it (a window at least 960 by 644: see geometry() there), the desk is laid at once, the
-  // page is kept from sight until the book is ready, and the desk and the vellum are fetched early (not
-  // the calf of the boards, which would only slow site.js and the type on a slow line; the boards are
-  // coloured as calf until it comes). If site.js never comes, the page shows itself after five seconds.
+  // page is kept from sight until the book is ready, and the desk, the paper and the cloth of the boards
+  // are fetched early (the three together weigh about a hundred kilobytes; until each comes, its colour
+  // stands in for it). If site.js never comes, the page shows itself after five seconds.
   (() => {
     const root = document.documentElement;
     if (!matchMedia('screen and (min-width: 960px) and (min-height: 644px)').matches) return;
     root.classList.add('binding');
-    for (const f of ['oak', 'paper']) {
+    for (const f of ['desk', 'paper', 'cloth']) {
       const l = document.createElement('link');
       l.rel = 'preload'; l.as = 'image'; l.href = `/assets/book/${f}.webp`;
       document.head.append(l);
@@ -522,7 +522,7 @@ if (feast) { const fe = box.querySelector('.kal-feast'); fe.textContent = feast;
           <span>Hear his name</span>
         </button>
         <p class="imprint">Set in EB Garamond, Georg Duffner’s revival of the romans of Claude Garamont and the italics of Robert Granjon, with Octavio Pardo’s completion of its small capitals and figures, in which its headings are set. Bound in the year of our Lord MMXXVI.</p>
-        <p class="materials">Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding and the oak beneath. <a href="https://github.com/andresmessina-SDG/andresmessina-SDG.github.io/blob/main/assets/book/SOURCES.md">Where each comes from</a></p>
+        <p class="materials">Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment of its paper, the cloth of its binding and the oak beneath. <a href="https://github.com/andresmessina-SDG/andresmessina-SDG.github.io/blob/main/assets/book/SOURCES.md">Where each comes from</a></p>
         <nav class="foot-links">
           <a href="https://ko-fi.com/andresmessina">Support the work</a>
           <a href="https://github.com/andresmessina-SDG">Source on GitHub</a>

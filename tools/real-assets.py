@@ -10,8 +10,6 @@ sizes the page uses, in assets/book/:
                   of Hours (Use of Metz), its vellum lifted out so it can be laid on another page
   gold.webp       a patch of that Bible initial's burnished gold, to gild S.D.G.
   parchment.webp  medieval parchment, made to tile
-  leather.webp    the worn calf of a 19th-century family Bible's cover, for the boards
-  oak.webp        oak planks, for the desk the book lies on
   fleuron.webp    a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out
 
 "Lifting out" divides a scan by its own paper colour, so the paper becomes white and only ink,
@@ -110,15 +108,7 @@ def main(src):
     p = tileable(Image.fromarray(arr.clip(0, 255).astype(np.uint8)))
     save(p.resize((720, 720), Image.LANCZOS), "parchment.webp", 80)
 
-    # the boards: worn oxblood calf
-    lt = Image.open(s / "bible1.jpg").convert("RGB")
-    # (only a band of it shows round the pages, and the spines of the folded thumb index: 540px will do)
-    save(lt.resize((540, round(540 * lt.height / lt.width)), Image.LANCZOS), "leather.webp", 62)
-
-    # the desk: oak, darkened and warmed as old furniture is
-    o = Image.open(s / "oak.png").convert("RGB")
-    arr = np.asarray(o).astype(np.float32) * np.array([0.62, 0.5, 0.4])
-    save(Image.fromarray(arr.clip(0, 255).astype(np.uint8)).resize((900, 900), Image.LANCZOS), "oak.webp", 78)
+    # (the boards and the desk are made by tools/modern-assets.py)
 
     # the fleuron
     f = Image.open(s / "fleuron1.jpg").convert("RGB")

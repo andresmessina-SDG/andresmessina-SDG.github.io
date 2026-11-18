@@ -64,8 +64,11 @@ book opens to it, so that the whole book plays the whole strophe. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
 The book is made as books were: its paper the real parchment of
-`assets/book/` quietened to a fine warm white (`tools/paper.py`); edged red under gold; a
-headband of red and gold silk at the head and tail of the spine; the lower
+`assets/book/` quietened to a fine warm white (`tools/paper.py`); bound in
+a real bookcloth dyed slate blue, its page edges plain, with a plain headband
+of the cloth's blue and the paper's cream at the head and tail of the spine;
+lying on a pale oak table in daylight from the upper left (warmer, and a
+little shadowed at the corners, after sunset); the lower
 outer corners a shade darker where readers' thumbs turn them; and a
 colophon that says what it is set in and when it was bound. The build ties
 each number to its word and each book of Scripture to its chapter and
@@ -75,13 +78,13 @@ On a phone, or a narrow or short window, the same document is read down the
 page, a folio to a leaf, as the church history's eras are: each leaf holds
 still at its foot for a moment's scrolling, then the next rises over it and
 the one beneath dims. Each work's line of the chorale is at the foot of its
-leaf, and the thumb index is folded to slim spines of calf at the left
+leaf, and the thumb index is folded to slim spines of the cloth at the left
 edge, drawn out by a touch, and drawn out for a moment once a visit as the
 page opens, so that it is known for what it is. On a window wide but too
 short for the book (a laptop whose screen is scaled up, from 1000px wide),
-the leaves lie on the oak desk instead: each a sheet with the desk at either
+the leaves lie on the oak table instead: each a sheet with the desk at either
 side and its two pages side by side as in the book, under the same lettered
-tabs of vellum as the book's, the type the book's at the reader's zoom. Without JavaScript, and on paper, it is simply
+tabs of paper as the book's, the type the book's at the reader's zoom. Without JavaScript, and on paper, it is simply
 one long page. Nothing moves for readers who ask for stillness: the book
 still binds, and its leaves turn at once; the leaves still lie one over
 another, but without the shade.
@@ -94,7 +97,7 @@ another, but without the shade.
 | `src/head.html`, `src/page.html`, `src/404.html` | The page templates. |
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
-| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the leather boards, the oak desk, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py` prepares them from the originals. |
+| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
 | `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
 | `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ. Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |

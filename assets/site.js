@@ -480,7 +480,7 @@
   // the window's title names the folio the book lies open at; the browser's own colour is the desk's
   const TITLE = document.title;
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  const PAGE = themeColor ? themeColor.getAttribute('content') : '', DESK = '#653A1D';
+  const PAGE = themeColor ? themeColor.getAttribute('content') : '', DESK = '#E8D8C3';
 
   function build() {
     leavesOff();

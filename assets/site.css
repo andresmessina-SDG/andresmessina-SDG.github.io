@@ -336,7 +336,7 @@ h1 {
    begins). Its type is the book's at the reader's zoom, 20px at the least (site.js sets --desk-u),
    and everything on the desk is measured from it. */
 @media screen {
-  html.leaves.spread { font-size: calc(var(--desk-u, 20px) * .8); background: #3B2516 url("/assets/book/oak.webp") 50% 0 / 900px 900px fixed; }
+  html.leaves.spread { font-size: calc(var(--desk-u, 20px) * .8); background: #E8D8C3 url("/assets/book/desk.webp") 50% 0 / 1000px 1000px fixed; }
   html.leaves.spread body { background: none; padding: 0; font-size: 1.25rem; }
   html.leaves.spread .leaf { max-width: none; padding: 28px 40px 0 136px; }
   html.leaves.spread .head, html.leaves.spread main > .folio { box-sizing: border-box; width: min(73.75rem, 100%); margin-left: auto; margin-right: auto; }
@@ -349,7 +349,7 @@ h1 {
   html.leaves.spread main > .anchor:first-child + .folio { padding-top: 8px; }
   html.leaves.spread main > .folio::after {
     left: 0; right: 0; border-radius: 2px;
-    box-shadow: 0 0 0 .5px rgba(40, 20, 5, .4), 0 -14px 26px -18px rgba(0, 0, 0, .6), 0 10px 28px rgba(0, 0, 0, .4);
+    box-shadow: 0 0 0 .5px rgba(60, 44, 28, .3), 0 -12px 24px -18px rgba(60, 44, 28, .4), 0 10px 26px rgba(60, 44, 28, .22);
   }
   html.leaves.spread main > .anchor:first-child + .folio::after { content: ""; top: calc(-1 * var(--cap, 0px)); }
   html.leaves.spread main > .folio > .shade { left: 0; right: 0; }
@@ -364,16 +364,15 @@ h1 {
   html.leaves.spread .work::before { left: calc(104px - var(--ini-gap) - 44px); }
   html.leaves.spread .finis .signature { margin-top: 44px; }
 
-  /* the thumb index: tabs of vellum lettered in ink, as in the book, their inner ends under the sheets */
+  /* the thumb index: tabs of the paper lettered in ink, as in the book, their inner ends under the sheets */
   html.leaves.spread .thumbs.slim { z-index: auto; left: calc(28px + max(0px, (100% - 176px - 73.75rem) / 2)); gap: 6px; }
   html.leaves.spread .thumbs.slim .thumb {
     width: 128px; height: auto; padding: 8px 30px 8px 16px; justify-content: flex-start;
-    border-radius: 8px 0 0 8px; transform: translateX(10px); filter: brightness(.86) saturate(.9);
+    border-radius: 8px 0 0 8px; transform: translateX(10px); filter: brightness(.95);
     background: #F3EDE0 url("/assets/book/paper.webp") calc(var(--k) * -97px) calc(var(--k) * -61px) / 360px auto;
     box-shadow:
-      inset 3px 0 0 var(--tab), inset 4px 0 1px rgba(40, 20, 5, .25),
-      inset 0 1px 0 rgba(255, 252, 240, .7), inset 0 -1px 0 rgba(90, 60, 25, .25),
-      inset -22px 0 12px -10px rgba(40, 20, 5, .5), -2px 2px 4px rgba(0, 0, 0, .45);
+      inset 0 0 0 .5px rgba(90, 70, 45, .3), inset 0 1px 0 rgba(255, 253, 248, .8), inset 0 -1px 0 rgba(90, 70, 45, .2),
+      inset -22px 0 12px -10px rgba(40, 30, 20, .3), -1px 2px 5px rgba(60, 44, 28, .38);
   }
   html.leaves.spread .thumbs.slim .thumb::after { display: none; }
   html.leaves.spread .thumbs.slim .thumb span {
@@ -413,19 +412,19 @@ h1 {
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .plate:hover { transform: none; } }
 
 /* ---------- Evening light ----------
-   After sunset where the reader is (src/evening.js sets --dusk, 0 by day to 1 by night), the leaf warms
-   and its edges fall into shadow, as if read by a candle; the pointer carries the flame (site.js sets
-   --lx and --ly). It is not a dark mode: the page stays vellum. */
+   After sunset where the reader is (src/evening.js sets --dusk, 0 by day to 1 by night), the light
+   warms a little and the corners fall a little into shadow, as under a reading lamp. It is not a dark
+   mode: the page stays paper. */
 html::after, html::before {
   content: ""; position: fixed; inset: 0; z-index: 20; pointer-events: none;
   opacity: var(--dusk, 0); transition: opacity 2.5s ease;
 }
 html::after {
   background:
-    radial-gradient(ellipse 115% 95% at 50% 42%, transparent 48%, rgba(66, 34, 8, .32) 100%),
-    linear-gradient(rgba(255, 150, 60, .075), rgba(255, 150, 60, .075));
+    radial-gradient(ellipse 120% 100% at 50% 42%, transparent 55%, rgba(66, 40, 14, .14) 100%),
+    linear-gradient(rgba(255, 170, 90, .05), rgba(255, 170, 90, .05));
 }
-html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50%) var(--ly, 34%), rgba(255, 206, 128, .22), transparent 72%); }
+html::before { display: none; }
 @media print { html::before, html::after { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   html.evening::before { animation: candle 11s ease-in-out infinite; }
@@ -506,7 +505,7 @@ html::before { background: radial-gradient(ellipse 34vmax 26vmax at var(--lx, 50
          part to the gutter and two to the outer margin
    ===================================================================================================== */
 html.bound, html.bound body, html.binding, html.binding body { height: 100%; overflow: hidden; }
-html.bound body, html.binding body { padding: 0; background: #3B2516 url("/assets/book/oak.webp") center / 900px 900px; }
+html.bound body, html.binding body { padding: 0; background: #E8D8C3 url("/assets/book/desk.webp") center / 1000px 1000px; }
 /* while the book is being bound (see the script at the head of src/page.html) only the desk shows;
    then the book and its lamp come up together, never the page unbound */
 html.binding body > * { visibility: hidden; opacity: 0; }
@@ -538,55 +537,53 @@ html.bound .folio { display: none; }
 .fs:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
 .stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 36px 10px 10px 52px; }   /* room on the left for the thumb index; site.js sets it to the zoom */
-.stage::before {   /* the lamp over the desk: a pool of warm light, falling away into the corners */
+.stage::before {   /* daylight on the desk from a window above and to the left, falling off a little to the far corner */
   content: ""; position: fixed; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 70% 65% at 50% 45%, rgba(255, 214, 160, .22), transparent 70%),
-              radial-gradient(ellipse 110% 100% at 50% 50%, transparent 45%, rgba(20, 10, 4, .55) 100%);
+  background: radial-gradient(ellipse 90% 85% at 25% 15%, rgba(255, 253, 248, .28), transparent 70%),
+              radial-gradient(ellipse 125% 115% at 45% 40%, transparent 55%, rgba(80, 58, 36, .16) 100%);
 }
-html.bound .langs a, html.bound .organ, html.bound .fs { color: #D8C6A8; }
-html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover { color: #FFF3DC; }
-html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: #F2A68E; }
-html.bound .langs span { color: #8C7458; }
-html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
+html.bound .langs a, html.bound .organ, html.bound .fs { color: #5F5345; }
+html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover { color: var(--ink); }
+html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: var(--vermilion); }
+html.bound .langs span { color: #9C8B73; }
+html.bound .organ .stop .knob { fill: #F3EDE0; stroke: #5F5345; }
 .book {
   --pw: 680px; --ph: 830px; --board: 13px; --u: 18px; --mi: 42px; --mo: 75px; --mt: 60px; --mb: 83px;
   position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
   border-radius: 5px 5px 6px 6px;
-  /* the boards, in the worn calf of a nineteenth-century family Bible's cover (assets/book/leather.webp),
-     shadowed where they hinge at the spine, and lit a little from the lamp */
+  /* the boards, in a bookcloth dyed slate blue (assets/book/cloth.webp, from a scan of a real bookbinding
+     cloth), shadowed a little where they hinge at the spine, the daylight across them from the left */
   background:
-    linear-gradient(to right, transparent calc(50% - 10px), rgba(10, 4, 2, .55) 50%, transparent calc(50% + 10px)),
-    radial-gradient(ellipse 85% 75% at 46% 42%, rgba(255, 220, 190, .08), rgba(15, 6, 3, .35) 100%),
-    url("/assets/book/leather.webp") center / cover #4A2416;   /* (the calf's own colour, until its skin comes) */
+    linear-gradient(to right, transparent calc(50% - 8px), rgba(15, 20, 30, .32) 50%, transparent calc(50% + 8px)),
+    linear-gradient(115deg, rgba(255, 255, 255, .07), transparent 45%, rgba(10, 15, 25, .12)),
+    url("/assets/book/cloth.webp") 0 0 / 300px 300px #3A4859;   /* (the cloth's own colour, until its weave comes) */
   box-shadow:
-    inset 0 0 0 1px rgba(15, 6, 3, .5), inset 0 1.5px 1px rgba(255, 215, 185, .18),
-    0 1px 2px rgba(0, 0, 0, .55),
-    calc(var(--sun, 0) * -18px) 24px 44px -10px rgba(0, 0, 0, .6),
-    calc(var(--sun, 0) * -6px) 8px 16px rgba(0, 0, 0, .3);
+    inset 0 0 0 1px rgba(15, 20, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .1),
+    0 1px 2px rgba(60, 44, 28, .35),
+    calc(var(--sun, 0) * -14px) 22px 42px -14px rgba(60, 44, 28, .45),
+    calc(var(--sun, 0) * -5px) 6px 14px rgba(60, 44, 28, .18);
 }
 /* a hand on a page turns it, so the book's text is not for selecting; touch moves reach the page, pinching stays the reader's */
 .block { position: absolute; left: var(--board); top: var(--board); width: calc(2 * var(--pw)); height: var(--ph); perspective: calc(var(--pw) * 8);
   -webkit-user-select: none; user-select: none; touch-action: pinch-zoom; }
-/* the fore-edges: as many leaves as are left on either side, seen edge on */
-/* edged red under gold, as Bibles and prayer books are: burnished gold over the fore-edge, the red
-   beneath it showing in the hairlines between the leaves, the gold darker toward head and foot */
+/* the fore-edges: as many leaves as are left on either side, seen edge on: the paper's own edges, leaf on
+   leaf, a shade darker toward head and foot */
 .edge {
   position: absolute; top: 2px; bottom: 2px; width: var(--w, 4px); transition: width .7s ease;
   background:
-    linear-gradient(to bottom, rgba(60, 25, 5, .45), transparent 9%, rgba(255, 240, 200, .18) 45%, transparent 60%, transparent 91%, rgba(60, 25, 5, .5)),
-    repeating-linear-gradient(to right, rgba(130, 30, 18, .55) 0 .45px, transparent .45px 1.6px),
-    linear-gradient(to right, #B88A35, #E2C274 45%, #C49A45);
-  box-shadow: 0 0 1px rgba(40, 20, 5, .6);
+    linear-gradient(to bottom, rgba(90, 70, 45, .22), transparent 8%, transparent 92%, rgba(90, 70, 45, .26)),
+    repeating-linear-gradient(to right, rgba(120, 100, 72, .28) 0 .45px, transparent .45px 1.6px),
+    linear-gradient(to right, #E9E2D2, #F6F1E6 45%, #ECE5D6);
+  box-shadow: 0 0 1px rgba(60, 45, 28, .45);
 }
-/* the headbands: silk worked red and gold round a core at the head and the tail of the spine, showing
-   where the leaves bow down into the gutter */
+/* the headbands: a plain band of cotton at the head and the tail of the spine, the cloth's blue and the
+   paper's cream, showing where the leaves bow down into the gutter */
 .block::before, .block::after {
   content: ""; position: absolute; left: calc(50% - 15px); width: 30px; height: 6.5px; border-radius: 3.25px;
   background:
     linear-gradient(to bottom, rgba(255, 238, 205, .32), transparent 38%, rgba(25, 8, 2, .55)),
-    repeating-linear-gradient(97deg, #7A2116 0 1.1px, #93301F 1.1px 2.2px, #B8914A 2.2px 3.3px, #9C7737 3.3px 4.4px);
-  box-shadow: 0 1px 1.5px rgba(20, 8, 2, .6), inset 0 0 0 .5px rgba(40, 12, 4, .5);
-  filter: saturate(.85);
+    repeating-linear-gradient(97deg, #3E4C5E 0 1.6px, #E8E1D1 1.6px 2.4px);
+  box-shadow: 0 1px 1.5px rgba(20, 25, 35, .4), inset 0 0 0 .5px rgba(20, 25, 35, .4);
 }
 .block::before { top: -3.5px; }
 .block::after { bottom: -3.5px; }
@@ -691,11 +688,11 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
 
 
 /* ---------- The thumb index ----------
-   A tab for each folio, as an old book had a tab on the leaf where each part begins. In the book they
-   are tabs of vellum lettered in ink, each edged in red or blue like the pilcrows of the text, standing
-   out from its left edge one under another; the open folio's stands out furthest and is lettered in
-   red, and a pointer draws any of them out. On a narrow page site.js folds them to the left edge as
-   slim spines of the binding's calf, and a touch draws them all out. Without the script there is no
+   A tab for each folio, as a reference book has a tab on the leaf where each part begins. In the book
+   they are tabs of the paper lettered in ink, standing out from its left edge one under another; the
+   open folio's stands out furthest and is lettered in red, and a pointer draws any of them out. On a
+   narrow page site.js folds them to the left edge as slim spines of the binding's cloth, and a touch
+   draws them all out. Without the script there is no
    index here: the contents on the first page serve. */
 .thumbs { display: none; }
 .thumb { position: relative; box-sizing: border-box; text-decoration: none; transition: transform .25s cubic-bezier(.2, .7, .2, 1), filter .25s ease; }
@@ -714,39 +711,36 @@ html.bound .organ .stop .knob { fill: #5C3A22; stroke: #D8C6A8; }
   padding-right: 22px; border-radius: 9px 0 0 9px;
   background: #F3EDE0 url("/assets/book/paper.webp") calc(var(--k) * -97px) calc(var(--k) * -61px) / 360px auto;
   box-shadow:
-    inset 3px 0 0 var(--tab), inset 4px 0 1px rgba(40, 20, 5, .25),
-    inset 0 1px 0 rgba(255, 252, 240, .7), inset 0 -1px 0 rgba(90, 60, 25, .25),
-    inset -22px 0 12px -10px rgba(40, 20, 5, .55),
-    -2px 2px 4px rgba(0, 0, 0, .45);
-  transform: translateX(8px); filter: brightness(.86) saturate(.9);
+    inset 0 0 0 .5px rgba(90, 70, 45, .3), inset 0 1px 0 rgba(255, 253, 248, .8), inset 0 -1px 0 rgba(90, 70, 45, .2),
+    inset -22px 0 12px -10px rgba(40, 30, 20, .32),
+    -1px 2px 5px rgba(60, 44, 28, .38);
+  transform: translateX(8px); filter: brightness(.95);
 }
 .book .thumb span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: max(calc(var(--u) * .74), calc(12.5px / var(--z, 1))); color: var(--ink); }
 .book .thumb[aria-current="true"] { transform: none; filter: none; }
 .book .thumb[aria-current="true"] span { color: var(--vermilion); }
 .book .thumb:hover, .book .thumb:focus-visible { transform: translateX(2px); filter: none; }
 .book .thumb[aria-current="true"]:hover { transform: translateX(-2px); }
-.book .thumb:focus-visible { outline: 1.5px solid #E9C877; outline-offset: 2px; }
+.book .thumb:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; }
 
-/* on a narrow page: slim spines of calf at the left edge, the open folio's a little wider; drawn
-   out, each tab shows its whole name, struck in gold */
+/* on a narrow page: slim spines of the cloth at the left edge, the open folio's a little wider; drawn
+   out, each tab shows its whole name, in the paper's cream */
 html.thumbable .thumbs.slim {
   display: flex; flex-direction: column; gap: 3px; position: fixed; z-index: 25; left: 0; top: 50%; transform: translateY(-50%);
 }
 .thumbs.slim .thumb {
   display: flex; align-items: center; justify-content: flex-end; width: 150px; height: 38px; padding-right: 14px;
   border-radius: 0 6px 6px 0; transform: translateX(-142px);
-  background: #4A1A12 url("/assets/book/leather.webp") 0 calc(var(--k) * -131px) / 420px auto;
-  box-shadow: inset -2px 0 0 var(--tab), inset -1.5px 0 3px rgba(255, 215, 185, .14), 2px 2px 4px rgba(0, 0, 0, .3);
+  background: #3A4859 url("/assets/book/cloth.webp") 0 calc(var(--k) * -131px) / 300px 300px;
+  box-shadow: inset -1.5px 0 3px rgba(255, 255, 255, .12), 2px 2px 4px rgba(40, 30, 20, .25);
 }
 .thumbs.slim .thumb::after { content: ""; position: absolute; top: 0; bottom: 0; right: -14px; width: 14px; }   /* a finger's reach */
 .thumbs.slim .thumb span {
   font-size: .95rem; opacity: 0; transition: opacity .2s ease;
-  color: transparent; background: #C9A045 url("/assets/book/gold.webp") center / 140px 140px;
-  -webkit-background-clip: text; background-clip: text;
-  filter: drop-shadow(0 -.5px 0 rgba(0, 0, 0, .7)) drop-shadow(0 .5px 0 rgba(255, 230, 170, .25));
+  color: #F3EDE0;
 }
 .thumbs.slim .thumb[aria-current="true"] { transform: translateX(-138px); }
-.thumbs.slim.open .thumb { transform: translateX(0); transition-delay: calc(var(--k) * 22ms); box-shadow: inset -2px 0 0 var(--tab), inset -1.5px 0 3px rgba(255, 215, 185, .14), 3px 3px 10px rgba(30, 15, 5, .35); }
+.thumbs.slim.open .thumb { transform: translateX(0); transition-delay: calc(var(--k) * 22ms); box-shadow: inset -1.5px 0 3px rgba(255, 255, 255, .12), 3px 3px 10px rgba(40, 30, 20, .3); }
 .thumbs.slim.open .thumb span { opacity: 1; transition-delay: calc(.1s + var(--k) * 22ms); }
 .thumbs.slim.open .thumb::after { display: none; }
 .thumbs.slim .thumb:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; }

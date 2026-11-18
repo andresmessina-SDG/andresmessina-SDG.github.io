@@ -2,14 +2,14 @@
 <script>
   // The book is bound before the page is first drawn, so that it is never seen unbound. Where site.js
   // will bind it (a window at least 960 by 644: see geometry() there), the desk is laid at once, the
-  // page is kept from sight until the book is ready, and the desk and the vellum are fetched early (not
-  // the calf of the boards, which would only slow site.js and the type on a slow line; the boards are
-  // coloured as calf until it comes). If site.js never comes, the page shows itself after five seconds.
+  // page is kept from sight until the book is ready, and the desk, the paper and the cloth of the boards
+  // are fetched early (the three together weigh about a hundred kilobytes; until each comes, its colour
+  // stands in for it). If site.js never comes, the page shows itself after five seconds.
   (() => {
     const root = document.documentElement;
     if (!matchMedia('screen and (min-width: 960px) and (min-height: 644px)').matches) return;
     root.classList.add('binding');
-    for (const f of ['oak', 'paper']) {
+    for (const f of ['desk', 'paper', 'cloth']) {
       const l = document.createElement('link');
       l.rel = 'preload'; l.as = 'image'; l.href = `/assets/book/${f}.webp`;
       document.head.append(l);

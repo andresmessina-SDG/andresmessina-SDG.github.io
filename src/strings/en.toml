@@ -23,7 +23,7 @@ sdg_gloss = "Soli Deo Gloria · To God alone be the glory"
 promise = "All five are free. None of them asks for an account or tracks you."
 bach = "Bach headed his scores J.J., “Jesus, help,” and signed them S.D.G., “to God alone the glory.” This book borrows his habit, and its staves carry his setting of Luther’s *Ein feste Burg ist unser Gott*, BWV 302, a line to each page; press one to hear it in his four parts. His name is a tune as well: in German, B is B\u00a0flat and H is B\u00a0natural."
 bach_play = "Hear his name"
-materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment, the calf of its binding and the oak beneath."
+materials = "Its materials are real: the initial A from a thirteenth-century Bible, the gilded ivy from a Book of Hours, the parchment of its paper, the cloth of its binding and the oak beneath."
 materials_link = "Where each comes from"
 # the colophon proper: how the book was made; {year} is the year it was built, in roman numerals
 imprint = "Set in EB Garamond, Georg Duffner’s revival of the romans of Claude Garamont and the italics of Robert Granjon, with Octavio Pardo’s completion of its small capitals and figures, in which its headings are set. Bound in the year of our Lord {year}."
