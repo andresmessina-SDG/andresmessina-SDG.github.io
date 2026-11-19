@@ -18,7 +18,9 @@ words), set out in seven staves:
 Writes src/chorale/1.svg to 7.svg: the soprano engraved on its own staff, with
 its words, each note a <g class="n"> that lights as it sounds, and the
 staff's data-play attribute holding all four voices as [start, length, MIDI
-note] in beats, with the fermatas held, for site.js's organ. Also writes
+note, voice] in beats (0 soprano to 3 bass, tied notes as one), with the
+fermatas held and the breath after each, and the last line broadening into
+its final chord, for site.js's organ. Also writes
 src/bach.svg, B-A-C-H in notes for the colophon.
 
 The note shapes come from Bravura (SIL Open Font License), the SMuFL music
@@ -61,8 +63,11 @@ WORD_FONT = ROOT / "assets" / "fonts" / "eb-garamond-italic-latin.woff2"
 
 # Each staff: the soprano's span of the strophe, in quarter notes from its start (repeat written out)
 STAVES = [(0, 8), (8, 16), (16, 24), (24, 32), (32, 44), (44, 54), (54, 64)]
-HOLD, BREATH = 0.9, 0.3   # a fermata holds its chord this many beats longer, then breathes
+HOLD, BREATH = 0.9, 0.6   # a fermata holds its chord this many beats longer, then breathes, at every fermata alike
 BEAT = 0.68               # seconds to a quarter note when the organ plays
+# the end: over the last RIT beats before the final chord the beat widens to (1 + SLOW) of itself, and
+# the final chord is held FINAL beats longer than written, at that slower beat
+RIT, SLOW, FINAL = 3.0, 0.22, 1.5
 
 
 def step(pitch: str) -> int:
@@ -132,7 +137,16 @@ def read_chorale():
                 "downbeat": n.beat == 1,
                 "ends_bar": n.beat + n.quarterLength == 5,
             })
-    voices = [[(float(n.offset), float(n.quarterLength), n.pitch.midi) for n in p.flatten().notes] for p in parts]
+    voices = []
+    for p in parts:
+        v = []
+        for n in p.flatten().notes:
+            if n.tie and n.tie.type in ("stop", "continue") and v and v[-1][2] == n.pitch.midi:
+                at, ln, m = v[-1]
+                v[-1] = (at, ln + float(n.quarterLength), m)   # a tied note is one note, struck once
+            else:
+                v.append((float(n.offset), float(n.quarterLength), n.pitch.midi))
+        voices.append(v)
     return sop, voices
 
 
@@ -149,8 +163,9 @@ def staff_notes(sop, a, b):
     return out, end
 
 
-def play_data(sop, voices, a, b):
-    """All four voices within [a, b), in beats from a: each fermata's chord held, then a breath before what follows."""
+def play_data(sop, voices, a, b, last=False):
+    """All four voices within [a, b), in beats from a: each fermata's chord held, then a breath before what
+    follows; on the last line, a broadening into the final chord, which is held longer."""
     eps = 1e-6
     ends = [n["at"] + n["len"] for n in sop if n["fermata"] and a < n["at"] + n["len"] <= b + eps]
     inner = [e for e in ends if e < b - eps]          # fermatas within the staff, which push what follows later
@@ -159,10 +174,24 @@ def play_data(sop, voices, a, b):
     def stop(t):
         held = HOLD if any(abs(t - e) < eps for e in ends) else 0
         return t - a + (HOLD + BREATH) * sum(1 for e in inner if e < t - eps) + held
-    events = sorted([round(start(at), 3), round(stop(at + ln) - start(at), 3), midi]
-                    for v in voices for at, ln, midi in v if a <= at < b)
-    lights = [round(start(n["at"]), 3) for n in sop if a <= n["at"] < b]
-    return {"beat": BEAT, "events": events, "lights": lights}
+    final = start(max(at for v in voices for at, ln, midi in v if a <= at < b))
+    r0 = final - RIT
+    def warp(t):                      # the last line's time, in beats as the slowing beat counts them
+        if not last or t <= r0:
+            return t
+        u = min(t, final) - r0
+        return r0 + u + SLOW * u * u / (2 * RIT) + max(0, t - final) * (1 + SLOW)
+    events = []
+    for k, v in enumerate(voices):
+        for at, ln, midi in v:
+            if a <= at < b:
+                s, e = start(at), stop(at + ln)
+                if last and s >= final - eps:
+                    e += FINAL
+                events.append([round(warp(s), 3), round(warp(e) - warp(s), 3), midi, k])
+    events.sort()
+    lights = [round(warp(start(n["at"])), 3) for n in sop if a <= n["at"] < b]
+    return {"beat": BEAT, "breath": BREATH, "events": events, "lights": lights}
 
 
 def engrave(items, end, g: Glyphs, w: Words, label: str, play: dict, time_sig: bool) -> str:
@@ -315,7 +344,7 @@ def engrave_motif(g: Glyphs) -> str:
     lines = "".join(f'<rect x="0" y="{top + i * S:.2f}" width="{width:.2f}" height="1"/>' for i in range(5))
     bar = f'<rect x="{x:.2f}" y="{top:.2f}" width="{0.16 * S:.2f}" height="{4 * S + 1:.2f}"/>'
     height = bottom + 3.6 * S + 4
-    play = {"beat": 0.6, "events": [[0, 0.56, 70], [1, 0.56, 69], [2, 0.56, 72], [3, 1.5, 71]], "lights": [0, 1, 2, 3]}
+    play = {"beat": 0.6, "events": [[0, 0.56, 70, 0], [1, 0.56, 69, 0], [2, 0.56, 72, 0], [3, 1.5, 71, 0]], "lights": [0, 1, 2, 3]}
     data = json.dumps(play, separators=(",", ":"))
     return (f'<svg class="motif" viewBox="0 0 {width:.1f} {height:.1f}" width="{width:.1f}" height="{height:.1f}" aria-hidden="true" data-play=\'{data}\'>\n'
             f'  <g class="motif-staff" fill="{RULE}">{lines}</g>\n'
@@ -333,7 +362,7 @@ def main():
         items, end = staff_notes(sop, a, b)
         words = " ".join(n["syl"] + ("-" if n["hyphen"] else "") for n in items if n != "|" and n["syl"]).replace("- ", "")
         label = f"Bach, Ein feste Burg ist unser Gott, BWV 302: “{words}”"
-        svg = engrave(items, end, g, w, label, play_data(sop, voices, a, b), time_sig=(k == 1))
+        svg = engrave(items, end, g, w, label, play_data(sop, voices, a, b, last=(k == len(STAVES))), time_sig=(k == 1))
         (out / f"{k}.svg").write_text(svg, encoding="utf-8")
     (ROOT / "src" / "bach.svg").write_text(engrave_motif(g), encoding="utf-8")
     print(f"wrote src/chorale/1.svg to {len(STAVES)}.svg and src/bach.svg")

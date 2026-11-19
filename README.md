@@ -65,7 +65,14 @@ right over the book; in the lower corner on the leaves) plays the chorale
 through as one piece, from the line of the page the reader is at to the
 *Fine*, a breath at each fermata: turning pages leaves it playing, the staff
 that sounds lights when its page is open, and the switch shows the line it
-has come to. Pressing a staff plays that line alone. The last
+has come to. Pressing a staff plays that line alone. It is played as an
+organist plays it (`keyboard()` in `assets/site.js`): two voices meeting on
+one key sound it once, a key struck again is first let up (longer than in a
+dry room, for this room rings), a 16' stop sounds under the bass part from
+end to end, each pipe is set true to equal temperament from its own measured
+tuning, every fermata takes the same breath, and the last line broadens into
+its final chord, held longer. What lights is kept with what is heard, through
+a wireless headset's delay too. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
 The book is made as books were: its paper the real parchment of
@@ -109,13 +116,13 @@ another, but without the shade.
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
 | `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
 | `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
-| `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ. Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
+| `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ (each note with its voice, tied notes as one, the fermatas, breaths and closing broadening timed). Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
 | `src/sdg.svg` | S.D.G. as paths with the pen strokes that write it, gilded with the real gold in `assets/book/gold.webp`; drawn by `tools/quill.py` from the page's own EB Garamond. |
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. Beside them, `<id>.mp4` is the short silent clip that plays over a plate while a pointer rests on it (fetched only then, and never on touch screens), recorded from each work's own site by `tools/record-clips.js`. Scriptura has no clip, since its plate is a desktop app. |
 | `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
-| `tools/organ-assets.py` | Makes the organ's pipes, `assets/organ/`, from the open stop of the pipe organ in VSCO 2: Community Edition (CC0): for each note the chorale needs, the pipe's speech, its sustain and its release into the room. |
+| `tools/organ-assets.py` | Makes the organ's pipes, `assets/organ/`, from the open stop of the pipe organ in VSCO 2: Community Edition (CC0): for each note the chorale needs, the pipe's speech, its sustain and its release into the room, and each pipe's tuning as recorded, measured from its harmonics, for the page to correct. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
 | `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |

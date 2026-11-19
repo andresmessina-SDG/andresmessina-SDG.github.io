@@ -26,8 +26,10 @@
   // when music is near (a pointer on a staff, the organ drawn out) and played at the pitch each note
   // asks; when a note is let go, the pipe's own release into that room follows. Until they have come, a
   // small principal chorus made in the browser stands in for them. It plays what a staff carries in its
-  // data-play attribute (from tools/engrave.py): every voice as [start, length, MIDI note] in beats,
-  // and the times at which each of its written notes sounds, to light them.
+  // data-play attribute (from tools/engrave.py): every voice as [start, length, MIDI note, voice] in
+  // beats, the breath after a line, and the times at which each of its written notes sounds, to light
+  // them. It is played as an organist plays: each key sounds once however many voices are on it, a key
+  // struck again is first let up, and a 16' stop sounds under the bass part throughout.
   const Organ = (() => {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     let ctx = null, out = null, wave = null, current = null;
@@ -46,7 +48,9 @@
       if (decoding || !fetched) return;
       decoding = fetched.then((got) => got && Promise.all(got.files.map(([m, b]) =>
         new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)).then((buf) => [m, buf]))).then((bufs) => {
-        pipes = { info: got.info, bufs: new Map(bufs), keys: bufs.map(([m]) => m) };
+        // each pipe's tuning as it was recorded, in cents from equal temperament, corrected as it plays
+        const cents = new Map(got.info.pipes.map((n, i) => [got.info.base + n, (got.info.cents || [])[i] || 0]));
+        pipes = { info: got.info, bufs: new Map(bufs), keys: bufs.map(([m]) => m), cents };
       })).catch(() => { pipes = null; });
     }
     function room() {
@@ -63,12 +67,12 @@
       const dry = ctx.createGain(); dry.gain.value = 0.75;
       const limit = ctx.createDynamicsCompressor();
       limit.threshold.value = -14; limit.ratio.value = 6;
-      out = ctx.createGain(); out.gain.value = 0.3;
+      out = ctx.createGain(); out.gain.value = 0.42;
       out.connect(dry).connect(limit);
       out.connect(verb).connect(wet).connect(limit);
       limit.connect(ctx.destination);
       // the real pipes carry their room in them, and go straight to the limiter
-      pipesOut = ctx.createGain(); pipesOut.gain.value = 0.5;
+      pipesOut = ctx.createGain(); pipesOut.gain.value = 0.7;
       pipesOut.connect(limit);
       const real = new Float32Array(9), imag = new Float32Array(9);
       [0, 1, 0.55, 0.3, 0.34, 0.07, 0.14, 0, 0.1].forEach((v, i) => { imag[i] = v; });
@@ -82,16 +86,12 @@
       env.gain.setValueAtTime(level, at + len);
       env.gain.exponentialRampToValueAtTime(0.0001, at + len + 0.28);
       env.connect(out);
-      const ranks = midi < 52 ? [[freq, 1], [freq / 2, 0.3]] : [[freq, 1]];   // a 16' stop under the bass
-      for (const [f, g] of ranks) {
-        const o = ctx.createOscillator();
-        o.setPeriodicWave(wave);
-        o.frequency.value = f;
-        const v = ctx.createGain(); v.gain.value = g;
-        o.connect(v).connect(env);
-        o.start(at); o.stop(at + len + 0.32);
-        nodes.push(o);
-      }
+      const o = ctx.createOscillator();
+      o.setPeriodicWave(wave);
+      o.frequency.value = freq;
+      o.connect(env);
+      o.start(at); o.stop(at + len + 0.32);
+      nodes.push(o);
       // the breath of air as the pipe speaks
       const n = ctx.createBufferSource();
       const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.07), ctx.sampleRate);
@@ -108,9 +108,9 @@
     // a note on the real organ: the pipe nearest its pitch, retuned to it, speaking for as long as the
     // note is held, and then its release into the room
     function sounded(midi, at, len, level, nodes) {
-      const { info, bufs, keys } = pipes;
+      const { info, bufs, keys, cents } = pipes;
       const near = keys.reduce((a, b) => (Math.abs(b - midi) < Math.abs(a - midi) ? b : a));
-      const buf = bufs.get(near), rate = Math.pow(2, (midi - near) / 12);
+      const buf = bufs.get(near), rate = Math.pow(2, (midi - near) / 12 - cents.get(near) / 1200);
       const held = Math.min(len * rate, info.head - 0.06);           // in the pipe's own time
       const env = ctx.createGain();
       env.gain.setValueAtTime(level, at);
@@ -121,16 +121,17 @@
       speak.buffer = buf; speak.playbackRate.value = rate;
       speak.connect(env);
       speak.start(at, 0, held + 0.08);
-      // the release: taken from just before the key was let go, faded in under the sustain's fading out
+      // the release: taken from the moment the key was let go (the file keeps a few hundredths before it,
+      // passed over here), faded in under the sustain's fading out
       const rel = ctx.createGain();
       const r0 = at + held / rate - 0.02;
       rel.gain.setValueAtTime(0, r0);
-      rel.gain.linearRampToValueAtTime(level, r0 + 0.06);
+      rel.gain.linearRampToValueAtTime(level, r0 + 0.05);
       rel.connect(pipesOut);
       const ring = ctx.createBufferSource();
       ring.buffer = buf; ring.playbackRate.value = rate;
       ring.connect(rel);
-      ring.start(r0, info.head + info.gap);
+      ring.start(r0, info.head + info.gap + 0.03);
       nodes.push(speak, ring, env, rel);
     }
     let waiting = null;
@@ -178,20 +179,47 @@
       begin(parts, done, onLine, whole);
     }
     const BREATH = 0.45;
+    // the notes as an organist's hands give them to the pipes, in seconds: [rank, MIDI note, from, to,
+    // level]. Where two voices meet on one key it sounds once, from the first to the last of them; where
+    // a key is struck again, it is let up a little before (nearly a third of the note, at most 0.2 s,
+    // as an organist lifts in a room that rings), so that the second is heard; and the bass part has a
+    // 16' stop under it, the length of the line.
+    function keyboard(notes) {
+      const keys = new Map();
+      for (const n of notes) {
+        const id = `${n[0]}:${n[1]}`;
+        if (!keys.has(id)) keys.set(id, []);
+        keys.get(id).push(n);
+      }
+      const out = [];
+      for (const list of keys.values()) {
+        list.sort((a, b) => a[2] - b[2]);
+        let cur = null;
+        for (const n of list) {
+          if (cur && n[2] < cur[3] - 0.01) { cur[3] = Math.max(cur[3], n[3]); cur[4] = Math.max(cur[4], n[4]); continue; }
+          if (cur && n[2] - cur[3] < 0.02) cur[3] -= Math.min(0.2, (cur[3] - cur[2]) * 0.3);
+          cur = n.slice();
+          out.push(cur);
+        }
+      }
+      return out;
+    }
     function begin(parts, done, onLine, whole) {
       const t0 = ctx.currentTime + 0.08;
       const c = { nodes: [], timers: [], lights: [], done, whole };
-      const at = (sec, f) => c.timers.push(setTimeout(f, sec * 1000));
-      let off = 0;
+      // what lights is kept with what is heard, through whatever lies between (a Bluetooth headset's delay)
+      const late = ctx.outputLatency || ctx.baseLatency || 0;
+      const at = (sec, f) => c.timers.push(setTimeout(f, (sec + late) * 1000));
+      let off = 0, breath = BREATH;
+      const notes = [];
       parts.forEach(({ data, lightsFor }, k) => {
         const beat = data.beat;
-        const voices = new Set(data.events.map((e) => e[0])).size > data.lights.length ? 0.6 : 1;
-        for (const [s, l, m] of data.events) {
-          const when = t0 + off + s * beat, len = Math.max(0.08, l * beat - 0.03);
-          if (pipes) {
-            sounded(m, when, len, voices, c.nodes);
-            if (m < 52) sounded(m - 12, when, len, voices * 0.35, c.nodes);   // a 16' under the bass
-          } else pipe(m, when, len, 0.5 * voices, c.nodes);
+        const voices = new Set(data.events.map((e) => e[3] || 0));
+        const level = voices.size > 1 ? 0.6 : 1, bass = voices.size > 1 ? Math.max(...voices) : -1;
+        for (const [s, l, m, v = 0] of data.events) {
+          const from = t0 + off + s * beat, to = from + l * beat;
+          notes.push([8, m, from, to, level]);
+          if (v === bass) notes.push([16, m - 12, from, to, level * 0.35]);
         }
         at(0.08 + off, () => onLine(k));
         data.lights.forEach((s, i) => at(0.08 + off + s * beat, () => {
@@ -201,12 +229,18 @@
         }));
         const end = Math.max(...data.events.map(([s, l]) => s + l)) * beat;
         at(0.08 + off + end + 0.1, () => c.lights.forEach((e) => e.classList.remove('lit')));
-        off += end + BREATH;
+        breath = data.breath != null ? data.breath * beat : BREATH;   // the same breath as at a fermata within a line
+        off += end + breath;
       });
+      for (const [, m, from, to, level] of keyboard(notes)) {
+        const len = Math.max(0.08, to - from - 0.03);
+        if (pipes) sounded(m, from, len, level, c.nodes);
+        else pipe(m, from, len, 0.5 * level, c.nodes);
+      }
       // the piece is over when its last chord has died away in the room (the real pipes' release), and
       // is then let go without cutting anything short
       const ring = pipes ? pipes.info.tail : 0.4;
-      at(0.08 + off - BREATH + ring, () => {
+      at(0.08 + off - breath + ring, () => {
         if (current !== c) return;
         current = null; c.lights.forEach((e) => e.classList.remove('lit')); c.done();
       });
