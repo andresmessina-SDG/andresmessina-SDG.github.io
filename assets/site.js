@@ -493,6 +493,11 @@
       if (onDesk.matches) { const g = geometry(); root.style.setProperty('--desk-u', `${Math.max(20, g.u * g.z).toFixed(1)}px`); }
       for (const f of folios) f.style.top = `${Math.min(0, window.innerHeight - f.offsetHeight)}px`;
       if (head) folios[0].style.setProperty('--cap', `${folios[0].previousElementSibling.offsetTop - head.offsetTop}px`);
+      // the first leaf's sheet is cut from the page's parchment just where it lies, so that no seam shows
+      // between them until it holds still (site.css draws the sheet 50vw either side of the leaf's middle)
+      const f0 = folios[0], b = document.body.getBoundingClientRect(), r = f0.getBoundingClientRect();
+      f0.style.setProperty('--paper-x', `${(b.left - (r.left + f0.clientWidth / 2 - window.innerWidth / 2)).toFixed(2)}px`);
+      f0.style.setProperty('--paper-y', `${(b.top - f0.previousElementSibling.getBoundingClientRect().top).toFixed(2)}px`);
     };
     const look = () => {
       if (raf) return;
@@ -537,7 +542,7 @@
     const onHash = () => to(decodeURIComponent(location.hash.slice(1)), true);
     const onResize = () => { layout(); look(); };
     const ro = 'ResizeObserver' in window ? new ResizeObserver(onResize) : null;
-    if (ro) folios.forEach((f) => ro.observe(f));
+    if (ro) { folios.forEach((f) => ro.observe(f)); if (head) ro.observe(head); }
     document.addEventListener('click', onClick);
     window.addEventListener('hashchange', onHash);
     window.addEventListener('scroll', look, { passive: true });
@@ -556,6 +561,8 @@
         made.forEach((e) => e.remove());
         folios.forEach((f) => { f.style.top = ''; f.classList.remove('deep'); });
         folios[0].style.removeProperty('--cap');
+        folios[0].style.removeProperty('--paper-x');
+        folios[0].style.removeProperty('--paper-y');
         root.classList.remove('leaves', 'spread');
         root.style.removeProperty('--desk-u');
         leaves = null;

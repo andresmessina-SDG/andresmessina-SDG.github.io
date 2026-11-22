@@ -380,8 +380,11 @@ h1 {
     box-shadow: 0 -18px 30px -22px rgba(70, 48, 16, .36), 0 -.5px 0 rgba(120, 90, 50, .16);
   }
   html.leaves main > .anchor:first-child + .folio { --leaf-head: 0px; padding-top: 0; }
-  html.leaves main > .anchor:first-child + .folio::after { content: none; }
-  html.leaves main > .anchor:first-child + .folio > .leafnum { display: none; }   /* the page's own head heads the first */   /* nothing lies beneath the first: the page's own parchment is its leaf */
+  /* the first leaf has a sheet of its own too, so that as it holds still the paper holds still with it;
+     it is cut from the page's own parchment where the page has it (site.js measures where), and casts no
+     shadow, there being nothing beneath it */
+  html.leaves main > .anchor:first-child + .folio::after { box-shadow: none; background-position: var(--paper-x, 0px) var(--paper-y, 0px); }
+  html.leaves main > .anchor:first-child + .folio > .leafnum { display: none; }   /* the page's own head heads the first */
   html.leaves main > .folio > .shade { position: absolute; z-index: 4; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw); background: #2A1C10; opacity: 0; pointer-events: none; }
   html.leaves main > .folio.deep { opacity: 0; }
   /* each leaf's number in its head, at the outer corner, as the book numbers its leaves */
