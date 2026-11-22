@@ -93,7 +93,10 @@ the one beneath dims. Each work's line of the chorale is at the foot of its
 leaf. In the window's lower corner a dock holds two round buttons, a fingertip
 wide: Contents, which opens the thumb index as a sheet (a line to each folio, the
 open one in red), and the organ, which names itself once when the first staff
-comes into view. Each leaf's foot leaves room for the dock. On a phone the type
+comes into view. Each leaf's foot leaves room for the dock. On a phone the dock
+steps below the window's edge while the reader reads on down, and comes back
+when they scroll back up, tap the page, or reach its end; it stays while the
+contents are open or the organ plays. On a phone the type
 is no smaller than reads easily in the hand, the staves are drawn at one scale
 as large as the line allows, every row of a work's list opens its place wherever
 it is touched, and a list of more than ten shows its first six and the rest on
@@ -124,7 +127,7 @@ another, but without the shade.
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `tools/organ-assets.py` | Makes the organ's pipes, `assets/organ/`, from the open stop of the pipe organ in VSCO 2: Community Edition (CC0): for each note the chorale needs, the pipe's speech, its sustain and its release into the room, and each pipe's tuning as recorded, measured from its harmonics, for the page to correct. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
-| `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size, pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
+| `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size (and the book's first pages on the fullest day the kalendar has, a Sunday with one of the longest verses, whatever day the check is run), pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
 | `favicon.ico`, `apple-touch-icon.png`, `assets/icon-192.png`, `assets/og-*.png` | Icons and share images, drawn by `tools/render-images.js` from the real initial, parchment and gold. |
 

@@ -100,6 +100,10 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
   display: flex; align-items: center; gap: 8px;
 }
 .dock[hidden] { display: none; }
+/* out of the way, below the window's edge, while the reader reads on down a phone's page (site.js) */
+.dock { transition: transform .32s cubic-bezier(.2, .7, .2, 1), opacity .24s ease; }
+.dock.away:not(:focus-within) { transform: translateY(calc(100% + 28px)); opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .dock.away:not(:focus-within) { transform: none; } }
 html.spread .dock .toc { display: none; }   /* on the desk the index stands lettered at the left */
 .dock .toc, .dock .organ {
   box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
@@ -858,7 +862,11 @@ html.thumbable .thumbs.slim {
 .book .maker .creds p { line-height: 1.4; }
 /* where the maker's page is short for its words, the lede is set a size smaller and closer */
 .book .maker.tight .lede { margin-top: 1.4em; font-size: 1.12em; line-height: 1.45; }
-.book .maker.tight .byline { margin-top: 1.2em; }
+.book .maker.tight .byline { margin-top: 1.1em; }
+/* (and the initial a little smaller, and the credentials' lines a little closer) */
+.book .maker.tight .initial { width: 5.4em; }
+.book .maker.tight .opening { grid-template-columns: 5.4em 1fr; }
+.book .maker.tight .creds p { line-height: 1.32; }
 .book .maker .cred-fields { margin-top: .2em !important; }
 
 /* the kalendar, on the first recto: the day at the head, the contents in the middle, its line of the chorale at the foot */
@@ -872,6 +880,19 @@ html.thumbable .thumbs.slim {
 .book .kalendar .contents { margin-top: auto; padding-top: 1.4em; }
 .book .contents ol { margin-top: .5em; gap: 0; }
 .book .contents a { font-size: 1em; padding: .2em 0; }
+/* where the day's verse is long and the day a red-letter one (a Sunday, a feast), the kalendar set closer:
+   the date a little smaller, the verse a little smaller and closer, the contents' rows and the space above
+   them and the staff narrower, until it is held above the page's foot (site.js marks it tight) */
+.book .kalendar.tight .kal-date { margin-top: .55em; }
+.book .kalendar.tight .kal-num { font-size: 2.8em; }
+.book .kalendar.tight .kal-feast { margin-top: .2em; line-height: 1.4; }
+.book .kalendar.tight .verse { margin-top: .6em; }
+.book .kalendar.tight .verse p { font-size: .9em; line-height: 1.42; }
+.book .kalendar.tight .verse cite { margin-top: .3em; }
+.book .kalendar.tight .contents { padding-top: .8em; }
+.book .kalendar.tight .contents ol { margin-top: .3em; }
+.book .kalendar.tight .contents a { padding: .1em 0; }
+.book .kalendar.tight .score { padding-top: .5em; }
 /* in the book the gloss never adds to the page's depth: it takes what room the staff leaves beside it,
    and where that is too narrow to hold a phrase, it is left out */
 .book .page .score { margin-top: auto; padding-top: .9em; column-gap: 1.1em; flex-wrap: nowrap; width: auto; }

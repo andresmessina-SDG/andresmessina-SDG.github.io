@@ -423,6 +423,25 @@
       dock.append(toc);
       document.body.append(dock);
       if (organ) organHome = [organ.parentElement, organ.nextSibling];
+      // On a phone the dock steps out of the way while the reader reads on down the page, so that it is
+      // not over the lines they are reading, and comes back when they turn back up, tap the page, or come
+      // to its end. It stays while the contents are open, while the organ plays (it says the line, and
+      // stops it), and while it holds the keyboard's focus (site.css).
+      let lastY = window.scrollY, run = 0, tapped = -1e9;
+      const away = (on) => dock.classList.toggle('away', on);
+      const stays = () => (thumbs && thumbs.classList.contains('open')) || (organ && organ.getAttribute('aria-pressed') === 'true');
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY, dy = y - lastY;
+        lastY = y;
+        if (!root.classList.contains('leaves') || root.classList.contains('spread')) { away(false); return; }
+        if (!dy) return;
+        run = Math.sign(dy) === Math.sign(run) ? run + dy : dy;   // how far the reader has gone one way
+        const end = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+        if (y <= 0 || end || run < -12) away(false);
+        // (the scrolling that follows a tap, to a place in the book, is the book's, not the reader's reading)
+        else if (run > 24 && !stays() && performance.now() - tapped > 1200) away(true);
+      }, { passive: true });
+      document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('a[href^="#"]')) tapped = performance.now(); away(false); }, true);
     }
     const docked = root.classList.contains('leaves');
     dock.hidden = !docked;
@@ -1203,6 +1222,7 @@
     try { told = !!sessionStorage.getItem('organ-named'); } catch (e) {}
     const io = told ? null : new IntersectionObserver((es) => {
       if (told || !es.some((e) => e.isIntersecting) || !root.classList.contains('leaves')) return;
+      if (dock && dock.classList.contains('away')) return;   // (it names itself where it can be seen)
       told = true;
       try { sessionStorage.setItem('organ-named', '1'); } catch (e) {}
       io.disconnect();

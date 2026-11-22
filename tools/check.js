@@ -61,10 +61,11 @@ const expect = (ok, name, detail) => (ok ? pass(name, detail) : fail(name, detai
 // the layout the page is in
 const MODE = () => { const c = document.documentElement.classList; return c.contains('bound') ? 'book' : c.contains('spread') ? 'desk' : c.contains('leaves') ? 'leaves' : 'page'; };
 
-async function open(browser, base, url, ctxOpts = {}, init) {
+async function open(browser, base, url, ctxOpts = {}, init, day) {
   const ctx = await browser.newContext(ctxOpts);
   if (init) await ctx.addInitScript(init);
   const page = await ctx.newPage();
+  if (day) await page.clock.setFixedTime(new Date(`${day}T15:00:00`));   // (the kalendar's day, and so its verse)
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -93,10 +94,13 @@ const checks = {
       [1440, 900, '', 'book'], [1280, 720, 'es/', 'book'], [1366, 657, '', 'book'], [1366, 657, 'es/', 'book'],
       [1920, 1080, 'es/', 'book'], [2560, 1440, '', 'book'], [1280, 600, '', 'desk'], [1024, 600, 'es/', 'desk'],
       [820, 1180, '', 'leaves'], [390, 844, '', 'leaves'], [390, 844, 'es/', 'leaves'], [320, 640, 'es/', 'leaves'],
+      // and the kalendar at its fullest, whatever day the check is run: a Sunday, its name in red, with
+      // one of the longest of the verses
+      [1366, 657, '', 'book', '2026-03-22'], [1366, 657, 'es/', 'book', '2026-02-08'],
     ];
-    for (const [W, H, lang, want] of cases) {
-      const name = `${W}x${H} ${lang || 'en/'}`;
-      const { ctx, page, errors } = await open(browser, base, '/' + lang, { viewport: { width: W, height: H } });
+    for (const [W, H, lang, want, day] of cases) {
+      const name = `${W}x${H} ${lang || 'en/'}${day ? ` on ${day}` : ''}`;
+      const { ctx, page, errors } = await open(browser, base, '/' + lang, { viewport: { width: W, height: H } }, undefined, day);
       // read the leaves down, so that every picture is asked for and every staff drawn
       if (want !== 'book') for (let y = 0; y < 12000; y += 600) { await page.evaluate((y) => scrollTo(0, y), y); await page.waitForTimeout(40); }
       const r = await page.evaluate((MODE) => {
