@@ -429,6 +429,7 @@ def main() -> None:
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,
                   "cred_fields_html": kept(t["cred_fields"]), "cred_degrees_html": kept(t["cred_degrees"]),
+                  "jj_gloss_html": kept(t["jj_gloss"]),
                   "head_links": head_links(t, url, strings),
                   # site.js from the head, fetched first: on a slow line the book waits on it
                   "head_script": f'<script src="/assets/site.js?v={v}" defer fetchpriority="high"></script>\n',
@@ -453,7 +454,7 @@ def main() -> None:
               "page_title": f'{en["nf_title"]} · Andres Messina', "v": v,
               "description": en["nf_p"],
               "head_links": '<meta name="robots" content="noindex">', "head_script": "",
-              "nf_works": nf_works, "evening": evening, "chorale_7": indent(chorale(7), 6), "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
+              "nf_works": nf_works, "jj_gloss_html": kept(en["jj_gloss"]), "evening": evening, "chorale_7": indent(chorale(7), 6), "sdg": indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 8),
               "es_nf_h": es["nf_h"], "es_nf_p": es["nf_p"], "es_nf_home": es["nf_home"]}
     (ROOT / "404.html").write_text(render(head, values) + render(notfound, values), encoding="utf-8")
     print("wrote 404.html")

@@ -62,7 +62,7 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 /* ---------- Head of the score ---------- */
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #7E5D1B; }   /* gilt, deep enough to read: 4.8:1 on the parchment, by candle too */
-.jj span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
+.jj > span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
 .head-tools { display: flex; align-items: baseline; gap: 10px; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
 /* the languages: a choice of two, the one in use marked by a ground of its own */
@@ -104,7 +104,7 @@ html.spread .dock .toc { display: none; }   /* on the desk the index stands lett
 .dock .toc, .dock .organ {
   box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font: 500 .875rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: #5F5345;
+  font: 500 .9375rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: #5F5345;
   background: rgba(250, 247, 240, .95) url("/assets/book/paper.webp") 0 0 / 360px auto;
   box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .14), 0 10px 22px -10px rgba(60, 44, 28, .45);
   transition: color .2s ease;
@@ -184,11 +184,11 @@ h1 {
 .portrait img { display: block; box-sizing: border-box; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--vellum); object-fit: cover; }
 .creds { min-width: 0; }
 .creds p { margin: 0; text-wrap: pretty; }
-.cred-title { font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.07em; color: var(--ink); line-height: 1.3; }
+.cred-title { text-wrap: balance; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.07em; color: var(--ink); line-height: 1.3; }
 .cred-fields { margin-top: 3px !important; font-size: 1.02rem; line-height: 1.4; }
 .cred-degrees { margin-top: 2px !important; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
 .cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: 0.05em; }
-.cred-fields .kept, .cred-degrees .kept { white-space: nowrap; }
+.cred-fields .kept, .cred-degrees .kept, .jj .kept { white-space: nowrap; }
 .cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; }
 
 /* a heading over a part of a page: a quiet label in small capitals */
@@ -847,7 +847,7 @@ html.thumbable .thumbs.slim {
 
 /* the maker, on the first verso: the name and the lede gathered in the middle of the page, under J.J. */
 .book .maker .jj { font-size: 1.1em; }
-.book .maker .jj span { font-size: .7em; }
+.book .maker .jj > span { font-size: .7em; }
 .book .maker .opening { display: grid; grid-template-columns: 6em 1fr; column-gap: 1.1em; align-items: center; margin: auto 0 0; padding: 0; min-height: 0; }
 .book .maker .initial { position: relative; left: 0; right: auto; top: 0; width: 6em; grid-row: 1 / span 2; }
 .book .maker h1 { padding: 0; font-size: 2.488em; line-height: 1; align-self: end; }
@@ -963,7 +963,7 @@ html.thumbable .thumbs.slim {
   font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
   letter-spacing: .09em; font-weight: 500;
 }
-.modern .kicker { margin: 0; color: var(--muted); font-size: .9rem; }
+.modern .kicker { margin: 0; color: var(--muted); font-size: .9rem; text-wrap: balance; }
 .modern .kicker .kind { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
 .modern .kicker-n { color: var(--ink); margin-right: .35em; }
 .modern .kicker-n::after { content: "\00a0·"; content: "\00a0·" / ""; color: var(--muted); }
@@ -1080,6 +1080,12 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .parts-more { display: none; }
 @media screen {
   html.leaves:not(.spread) .modern .details dt { font-size: .9rem; }
+  /* the labels in small capitals no smaller than a lower case that reads easily in the hand */
+  html.leaves:not(.spread) :is(.rubric, .modern .kicker, .modern .parts h3, .verse cite, .modern .epigraph cite, .contents .c-fol, .leafnum) { font-size: .95rem; }
+  /* the colophon's smaller type in a line no longer than reads easily, where the leaf is wide */
+  html.leaves:not(.spread) :is(.bach, .imprint, .materials) { max-width: 36em; }
+  /* a name in a table that cannot fit its line whole is broken rather than run off the page */
+  html.leaves:not(.spread) .modern .st-name { min-width: 0; overflow-wrap: break-word; }
   html.leaves:not(.spread) .kal-names .kal-ad, html.leaves:not(.spread) .materials, html.leaves:not(.spread) .imprint { font-size: .9375rem; }
   html.leaves:not(.spread) .score-hear { font-size: 1em; }
   html.leaves:not(.spread) .score-gloss { font-size: .95rem; }
@@ -1121,4 +1127,12 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 }
 @media screen and (max-width: 360px) {
   html.leaves h1 { font-size: 2.35rem; }
+}
+/* on the very narrowest (a folded phone), the ivy is set aside, so that the works' text and tables have
+   the page's whole width */
+@media screen and (max-width: 300px) {
+  html.leaves:not(.spread) { --ini-col: 0px; --ini-gap: 0px; }
+  html.leaves:not(.spread) .work::before { display: none; }
+  html.leaves:not(.spread) .modern .parts li { grid-template-columns: 1.7em 1fr; column-gap: .5em; }
+  .creds .kept { white-space: normal; }   /* (beside the medallion even a short item may not fit whole) */
 }
