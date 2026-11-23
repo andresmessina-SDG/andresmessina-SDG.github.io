@@ -1177,9 +1177,10 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .book .letter-beside .contents li.by-letter { margin-right: 46%; }
 /* or beside the date, as tall as it and rising beside the heading, its word before it */
 .book .letter-small .envelope { grid-auto-flow: column; align-items: center; gap: .9em; }
-.book .letter-small .env-word { order: -1; }
-.env-word .w-short, .book .letter-small .env-word .w-long { display: none; }
-.book .letter-small .env-word .w-short { display: inline; }
+.book .letter-small .env-word, .book .letter-shelf .env-word { order: -1; }
+.book .letter-shelf .envelope { grid-auto-flow: column; align-items: center; gap: .9em; }
+.env-word .w-short, .book .letter-small .env-word .w-long, .book .letter-shelf .env-word .w-long { display: none; }
+.book .letter-small .env-word .w-short, .book .letter-shelf .env-word .w-short { display: inline; }
 .book .letter-small .env-body { width: 6.6em; }
 @media print { .kal-letter, .me-letter { display: none !important; } }
 

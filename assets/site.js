@@ -567,9 +567,15 @@
     b.style.setProperty('--z', g.z.toFixed(3));
     book.stage.style.paddingLeft = `${Math.round(SIDE + THUMBS * g.z)}px`;
     book.stage.style.paddingBottom = `${foot(window.innerHeight)}px`;
-    // the controls above the book end where the book does
-    root.style.setProperty('--book-r', `${Math.max(14, Math.round(window.innerWidth - b.getBoundingClientRect().right))}px`);
+    placeStrip();
     fitWithin();
+  }
+  // The controls above the book end where the book does: measured only while the book lies where it rests
+  // (not while it is drawn back behind a letter, which measures it, wrongly, short), and measured again once
+  // it has come back (see the letter's finish()).
+  function placeStrip() {
+    if (!book || getComputedStyle(book.bk).transform !== 'none') return;
+    root.style.setProperty('--book-r', `${Math.max(14, Math.round(window.innerWidth - book.bk.getBoundingClientRect().right))}px`);
   }
 
   // A work's contents run on in a paragraph; where its page has room for them as a list, one to a
@@ -577,7 +583,7 @@
   function fitWithin() {
     const fits = (p) => p.scrollHeight <= p.clientHeight + 1;
     // (each page fitted as it stands without the letter, which is set on the calendar page afterwards)
-    for (const s of book.spreads) s.r.classList.remove('letter-beside', 'letter-small');
+    for (const s of book.spreads) s.r.classList.remove('letter-beside', 'letter-small', 'letter-shelf', 'letter-band');
     for (const s of book.spreads) {
       s.v.classList.remove('tight');
       const w = s.r.querySelector('.within'), parts = s.r.querySelector('.parts');
@@ -1084,7 +1090,7 @@
     const ASPECT = 960 / 649, LIFT = 0.6033;   // the envelope's width to its height; its flap's depth, to its height
     function place() {
       if (!kal || !room) return;
-      kal.classList.remove('letter-small', 'letter-beside', 'letter-band');
+      kal.classList.remove('letter-small', 'letter-beside', 'letter-band', 'letter-shelf');
       kal.querySelectorAll('.by-letter').forEach((li) => li.classList.remove('by-letter'));
       env.style.top = env.style.left = ''; face.style.width = '';
       if (!env.closest('.book')) return;
@@ -1102,6 +1108,9 @@
       };
       const list = kal.querySelector('.contents');
       const gap = 0.5 * em, top = room.offsetTop + gap, band = room.offsetHeight - 2 * gap;
+      kal.classList.add('letter-small');
+      const pad = env.offsetHeight - face.offsetHeight, small = face.offsetWidth;   // (its size beside the date)
+      kal.classList.remove('letter-small');
       // in the room above the contents
       let w = Math.min(line * 0.6, (band - below) / per);
       if (w >= line * 0.38) {
@@ -1116,9 +1125,9 @@
         const rows = [...list.querySelectorAll('li')], titles = rows.map((li) => li.querySelector('a'));
         const before = titles.map((a) => a.offsetHeight);
         // (smaller, if a title it would lie beside could not then keep to its line: it lies beside fewer)
-        for (const k of [1, 0.9, 0.8, 0.7]) {
+        for (const k of [1, 0.9, 0.8, 0.7, 0.6, 0.5]) {
           w = most * k;
-          if (w < 7 * em) break;
+          if (w < small * 1.15) break;
           const bottom = top + need(w);
           kal.classList.add('letter-beside');
           for (const li of rows) li.classList.toggle('by-letter', li.offsetTop < bottom && li.offsetTop + li.offsetHeight > top);
@@ -1127,9 +1136,26 @@
           rows.forEach((li) => li.classList.remove('by-letter'));
         }
       }
-      // beside the date
+      // in the room under the verse, at the right of the line, reaching down beside the contents' heading
+      // (which is at the left) as far as the contents' first line, its word before it: where that makes it
+      // larger, by a good deal, than it would be beside the date
+      const padTop = parseFloat(cs.paddingTop), d = kal.querySelector('.kal-date');
+      const ol = list && list.querySelector('ol');
+      if (ol) {
+        const shelf = ol.offsetTop - top - gap;
+        w = Math.min(line * 0.42, (shelf - pad) / per);
+        if (w >= small * 1.15) {
+          kal.classList.add('letter-shelf');
+          face.style.width = `${w.toFixed(1)}px`;
+          env.style.top = `${(top + (shelf - (w / ASPECT) * (1 + lift) - pad) / 2 + (w / ASPECT) * lift).toFixed(1)}px`;
+          return;
+        }
+      }
+      // beside the date, its foot level with the date's; opened, no larger than lets its flap stop at the top
+      // of the page's text, below the folio's number
       kal.classList.add('letter-small');
-      const d = kal.querySelector('.kal-date');
+      const room2 = d.offsetTop + d.offsetHeight + 0.1 * em - padTop - 0.6 * em;   // (a little clear of the text's top)
+      if (lift && (small / ASPECT) * (1 + lift) + pad > room2) face.style.width = `${Math.max(3 * em, (room2 - pad) / per).toFixed(1)}px`;
       env.style.top = `${d.offsetTop + d.offsetHeight - env.offsetHeight + 0.1 * em}px`;
     }
 
@@ -1419,6 +1445,7 @@
       clearTimeout(dwell);
       showRead();
       if (away) { away.cancel(); away = null; }
+      if (book) Promise.all(book.bk.getAnimations().map((a) => a.finished.catch(() => {}))).then(placeStrip);
       dlg.querySelectorAll('.me-fold').forEach((f) => f.remove());
       paper.getAnimations().forEach((a) => a.cancel());
       veil.getAnimations().forEach((a) => a.cancel());
