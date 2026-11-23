@@ -16,9 +16,26 @@ at the end.
 
 `index.html` is one document, read in order, made of seven folios: the
 opening (the maker, his name spelled out beside a real historiated initial A,
-and a calendar with the day's verse and the contents),
+and a calendar with the day's verse, a sealed letter and the contents),
 one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
+
+Beside the calendar's date, on the English page, lies an envelope closed with
+a seal of real red wax. In it is the reading from C. H. Spurgeon's *Morning
+and Evening* (1865–68) for the reader's hour: the evening's from five, or from
+noon once the evening light has come, and until four in the morning still the
+evening's of the day before; else the morning's. Pressed, its flap lifts and
+the letter, folded in three, rises out of it; the book draws back to the left,
+a little smaller and out of focus, and the letter comes forward and unfolds,
+its text of Scripture at its head and Spurgeon's reading beneath, with a
+switch for the other reading of the day. The ×, a click on the desk beyond it,
+Esc or Back fold it up and put it back. On a phone it rises from the foot of
+the screen instead, and can also be drawn down. For readers who ask for
+stillness it simply comes and goes. It is a dialog to a screen reader, and
+gives the focus back to the envelope when it is put away. Each day's two
+readings are a file of their own (`assets/morning-evening/MM-DD.json`, about
+4 KB), fetched only when a pointer or a finger comes near the envelope. The
+Spanish page has none until there is a Spanish text free to use.
 
 On a screen wide and tall enough (a window from about 1024 by 768),
 `assets/site.js` binds those pages into a book lying open across the whole
@@ -104,8 +121,9 @@ another, but without the shade.
 | `src/strings/en.toml`, `src/strings/es.toml` | Every word on the page, and the five works, each with the verse set beneath its miniature. Edit these to change the text or add a work; a sixth work would need a line of the chorale of its own (see `tools/engrave.py`). |
 | `src/head.html`, `src/page.html`, `src/404.html` | The page templates. |
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
+| `assets/morning-evening/` | Spurgeon's *Morning and Evening*, a file to each day of the year (29 February too): its morning and its evening reading, each its text of Scripture, the reference and the reading, a hymn it quotes kept line by line. Made by `tools/morning-evening.py` from the Christian Classics Ethereal Library's plain text (public domain), with the typewriter's marks set as a printer would set them. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
-| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
+| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G., the fleuron and the red wax seal on the letter. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
 | `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish. Nothing moves for readers who ask for stillness. |
 | `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words (the tool also writes all four voices as data for playing, which `tools/build.py` leaves out of the page). Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
@@ -114,7 +132,7 @@ another, but without the shade.
 | `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
-| `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size (and the book's first pages on the fullest day the kalendar has, a Sunday with one of the longest verses, whatever day the check is run), pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
+| `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size (and the book's first pages on the fullest day the kalendar has, a Sunday with one of the longest verses, whatever day the check is run), pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the letter (every day's readings there, and opened and put away again in the book and on a phone), the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
 | `favicon.ico`, `apple-touch-icon.png`, `assets/icon-192.png`, `assets/og-*.png` | Icons and share images, drawn by `tools/render-images.js` from the real initial, parchment and gold. |
 

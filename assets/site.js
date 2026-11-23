@@ -821,6 +821,7 @@
     // keys: the arrows, Page Up and Down, Home and End
     book.onKey = (e) => {
       if (!book || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (document.querySelector('dialog[open]')) return;   // (a letter open over the book has the keys)
       const t = e.target;
       if (t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
       if ((e.key === 'f' || e.key === 'F') && canFull) { e.preventDefault(); toggleFull(); return; }
@@ -978,6 +979,285 @@
   const shown = () => root.classList.remove('binding');
   if (book && !typeIn()) Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 600))]).then(() => { if (book) { fitWithin(); check(); } shown(); });
   else shown();
+
+  // ---------------------------------------------------------------------------------------------
+  // The letter. Beside the calendar's date lies a sealed envelope, and in it the reading from Spurgeon's
+  // Morning and Evening for the reader's hour (assets/morning-evening/, a file to each day, fetched only
+  // when a pointer or a finger comes near it). Opened, its flap lifts and the letter, folded in three,
+  // rises out of it; the book draws back to the left and out of focus, and the letter comes forward and
+  // is unfolded to be read. The ×, a click or tap on the desk beyond it, Esc or Back fold it up again and
+  // put it back. On a phone, where there is no book to draw back, it rises from the foot of the screen
+  // and is let down again by the same means or by drawing it down. For readers who ask for stillness it
+  // simply comes and goes.
+  //   Which reading: the evening's from five, or from noon once the evening light has come (src/evening.js);
+  // until four in the morning, still the evening's of the day before; else the morning's. A switch on the
+  // letter gives the other.
+  const envBtn = document.querySelector('.envelope');
+  if (envBtn && window.HTMLDialogElement && window.fetch) letter(envBtn);
+  function letter(env) {
+    let W;
+    try { W = JSON.parse(env.dataset.me); } catch (e) { return; }
+    const pad = (x) => String(x).padStart(2, '0');
+    const hour = () => {
+      const now = new Date(), h = now.getHours();
+      if (h < 4) { const d = new Date(now); d.setDate(now.getDate() - 1); return { d, eve: true }; }
+      return { d: now, eve: h >= 17 || (h >= 12 && root.classList.contains('evening')) };
+    };
+    const dayKey = (d) => `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    let when = hour();
+    const word = env.querySelector('.env-word');
+    const label = () => {
+      const p = when.eve ? W.evening : W.morning;
+      word.textContent = p;
+      env.setAttribute('aria-label', W.open.replace('{period}', p.toLowerCase()));
+    };
+    label();
+    env.hidden = false;
+
+    const got = {};
+    const get = (k) => got[k] || (got[k] = fetch(`/assets/morning-evening/${k}.json`)
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .catch((e) => { delete got[k]; throw e; }));
+    const early = () => { get(dayKey(when.d)).catch(() => {}); };
+    env.addEventListener('pointerenter', early);
+    env.addEventListener('focus', early);
+    env.addEventListener('touchstart', early, { passive: true });
+
+    // the letter: a dialog over the whole window, a veil over what lies behind it, and the paper
+    const dlg = el('dialog', 'me-letter', { 'aria-labelledby': 'me-when' });
+    const veil = el('div', 'me-veil');
+    const paper = el('div', 'me-paper');
+    const shut = el('button', 'me-close', { type: 'button', 'aria-label': W.close });
+    shut.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
+    const scroll = el('article', 'me-scroll', { tabindex: '-1', lang: 'en' });
+    const head = el('header', 'me-head');
+    const title = el('h2', 'me-when', { id: 'me-when' });
+    const period = el('span', 'me-period'), dated = el('span', 'me-date');
+    title.append(period, dated);
+    const which = el('div', 'me-which', { role: 'group', 'aria-label': W.which });
+    const bM = el('button', '', { type: 'button' }), bE = el('button', '', { type: 'button' });
+    bM.textContent = W.morning; bE.textContent = W.evening;
+    which.append(bM, bE);
+    head.append(title, which);
+    const text = el('blockquote', 'me-text');
+    const body = el('div', 'me-body');
+    const sign = el('p', 'me-sign');
+    sign.innerHTML = W.by;   // (from the page's own strings, escaped by tools/build.py)
+    scroll.append(head, text, body, sign);
+    paper.append(shut, scroll);
+    dlg.append(veil, paper);
+    document.body.append(dlg);
+
+    // Lord in small capitals where the King James sets LORD for the Name, as the calendar's verse has it
+    const lorded = (node, s) => s.split(/\bLORD\b/).forEach((part, i) => {
+      if (i) { const l = el('span', 'lord'); l.textContent = 'Lord'; node.append(l); }
+      node.append(part);
+    });
+    let shown = null;   // { data, eve, d }
+    function render() {
+      const { data, eve, d } = shown;
+      period.textContent = eve ? W.evening : W.morning;
+      dated.textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+      bM.setAttribute('aria-pressed', String(!eve));
+      bE.setAttribute('aria-pressed', String(eve));
+      text.textContent = ''; body.textContent = '';
+      if (!data) { const p = el('p', 'me-failed'); p.textContent = W.failed; body.append(p); return; }
+      const r = data[eve ? 'e' : 'm'];
+      const tp = el('p'), tc = el('cite');
+      lorded(tp, r.text.replace(/^“([\s\S]*)”$/, '$1'));
+      tc.textContent = r.ref;
+      text.append(tp, tc);
+      r.body.forEach((p, i) => {
+        const n = el('p', Array.isArray(p) ? 'stanza' : i === 0 ? 'first' : '');
+        if (Array.isArray(p)) p.forEach((line) => { const s = el('span'); lorded(s, line); n.append(s); });
+        else lorded(n, p);
+        body.append(n);
+      });
+    }
+    const swap = (eve) => {
+      if (!shown || shown.eve === eve) return;
+      shown.eve = eve;
+      const go = () => { render(); scroll.scrollTop = 0; };
+      if (still.matches) { go(); return; }
+      scroll.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: 'ease-in' }).finished.then(() => {
+        go(); scroll.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+      });
+    };
+    bM.addEventListener('click', () => swap(false));
+    bE.addEventListener('click', () => swap(true));
+
+    // ---- the motions ----
+    const EASE = 'cubic-bezier(.2, .7, .2, 1)', SWING = 'cubic-bezier(.45, 0, .2, 1)';
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const done = (a) => a.finished.catch(() => {});
+    const onPhone = () => root.classList.contains('leaves') && !root.classList.contains('spread');
+    let state = 'shut', pushed = false, rest = null, away = null, flight = null, later = false;
+
+    // the folded letter: three panels the size of the paper, the upper and lower folded over the middle
+    function folded(r, shut = false) {
+      const f = el('div', 'me-fold', { 'aria-hidden': 'true' });
+      Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      for (const c of ['mid', 'top', 'bot']) f.append(el('div', `me-panel ${c}`));   // (the outer two painted over the middle)
+      if (shut) { f.querySelector('.top').style.transform = turn(-179.5); f.querySelector('.bot').style.transform = turn(179.5); }
+      dlg.append(f);
+      return f;
+    }
+    // where a letter lies in the envelope, as a transform of the folded letter (its middle third)
+    function inEnvelope(r, e) {
+      const s = (e.width * 0.78) / r.width;
+      const dx = e.left + e.width / 2 - (r.left + r.width / 2), dy = e.top + e.height * 0.56 - (r.top + r.height / 2);
+      return { s, dx, dy, rise: (r.height / 3) * 0.95 };
+    }
+    const at = (p, extra = '') => `translate(${p.dx}px, ${p.dy}px) scale(${p.s})${extra}`;
+    // unfolding, the lower third comes down and then the upper goes up; folding, the reverse
+    const turn = (deg) => `perspective(1400px) rotateX(${deg}deg)`;
+    const fold = (f, open, ms) => {
+      const top = f.querySelector('.top'), bot = f.querySelector('.bot');
+      const swing = (p, folded, delay) => done(p.animate(open ? [{ transform: turn(folded) }, { transform: turn(0) }] : [{ transform: turn(0) }, { transform: turn(folded) }],
+        { duration: ms, delay, easing: SWING, fill: 'both' }));
+      return Promise.all([swing(bot, 179.5, open ? 0 : ms * 0.5), swing(top, -179.5, open ? ms * 0.5 : 0)]);
+    };
+
+    async function open() {
+      if (state !== 'shut' || (book && book.busy)) return;
+      state = 'opening';
+      when = hour(); label();
+      let data = null;
+      env.classList.add('waiting');
+      try { data = await get(dayKey(when.d)); } catch (e) {}
+      env.classList.remove('waiting');
+      shown = { data, eve: when.eve, d: when.d };
+      render();
+      scroll.scrollTop = 0;
+      const phone = onPhone();
+      dlg.classList.toggle('sheet', phone);
+      dlg.classList.toggle('beside', !!book);
+      rest = env.querySelector('.env-body').getBoundingClientRect();
+      paper.style.opacity = '0';
+      dlg.showModal();
+      try { history.pushState({ letter: true }, ''); pushed = true; } catch (e) {}
+      env.classList.add('open');   // the flap lifts (site.css)
+      // (what lies behind goes out of focus once the letter is on its way out of the envelope)
+      done(veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: still.matches ? 160 : 560, delay: still.matches || onPhone() ? 0 : 220, easing: 'ease-out', fill: 'both' }));
+      if (still.matches) {
+        paper.style.opacity = '';
+        await done(paper.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' }));
+      } else if (phone) {
+        paper.style.opacity = '';
+        await done(paper.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 440, delay: 120, easing: EASE, fill: 'backwards' }));
+      } else {
+        const r = paper.getBoundingClientRect();
+        const f = folded(r, true), p = inEnvelope(r, rest);
+        flight = { r, p };
+        // the book draws back once the letter is out of it
+        if (book) {
+          const z = parseFloat(book.bk.style.zoom) || 1, dx = Math.min(window.innerWidth * 0.26, Math.max(0, r.left - 24));
+          away = book.bk.animate([{ transform: 'none' }, { transform: `translateX(${-dx / z}px) scale(.92)` }],
+            { duration: 820, delay: 260, easing: EASE, fill: 'forwards' });
+        }
+        const fly = f.animate([
+          { transform: at(p, ` translateY(${p.rise * 0.5}px)`), opacity: 0 },
+          { transform: at(p, ` translateY(${-p.rise}px)`), opacity: 1, offset: 0.32 },
+          { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+        ], { duration: 760, delay: 180, easing: EASE, fill: 'both' });
+        await done(fly);
+        await fold(f, true, 300);
+        paper.style.opacity = '';
+        await done(paper.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' }));
+        f.remove();
+      }
+      if (state !== 'opening') return;
+      state = 'open';
+      scroll.focus({ preventScroll: true });
+      if (later) { later = false; close(); }   // (asked to be put away while it was still coming)
+    }
+
+    async function close() {
+      if (state === 'opening') { later = true; return; }
+      if (state !== 'open') return;
+      state = 'closing';
+      if (pushed) { pushed = false; history.back(); }
+      const phone = dlg.classList.contains('sheet');
+      // the book comes forward again from wherever it has got to
+      const back = () => {
+        if (!away) return;
+        const a = away, bk = a.effect.target; away = null;
+        const from = getComputedStyle(bk).transform;
+        a.cancel();
+        done(bk.animate([{ transform: from }, { transform: 'none' }], { duration: 720, easing: EASE }));
+      };
+      done(veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: still.matches ? 160 : 520, delay: still.matches ? 0 : 260, easing: 'ease-in-out', fill: 'both' }));
+      const r = paper.getBoundingClientRect();
+      if (still.matches || (!phone && (!flight || Math.abs(r.width - flight.r.width) > 1 || Math.abs(r.height - flight.r.height) > 1))) {
+        back();
+        await done(paper.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }));
+      } else if (phone) {
+        const from = getComputedStyle(paper).transform;
+        await done(paper.animate([{ transform: from === 'none' ? 'none' : from }, { transform: 'translateY(105%)' }], { duration: 320, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }));
+      } else {
+        const f = folded(r);
+        await done(paper.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' }));
+        await fold(f, false, 260);
+        back();
+        await done(f.animate([
+          { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+          { transform: at(flight.p, ` translateY(${-flight.p.rise}px)`), opacity: 1, offset: 0.72 },
+          { transform: at(flight.p, ` translateY(${flight.p.rise * 0.5}px)`), opacity: 0 },
+        ], { duration: 700, easing: SWING, fill: 'both' }));
+        f.remove();
+      }
+      env.classList.remove('open');   // and the flap comes down
+      finish();
+    }
+    function finish() {
+      if (away) { away.cancel(); away = null; }
+      dlg.querySelectorAll('.me-fold').forEach((f) => f.remove());
+      paper.getAnimations().forEach((a) => a.cancel());
+      veil.getAnimations().forEach((a) => a.cancel());
+      paper.style.transform = ''; paper.style.opacity = '';
+      env.classList.remove('open');
+      state = 'shut'; later = false;
+      if (dlg.open) dlg.close();
+      env.focus({ preventScroll: true });
+    }
+
+    env.addEventListener('click', open);
+    shut.addEventListener('click', close);
+    // a click on the desk beyond the paper puts it away; Esc does (the browser's own cancel, taken over to
+    // fold it up first); and Back does, for the letter took a step in the history as it opened
+    dlg.addEventListener('click', (e) => { if (!paper.contains(e.target)) close(); });
+    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+    dlg.addEventListener('close', () => { if (state !== 'shut') { pushed = false; finish(); } });
+    window.addEventListener('popstate', () => { if (state === 'open' || state === 'opening') { pushed = false; close(); } });
+    // the page beneath is not scrolled by a wheel or a finger on the veil
+    for (const t of ['wheel', 'touchmove']) veil.addEventListener(t, (e) => e.preventDefault(), { passive: false });
+
+    // on a phone the letter is drawn down to put it away, from its head or when it is read to its top
+    let drag = null;
+    paper.addEventListener('touchstart', (e) => {
+      if (!dlg.classList.contains('sheet') || state !== 'open' || e.touches.length !== 1) return;
+      if (scroll.scrollTop > 0 && !e.target.closest('.me-head')) return;
+      drag = { y: e.touches[0].clientY, dy: 0 };
+    }, { passive: true });
+    paper.addEventListener('touchmove', (e) => {
+      if (!drag) return;
+      drag.dy = Math.max(0, e.touches[0].clientY - drag.y);
+      if (drag.dy > 0) { e.preventDefault(); paper.style.transform = `translateY(${drag.dy}px)`; }
+    }, { passive: false });
+    paper.addEventListener('touchend', () => {
+      if (!drag) return;
+      const { dy } = drag; drag = null;
+      if (dy > 90) close();
+      else if (dy > 0) { paper.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 220, easing: EASE }); paper.style.transform = ''; }
+    });
+
+    // the hour turns while the page is open
+    setInterval(() => {
+      if (state !== 'shut') return;
+      const w = hour();
+      if (w.eve !== when.eve || dayKey(w.d) !== dayKey(when.d)) { when = w; label(); }
+    }, 6e4);
+  }
 
   // ---------------------------------------------------------------------------------------------
   // Light. The gold catches a light that follows the pointer: the burnished gold of the opening

@@ -1101,3 +1101,138 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   html.leaves:not(.spread) .modern .parts li { grid-template-columns: 1.7em 1fr; column-gap: .5em; }
   .creds .kept { white-space: normal; }   /* (beside the medallion even a short item may not fit whole) */
 }
+
+/* ---------- The letter: Spurgeon's Morning and Evening, sealed beside the calendar's date ----------
+   The envelope is the book's own paper, a shade deeper, seen from the back: its side and lower flaps
+   meeting beneath the top one, which is closed with a seal of real red wax (assets/book/seal.webp). It
+   stands at the right of the date and takes no room of its own. site.js shows it, and opens it. */
+.envelope {
+  flex: none; align-self: center; margin: -.2em 0 -.2em auto; padding: 4px 2px 2px; border: 0; background: none; cursor: pointer;
+  display: grid; justify-items: center; gap: 7px; color: var(--muted); -webkit-tap-highlight-color: transparent;
+}
+.envelope[hidden] { display: none; }
+.env-body {
+  position: relative; display: block; width: 60px; height: 40px; perspective: 240px; border-radius: 2px;
+  background: #F0E6D2 url("/assets/book/paper.webp") 0 0 / 300px auto;
+  box-shadow: inset 0 0 0 .5px rgba(90, 70, 45, .32), 0 1px 1.5px rgba(60, 44, 28, .22), 0 7px 12px -7px rgba(60, 44, 28, .4);
+  transition: transform .25s ease;
+}
+.env-body::before {   /* the side flaps' edges, from the lower corners up to the middle */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background:
+    linear-gradient(to top right, transparent calc(50% - .7px), rgba(90, 70, 45, .26) 50%, transparent calc(50% + .7px)) left bottom / 50% 58% no-repeat,
+    linear-gradient(to top left, transparent calc(50% - .7px), rgba(90, 70, 45, .26) 50%, transparent calc(50% + .7px)) right bottom / 50% 58% no-repeat;
+}
+.env-flap {
+  position: absolute; left: 0; right: 0; top: 0; height: 60%; transform-origin: 50% 0;
+  filter: drop-shadow(0 1px .7px rgba(60, 44, 28, .32));
+  transition: transform .36s cubic-bezier(.45, 0, .2, 1);
+}
+.env-flap::before {
+  content: ""; position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: #F5ECDB url("/assets/book/paper.webp") 40px 12px / 300px auto;
+}
+.env-seal {
+  position: absolute; left: 50%; top: 100%; width: 18px; height: 18px; translate: -50% -60%;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 .5px .6px rgba(60, 16, 8, .45));
+}
+.envelope.open .env-flap { transform: rotateX(180deg); }
+.envelope:hover .env-body { transform: translateY(-1px) rotate(-1.5deg); }
+.envelope.waiting .env-body { opacity: .8; }
+.env-word { font: 500 .8rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .09em; color: var(--muted); transition: color .2s ease; }
+.envelope:hover .env-word { color: var(--vermilion); }
+.envelope:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 3px; border-radius: 3px; }
+/* in the book, at the page's own scale */
+.book .envelope { gap: .38em; padding: .2em .1em .1em; }
+.book .env-body { width: 3.2em; height: 2.1em; }
+.book .env-seal { width: .98em; height: .98em; }
+.book .env-word { font-size: max(.7em, calc(12px / var(--z, 1))); }
+@media print { .envelope, .me-letter { display: none !important; } }
+
+/* the letter, opened: over the whole window, a veil that puts what lies behind out of focus, and the
+   paper; beside the book it lies a little to the right, the book having drawn back to the left */
+.me-letter {
+  position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0;
+  border: 0; background: transparent; overflow: hidden; color: var(--ink); display: grid; place-items: center;
+}
+.me-letter:not([open]) { display: none; }
+.me-letter::backdrop { background: transparent; }
+.me-veil {
+  position: absolute; inset: 0; background: rgba(46, 32, 16, .2);
+  -webkit-backdrop-filter: blur(3px) saturate(.94); backdrop-filter: blur(3px) saturate(.94);
+}
+.me-paper {
+  position: relative; z-index: 1; box-sizing: border-box; display: flex; flex-direction: column;
+  width: min(35rem, calc(100vw - 32px)); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
+  background: #FAF6EE url("/assets/book/paper.webp") 0 0 / 720px 720px; border-radius: 2px;
+  box-shadow: 0 0 0 .5px rgba(90, 70, 45, .2), 0 1px 2px rgba(60, 44, 28, .18), 0 26px 60px -20px rgba(40, 28, 14, .6);
+}
+.me-letter.beside .me-paper { left: min(9vw, 150px); }
+.me-paper::before {   /* where it was folded in three: two creases, a light and a shade on either side of each */
+  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent calc(100% / 3 - 6px), rgba(90, 70, 45, .045) calc(100% / 3 - .5px), rgba(255, 253, 248, .5) calc(100% / 3 + .5px), transparent calc(100% / 3 + 7px)),
+    linear-gradient(to bottom, transparent calc(200% / 3 - 6px), rgba(90, 70, 45, .045) calc(200% / 3 - .5px), rgba(255, 253, 248, .5) calc(200% / 3 + .5px), transparent calc(200% / 3 + 7px));
+}
+.me-paper::after {   /* the evening light, as over the page (the letter lies above it) */
+  content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none; opacity: var(--dusk, 0);
+  background: radial-gradient(ellipse 120% 100% at 50% 42%, transparent 60%, rgba(66, 40, 14, .1) 100%), linear-gradient(rgba(255, 170, 90, .05), rgba(255, 170, 90, .05));
+}
+.me-scroll {
+  min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; padding: 2.6rem 3rem 2.4rem;
+  scrollbar-width: thin; scrollbar-color: rgba(90, 70, 45, .3) transparent;
+}
+.me-close {
+  position: absolute; z-index: 4; top: 8px; right: 8px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px;
+  display: grid; place-items: center; background: none; color: var(--muted); cursor: pointer; transition: color .2s ease, background-color .2s ease;
+}
+.me-close svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.me-close:hover { color: var(--ink); background: rgba(90, 70, 45, .07); }
+.me-close:focus-visible, .me-which button:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 1px; }
+.me-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1.2rem; margin: 0 1.8rem 1.5rem 0; }
+.me-when { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .7rem; font-size: 1rem; font-weight: 400; }
+.me-period { font-family: var(--rubric); font-variant-caps: all-small-caps; font-weight: 500; letter-spacing: .1em; font-size: 1.2rem; color: var(--vermilion); }
+.me-date { font-style: italic; color: var(--muted); }
+.me-which { display: flex; margin-right: -8px; }
+.me-which button {
+  padding: 8px; border: 0; background: none; cursor: pointer; color: var(--muted);
+  font: 500 .95rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em;
+}
+.me-which button + button { position: relative; }
+.me-which button + button::before { content: ""; position: absolute; left: 0; top: 30%; bottom: 30%; width: 1px; background: rgba(90, 70, 45, .25); }
+.me-which button:hover { color: var(--ink); }
+.me-which button[aria-pressed="true"] { color: var(--ink); text-decoration: underline 1px var(--vermilion); text-underline-offset: .35em; }
+.me-text { margin: 0 0 1.5rem; padding: 0 0 1.35rem; border-bottom: 1px solid var(--rule); }
+.me-text p { margin: 0; font-style: italic; font-size: 1.45rem; line-height: 1.38; text-wrap: balance; }
+.me-text cite {
+  display: block; margin-top: .6rem; font-style: normal; font-family: var(--rubric); font-variant-caps: all-small-caps;
+  font-variant-numeric: lining-nums; font-weight: 500; letter-spacing: .08em; color: var(--muted);
+}
+.me-body { font-size: 1.1rem; line-height: 1.62; text-align: justify; hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
+.me-body p { margin: 0; }
+.me-body p + p { text-indent: 1.4em; }
+.me-body .stanza { display: grid; margin: .75em 0 .75em 1.6em; text-indent: 0; text-align: left; font-style: italic; font-size: .97em; line-height: 1.5; color: #3F362E; hyphens: manual; }
+.me-body .stanza + p { text-indent: 0; }
+.me-body .first::first-letter { float: left; margin: .07em .09em 0 0; font-size: 3.3em; line-height: .78; font-weight: 500; color: var(--vermilion); }
+.me-sign { margin: 1.5rem 0 0; text-align: right; font-size: .95rem; color: var(--muted); }
+.me-failed { font-style: italic; color: var(--muted); }
+
+/* the letter folded in three, as it comes out of the envelope and goes back into it */
+.me-fold { position: fixed; z-index: 3; pointer-events: none; transform-origin: 50% 50%; }
+.me-panel {
+  position: absolute; left: 0; right: 0; height: calc(100% / 3 + .5px);
+  background: #FAF6EE url("/assets/book/paper.webp") 0 0 / 720px 720px; box-shadow: 0 0 0 .5px rgba(90, 70, 45, .18);
+}
+.me-panel.top { top: 0; transform-origin: 50% 100%; background-image: linear-gradient(to bottom, transparent 75%, rgba(90, 70, 45, .07)), url("/assets/book/paper.webp"); background-size: auto, 720px 720px; }
+.me-panel.mid { top: calc(100% / 3); box-shadow: 0 0 0 .5px rgba(90, 70, 45, .18), 0 20px 44px -18px rgba(40, 28, 14, .5); }
+.me-panel.bot { bottom: 0; transform-origin: 50% 0; background-image: linear-gradient(to top, transparent 75%, rgba(90, 70, 45, .07)), url("/assets/book/paper.webp"); background-size: auto, 720px 720px; }
+
+/* on a phone, a sheet risen from the foot of the screen */
+.me-letter.sheet { place-items: end center; }
+.me-letter.sheet .me-paper { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 14px 14px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* (in place of the creases, a grip to draw it down by) */
+.me-letter.sheet .me-paper::before { z-index: 4; inset: 8px auto auto 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: rgba(90, 70, 45, .22); }
+.me-letter.sheet .me-scroll { padding: 2.1rem max(20px, env(safe-area-inset-left, 0px)) 2rem; }
+.me-letter.sheet .me-close { top: 12px; right: 6px; width: 44px; height: 44px; }
+.me-letter.sheet .me-text p { font-size: 1.3rem; }
+.me-letter.sheet .me-body { font-size: 1.0625rem; text-align: left; }

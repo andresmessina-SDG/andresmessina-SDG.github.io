@@ -245,6 +245,33 @@ const checks = {
     }
   },
 
+  // the letter on the calendar page: a reading for every day of the year, morning and evening; it opens over
+  // the book and on a phone, takes the focus, and is put away by Esc and by Back, giving the focus back
+  async letter(browser, base) {
+    const dir = require('path').join(__dirname, '..', 'assets', 'morning-evening');
+    const days = require('fs').readdirSync(dir).filter((f) => f.endsWith('.json'));
+    const bad = days.filter((f) => { const d = JSON.parse(require('fs').readFileSync(require('path').join(dir, f), 'utf8')); return !(d.m && d.e && d.m.body.length && d.e.body.length && d.m.ref && d.e.ref); });
+    expect(days.length === 366 && !bad.length, 'letter: 366 days, each a morning and an evening', `${days.length} files; incomplete: ${bad.join(', ')}`);
+    for (const [label, opts, how] of [['book', { viewport: { width: 1440, height: 900 } }, 'Escape'], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, 'Back']]) {
+      const { ctx, page, errors } = await open(browser, base, '/', opts, null, '2026-11-23');
+      await page.evaluate(() => document.querySelector('.envelope').scrollIntoView({ block: 'center' }));
+      await page.click('.envelope');
+      await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('me-scroll'), null, { timeout: 8000 }).catch(() => {});
+      const o = await page.evaluate(() => ({ open: document.querySelector('.me-letter').open, words: document.querySelector('.me-body').textContent.split(/\s+/).length, inside: !!document.activeElement.closest('.me-letter') }));
+      expect(o.open && o.words > 200 && o.inside, `letter ${label}: opens with the reading, focus within`, JSON.stringify(o));
+      if (how === 'Back') await page.goBack(); else await page.keyboard.press('Escape');
+      await page.waitForFunction(() => !document.querySelector('.me-letter').open, null, { timeout: 8000 }).catch(() => {});
+      await page.waitForTimeout(800);   // (the book's last steps home)
+      const c = await page.evaluate(() => ({ open: document.querySelector('.me-letter').open, focus: document.activeElement.className, book: document.querySelector('.book') ? getComputedStyle(document.querySelector('.book')).transform : 'none', at: location.pathname }));
+      expect(!c.open && c.focus === 'envelope' && c.book === 'none' && c.at === '/', `letter ${label}: ${how} puts it away`, JSON.stringify(c));
+      expect(!errors.length, `letter ${label}: no errors`, errors.join('; '));
+      await ctx.close();
+    }
+    const { ctx, page } = await open(browser, base, '/es/', { viewport: { width: 1440, height: 900 } });
+    expect(!(await page.$('.envelope')), 'letter: none on the Spanish page (no free Spanish text yet)');
+    await ctx.close();
+  },
+
   async print(browser, base) {
     const { ctx, page } = await open(browser, base, '/', { viewport: { width: 1440, height: 900 } });
     await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));

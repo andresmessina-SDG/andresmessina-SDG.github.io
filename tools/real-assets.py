@@ -11,6 +11,8 @@ sizes the page uses, in assets/book/:
   gold.webp       a patch of that Bible initial's burnished gold, to gild S.D.G.
   parchment.webp  medieval parchment, made to tile
   fleuron.webp    a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out
+  seal.webp       a seal of red sealing wax on a folded letter of 1846, cut from its paper, to close
+                  the envelope on the calendar page (from Commons' 960px rendering of the scan)
 
 "Lifting out" divides a scan by its own paper colour, so the paper becomes white and only ink,
 paint and gold remain; laid on the page with mix-blend-mode: multiply, the ornament sits on our
@@ -20,7 +22,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "book"
@@ -118,6 +120,26 @@ def main(src):
     f = ImageOps.autocontrast(f, cutoff=1).point(lambda v: 255 if v > 170 else round(v * 255 / 170))
     f = ImageOps.colorize(f, black=(52, 38, 26), white=(255, 255, 255))   # printer's ink, gone brown with age
     save(to_alpha(f.resize((300, round(300 * f.height / f.width)), Image.LANCZOS)), "fleuron.webp", 86)
+
+    # the seal: the wax is what is red and not tan (the letter's paper, and the scraps of it torn away
+    # with the wax, are tan); its letters and its border, darker, are filled in as what the wax encloses
+    w = Image.open(s / "seal-1846-960.jpg").convert("RGB").crop((370, 215, 605, 420))
+    a = np.asarray(w).astype(np.float32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    wax = Image.fromarray((((g < r * 0.62) & (b < r * 0.5) & (r > 70)) * 255).astype(np.uint8), "L")
+    wax = wax.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MinFilter(3))
+    outside = ImageOps.expand(wax, 3, 0)
+    ImageDraw.floodfill(outside, (0, 0), 128)
+    whole = outside.point(lambda v: 0 if v == 128 else 255).crop((3, 3, 3 + w.width, 3 + w.height))
+    ImageDraw.floodfill(whole, (110, 100), 200)          # the piece at the seal's middle, and no stray specks
+    whole = whole.point(lambda v: 255 if v == 200 else 0).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
+    w = w.convert("RGBA")
+    w.putalpha(whole.filter(ImageFilter.GaussianBlur(.7)))
+    w = w.crop(w.getchannel("A").point(lambda v: 255 if v > 30 else 0).getbbox())
+    side = max(w.size)
+    sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    sq.paste(w, ((side - w.width) // 2, (side - w.height) // 2), w)
+    save(sq.resize((128, 128), Image.LANCZOS), "seal.webp", 86)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ printed on, so that they can lie on this page instead.
 | `paper.webp` | The book's paper: the parchment above, its grain kept at a little over half and its colour at a quarter, on a warm white (made by `tools/paper.py`) | (derived from the parchment) | CC0 |
 | `cloth.webp` | A bookbinding cloth, for the boards: its weave kept, its scuffs and mottling evened out, dyed slate blue (made by `tools/modern-assets.py`) | Poly Haven, [Book Pattern](https://polyhaven.com/a/book_pattern) (Rob Tuytel) | CC0 |
 | `desk.webp` | Pale oak veneer, for the table the book lies on (made by `tools/modern-assets.py`) | Poly Haven, [Oak Veneer 03](https://polyhaven.com/a/oak_veneer_03) (Jenelle van Heerden) | CC0 |
+| `seal.webp` | A seal of red sealing wax, unbroken, on a folded letter of 30 June 1846 from the directorate of the Gewerbeverein of the Kingdom of Hanover; cut from its paper, for the envelope on the calendar page | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gewerbeverein_Koenigreich_Hannover_Direktion_1846_Wachssiegel.jpg), a scan of the original (from Commons' 960px rendering, as `seal-1846-960.jpg`) | Public domain |
 | `fleuron.webp` | A printer's ornament from the Kilmarnock edition of Burns's poems, 1786, its paper taken out | Photograph by Rosser1954, [via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Fleuron_from_1786_Robert_Burns_Kilmarnock_Edition.jpg), cropped and cleaned | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
 The share images (`assets/og-*.png`) and the icons are drawn by
@@ -31,4 +32,5 @@ python3 tools/real-assets.py path/to/originals
 
 | File | What it is | Source | Licence |
 |---|---|---|---|
+| `assets/morning-evening/` | C. H. Spurgeon, *Morning and Evening: Daily Readings* (1865–68), every morning's and evening's reading (made by `tools/morning-evening.py`) | Christian Classics Ethereal Library, [plain text](https://ccel.org/ccel/s/spurgeon/morneve/cache/morneve.txt) | Public domain |
 | The words beside the staves | Luther's *Ein feste Burg ist unser Gott* in English as Frederick H. Hedge made it (1853), and in Spanish as Juan Bautista Cabrera made it (19th century), each written to be sung to this tune | | Public domain |

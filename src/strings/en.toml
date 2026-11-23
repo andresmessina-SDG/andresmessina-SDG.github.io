@@ -53,6 +53,15 @@ turn_prev = "Turn back"
 folio = "Folio"
 within = "Within"
 thumbs_label = "Thumb index"
+# Spurgeon's Morning and Evening: a letter on the calendar page, the reading for the reader's hour
+# (on the English page only, until there is a Spanish text free to use)
+me_morning = "Morning"
+me_evening = "Evening"
+me_open = "Read this {period}’s portion of Spurgeon’s Morning and Evening"
+me_close = "Close the letter"
+me_which = "Morning or evening"
+me_by = "C. H. Spurgeon, *Morning and Evening*"
+me_failed = "The reading could not be fetched. It will be here when you are online again."
 # red-letter days in the kalendar
 lords_day = "The Lord’s Day"
 christmas = "Christmas Day"

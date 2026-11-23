@@ -305,6 +305,19 @@ def kalendar_js(verses: list, t: dict) -> str:
     return js.replace("</", "<\\/")
 
 
+def envelope(t: dict) -> str:
+    """Beside the calendar's date, a sealed letter: the reading from Spurgeon's Morning and Evening for the
+    reader's hour (assets/morning-evening/, made by tools/morning-evening.py). site.js shows it and opens it;
+    a page whose strings have no words for it has none."""
+    if "me_morning" not in t:
+        return ""
+    words = {k[3:]: t[k] for k in ("me_morning", "me_evening", "me_open", "me_close", "me_which", "me_failed")}
+    words["by"] = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["me_by"]))
+    return (f'<button class="envelope" type="button" aria-haspopup="dialog" hidden data-me=\'{esc(json.dumps(words, ensure_ascii=False, separators=(",", ":")))}\'>'
+            '<span class="env-body" aria-hidden="true"><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="128" height="128" decoding="async"></span></span>'
+            '<span class="env-word" aria-hidden="true"></span></button>')
+
+
 def ui_json(t: dict) -> str:
     """The words site.js needs for the book's own controls, kept with the page's other words."""
     keys = ["contents", "turn_next", "turn_prev", "folio", "show_all", "opening_name", "colophon_name", "thumbs_label"]
@@ -452,7 +465,7 @@ def main() -> None:
                   "chorale_1": indent(chorale(1) + gloss(1, t), 10), "chorale_7": indent(chorale(7) + gloss(7, t), 10),
                   "motif": motif, "sdg": sdg, "evening": evening,
                   "verse_html": lord(verses[0][lang]), "verse_ref": verses[0][f"{lang}_ref"],
-                  "kalendar_js": kalendar_js(verses, t), "ui": ui_json(t),
+                  "kalendar_js": kalendar_js(verses, t), "ui": ui_json(t), "envelope": envelope(t),
                   "contents": contents_html(t), "thumbs": thumbs_html(t),
                   "bach_html": re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["bach"])),
                   "works": works_html(t)}
