@@ -36,9 +36,13 @@ evening's of the day before; else the morning's. Pressed, its flap lifts and
 the letter, folded in three, rises out of it; the book draws back to the left,
 a little smaller and out of focus, and the letter comes forward and unfolds,
 along the creases it was really folded by: it is written on the blank page of
-the very letter that came in that envelope, her stationer's emboss at its head.
-Its text of Scripture is at its head and Spurgeon's reading beneath, with a
-switch for the other reading of the day. The ×, a click on the desk beyond it,
+the very letter that came in that envelope, with its own edges and her
+stationer's emboss at its head. It is written as a letter is: dated at the
+right of its head ("Monday morning, 23rd November"), the text of Scripture
+as its motto in the middle of the line, a printer's ornament (the colophon's
+fleuron of 1786), Spurgeon's reading, and his name at its foot. Its controls
+are not on the paper but on a slip beside it (above it, on a phone): the ×,
+the other reading of the day, and larger type. The ×, a click on the desk beyond it,
 Esc or Back fold it up and put it back. On a phone it rises from the foot of
 the screen instead, and can also be drawn down. For readers who ask for
 stillness it simply comes and goes. It is a dialog to a screen reader, and
@@ -50,6 +54,16 @@ read is kept in the reader's browser alone. Each day's two readings are a file
 of their own (`assets/morning-evening/MM-DD.json`, about 4 KB), fetched only
 when a pointer or a finger comes near the envelope, as is the letter's paper.
 The Spanish page has none until there is a Spanish text free to use.
+
+The envelope, the letter and its controls cast their shadows as the book does,
+away from the day's light (`--sun`, from the reader's hour); the letter's
+creases catch that light above and are shaded below, its panels darken as they
+turn edge on while it folds, and after dark it warms with the page.
+
+The type is set as a book's is: old-style figures in running text (lining
+figures in the labels and headings), the small capitals of every label spaced
+alike, leaders from each title to its folio in the contents, and a line of
+the letter that begins with a quotation mark hanging it in the margin.
 
 Beside the language, a control for larger type (and the same within the
 letter): everything a step larger, kept in the reader's browser and taken up

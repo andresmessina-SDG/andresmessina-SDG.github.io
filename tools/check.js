@@ -256,7 +256,7 @@ const checks = {
       const { ctx, page, errors } = await open(browser, base, '/', opts, null, '2026-11-23');
       await page.evaluate(() => document.querySelector('.envelope').scrollIntoView({ block: 'center' }));
       await page.click('.envelope');
-      await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('me-scroll'), null, { timeout: 8000 }).catch(() => {});
+      await page.waitForFunction(() => document.querySelector('.me-letter.ready'), null, { timeout: 8000 }).catch(() => {});
       const o = await page.evaluate(() => ({ open: document.querySelector('.me-letter').open, words: document.querySelector('.me-body').textContent.split(/\s+/).length, inside: !!document.activeElement.closest('.me-letter') }));
       expect(o.open && o.words > 200 && o.inside, `letter ${label}: opens with the reading, focus within`, JSON.stringify(o));
       if (how === 'Back') await page.goBack(); else await page.keyboard.press('Escape');

@@ -42,6 +42,7 @@ body {
   margin: 0;
   color: var(--ink);
   font: 400 1.1875rem/1.6 var(--text);
+  font-variant-numeric: oldstyle-nums proportional-nums;   /* figures that sit among the lower case, as the text's own do; the labels keep lining figures (below) */
   font-kerning: normal;
   font-variant-ligatures: common-ligatures;
   font-variant-numeric: oldstyle-nums;
@@ -65,7 +66,7 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #7E5D1B; }   /* gilt, deep enough to read: 4.8:1 on the parchment, by candle too */
 .jj > span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
 .head-tools { display: flex; align-items: baseline; gap: 10px; margin-left: auto; }
-.langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
+.langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: .08em; }
 /* the languages: a choice of two, the one in use marked by a ground of its own */
 .langs a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; transition: color .2s ease, background-color .2s ease; }
 .langs a:hover { color: var(--ink); background: rgba(90, 70, 45, .06); }
@@ -157,16 +158,16 @@ h1 {
 .portrait img { display: block; box-sizing: border-box; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--vellum); object-fit: cover; }
 .creds { min-width: 0; }
 .creds p { margin: 0; text-wrap: pretty; }
-.cred-title { text-wrap: balance; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.07em; color: var(--ink); line-height: 1.3; }
+.cred-title { text-wrap: balance; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: .08em; color: var(--ink); line-height: 1.3; }
 .cred-fields { margin-top: 3px !important; font-size: 1.02rem; line-height: 1.4; }
 .cred-degrees { margin-top: 2px !important; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
 .cred-line { display: block; }   /* the degree, its school, the rest: a line each */
-.cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: 0.05em; }
+.cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: .08em; }
 .cred-fields .kept, .cred-degrees .kept, .jj .kept { white-space: nowrap; }
 .cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; }
 
 /* a heading over a part of a page: a quiet label in small capitals */
-.rubric { line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: .9rem; letter-spacing: 0.09em; color: var(--muted); }
+.rubric { line-height: 1.3; margin: 0; font-family: var(--rubric); font-size: .9rem; letter-spacing: .08em; color: var(--muted); }
 
 /* ---------- The kalendar: today's date, a red-letter day, the day's verse, and the contents ---------- */
 .kalendar { margin-top: 64px; }
@@ -174,7 +175,7 @@ h1 {
 .kal-date[hidden] { display: none; }
 .kal-num { font-size: 3.4rem; line-height: .8; font-weight: 500; color: var(--ink); font-variant-numeric: lining-nums; }
 .kal-date.red .kal-num { color: var(--vermilion); }
-.kal-names { display: grid; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; line-height: 1.25; color: var(--ink); }
+.kal-names { display: grid; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: .08em; line-height: 1.25; color: var(--ink); }
 .kal-names .kal-ad { color: var(--muted); font-size: .85rem; }
 .kal-feast { margin: 8px 0 0; font-style: italic; color: var(--vermilion); }
 .verse { margin: 18px 0 0; padding: 0; }
@@ -187,7 +188,10 @@ h1 {
 .contents li { border-bottom: 1px solid rgba(120, 88, 50, .2); }
 .contents a { display: flex; align-items: baseline; gap: 0; padding: 5px 0; text-decoration: none; font-size: 1.1rem; transition: color .2s ease; }
 .contents a:hover { color: var(--vermilion); }
-.contents .c-dots { flex: 1; min-width: 24px; margin-left: 8px; }
+.contents .c-dots {   /* the leaders: dots from each title to its folio, on the line's baseline, as an old table of contents has them */
+  flex: 1; min-width: 24px; margin: 0 .55em 0 .6em; align-self: stretch; color: rgba(90, 70, 45, .42);
+  background: radial-gradient(circle, currentColor .055em, transparent .075em) 0 calc(100% - .42em) / .5em .2em repeat-x;
+}
 .contents .c-fol { font-family: var(--rubric); font-size: .9rem; letter-spacing: .08em; color: var(--muted); }
 
 /* ---------- Staves: Bach's chorale, a line to each folio, engraved by tools/engrave.py ---------- */
@@ -243,12 +247,12 @@ h1 {
 .plate:hover { transform: translateY(-2px); box-shadow: 0 1px 1px rgba(60, 40, 10, .06), 0 20px 34px -20px rgba(60, 40, 10, .55); }
 .plate:focus-visible { outline-offset: 3px; }
 
-.kind { margin: 8px 0 0; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.06em; color: var(--muted); }
+.kind { margin: 8px 0 0; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: .08em; color: var(--muted); }
 .epigraph { margin: 22px 0 0; padding: 0; }
 .epigraph p { margin: 0; font-style: italic; color: var(--muted); font-size: 1.0625rem; text-wrap: pretty; }
 .what { margin: 14px 0 0; text-wrap: pretty; }
 .facts { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 2px 20px; font-size: 0.95rem; color: var(--muted); }
-.go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.05em; }
+.go { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 26px; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: .08em; }
 /* the way into the work, the one thing on its page to be done: rubricated, as a scribe reddened what
    the reader was to find first, and not to be taken for the running feet, which are set in ink */
 .go a { text-decoration: none; color: var(--vermilion); text-decoration-color: rgba(176, 54, 31, .45); text-decoration-thickness: 1px; text-underline-offset: .22em; transition: color .2s ease; }
@@ -279,7 +283,7 @@ h1 {
 .colophon .rubric { margin-bottom: 2px; }
 .promise { margin: 0; text-wrap: pretty; }
 .bach { margin: 0; font-size: 0.95rem; color: var(--muted); text-wrap: pretty; }
-.foot-links { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 26px; font-family: var(--rubric); letter-spacing: 0.05em; }
+.foot-links { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 26px; font-family: var(--rubric); letter-spacing: .08em; }
 /* every way out of the book in red, as the way into each work is */
 .foot-links a, .cred-link a { color: var(--vermilion); text-decoration: none; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: color .2s ease; }
 .foot-links a:hover, .cred-link a:hover { color: #8E2914; text-decoration-line: underline; }
@@ -695,7 +699,7 @@ html.bound .langs a:hover, html.bound .fs:hover, html.bound .langs a[aria-curren
 .book .page > * { flex-shrink: 0; }
 /* foliation in the head's outer corner of every recto, and a catchword at the foot naming the next page,
    each on the text block's edge, a third of the way into its margin */
-.folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13.5px / var(--z, 1))); letter-spacing: .07em; line-height: 1.2; }
+.folnum, .catch { font-family: var(--rubric); font-size: max(calc(var(--u) * .75), calc(13.5px / var(--z, 1))); letter-spacing: .08em; line-height: 1.2; }
 .folnum { position: absolute; z-index: 2; top: calc(var(--mt) * .42); right: var(--mo); color: var(--vermilion); }
 .catch {
   position: absolute; z-index: 2; bottom: calc(var(--mb) * .36); padding: 4px 2px; border: 0; background: none; cursor: pointer;
@@ -791,7 +795,7 @@ html.thumbable .thumbs.slim {
    the least, other small text 14.5px, a work's contents 15px unless its page is tight; --z is the
    book's zoom) */
 .book .rubric, .book .kind, .book .subtitle, .book .cred-title, .book .cred-link, .book .verse cite, .book .epigraph cite,
-.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13.5px / var(--z, 1))); letter-spacing: .07em; }
+.book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13.5px / var(--z, 1))); letter-spacing: .08em; }
 .book .cred-fields, .book .cred-degrees, .book .facts, .book .bach { font-size: max(.833em, calc(14.5px / var(--z, 1))); }
 .book .kal-names .kal-ad { font-size: max(.833em, calc(12.5px / var(--z, 1))); }
 .book .page .score, .book .motif-fig .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
@@ -818,11 +822,11 @@ html.thumbable .thumbs.slim {
 
 /* the kalendar, on the first recto: the day at the head, the contents in the middle, its line of the chorale at the foot */
 .book .kalendar { margin: 0; }
-.book .kal-date { margin-top: .9em; gap: .7em; }
+.book .kal-date { margin-top: .75em; gap: .7em; }
 .book .kal-num { font-size: 3.2em; }
 .book .kal-names { font-size: max(.8em, calc(13px / var(--z, 1))); }
 .book .kal-feast { margin-top: .35em; }
-.book .kalendar .verse { margin-top: 1em; }
+.book .kalendar .verse { margin-top: 1.15em; }
 .book .kalendar .verse p { font-size: .94em; line-height: 1.5; }
 .book .kalendar .contents { margin-top: auto; padding-top: 1.4em; }
 .book .contents ol { margin-top: .5em; gap: 0; }
@@ -901,7 +905,7 @@ html.thumbable .thumbs.slim {
 .book .within.listed .num { display: inline-block; width: 2.2em; text-indent: 0; text-align: right; margin-right: .1em; }
 .book .page-r.tight .within p { font-size: .87em; line-height: 1.5; }
 .book .page-r .facts { margin-top: 1.3em; }
-.book .page-r .go { margin-top: 1.2em; font-size: max(1em, calc(15px / var(--z, 1))); letter-spacing: .06em; }
+.book .page-r .go { margin-top: 1.2em; font-size: max(1em, calc(15px / var(--z, 1))); letter-spacing: .08em; }
 
 /* the colophon, and the last page: the final line of the chorale, and the signature in the middle */
 .book .colophon { margin: 0; gap: .8em; }
@@ -928,7 +932,7 @@ html.thumbable .thumbs.slim {
    the picture's caption, and no ruling */
 .modern .kicker, .modern .parts h3, .modern .details dt, .modern .epigraph cite, .modern .go {
   font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
-  letter-spacing: .09em; font-weight: 500;
+  letter-spacing: .08em; font-weight: 500;
 }
 .modern .kicker { margin: 0; color: var(--muted); font-size: .9rem; text-wrap: balance; }
 .modern .kicker .kind { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
@@ -1009,7 +1013,7 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
 .book .page-r.modern .parts li { padding: .26em 0; font-size: max(.94em, calc(15px / var(--z, 1))); }
 .book .page-r.modern .details { margin-top: 1.3em; }
 .book .page-r.modern .details dd { font-size: max(.94em, calc(15px / var(--z, 1))); }
-.book .page-r.modern .go { margin-top: 1.3em; font-size: max(.95em, calc(15px / var(--z, 1))); letter-spacing: .09em; }
+.book .page-r.modern .go { margin-top: 1.3em; font-size: max(.95em, calc(15px / var(--z, 1))); letter-spacing: .08em; }
 .book .page-r.modern.tight .parts li { padding: .14em 0; }
 .book .page-r.modern.tight .details, .book .page-r.modern.tight .go { margin-top: .9em; }
 .book .page-r.modern.tight .parts h3 { margin-bottom: .2em; }
@@ -1125,7 +1129,8 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   position: relative; display: block; width: clamp(200px, 72vw, 340px); aspect-ratio: 960 / 649; perspective: 900px;
   background: url("/assets/book/envelope.webp") 0 0 / 100% 100% no-repeat;
   transform: rotate(-2deg);
-  filter: drop-shadow(0 .8px .6px rgba(50, 36, 20, .3)) drop-shadow(0 7px 10px rgba(50, 36, 20, .17));
+  /* (its shadow falls as the book's does, away from the day's light: --sun) */
+  filter: drop-shadow(calc(var(--sun, 0) * -.8px) .8px .6px rgba(50, 36, 20, .3)) drop-shadow(calc(var(--sun, 0) * -5px) 7px 10px rgba(50, 36, 20, .17));
   transition: transform .3s ease, filter .3s ease;
 }
 .env-inside, .env-flap::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, var(--tip)); }
@@ -1156,9 +1161,9 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .envelope.read:not(.open) .env-tucked { opacity: 1; }
 /* (its flap, lifted, stands above it: on a phone and on the desk the room for it is kept above it) */
 .envelope.read { padding-top: calc(clamp(200px, 72vw, 340px) * .408 + 6px); }
-.envelope:hover .env-body { transform: rotate(-1.2deg) translateY(-2px); filter: drop-shadow(0 1px .8px rgba(50, 36, 20, .3)) drop-shadow(0 11px 14px rgba(50, 36, 20, .2)); }
+.envelope:hover .env-body { transform: rotate(-1.2deg) translateY(-2px); filter: drop-shadow(calc(var(--sun, 0) * -1px) 1px .8px rgba(50, 36, 20, .3)) drop-shadow(calc(var(--sun, 0) * -7px) 11px 14px rgba(50, 36, 20, .2)); }
 .envelope.waiting .env-body { opacity: .85; }
-.env-word { font: 500 .9rem/1.2 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .09em; color: var(--muted); transition: color .2s ease; }
+.env-word { font: 500 .9rem/1.2 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: var(--muted); transition: color .2s ease; }
 .envelope:hover .env-word { color: var(--vermilion); }
 .envelope:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 3px; border-radius: 3px; }
 @media (prefers-reduced-motion: reduce) { .envelope:hover .env-body { transform: rotate(-2deg); } }
@@ -1195,15 +1200,11 @@ html.bound .type-size[aria-pressed="true"] { color: var(--vermilion); }
 html.bound .type-size:hover { background: rgba(90, 70, 45, .07); }
 html.bound .head-tools > .type-size { position: relative; margin-left: 7px; }
 html.bound .head-tools > .type-size::before { content: ""; position: absolute; left: -4px; top: 5px; bottom: 5px; width: 1px; background: rgba(90, 70, 45, .2); }
-/* in the letter, beside the switch, a fingertip wide */
-.me-which .me-type { height: 34px; min-width: 38px; margin-left: 6px; padding: 0 7px; font: 400 1rem/1 var(--text); font-variant-caps: normal; letter-spacing: 0; text-decoration: none; color: var(--muted); }
-.me-which .me-type[aria-pressed="true"] { color: var(--vermilion); text-decoration: none; }
-.me-which .me-type .ts-a { font-size: 12px; }
-.me-which .me-type .ts-b { font-size: 18px; }
 @media print { .type-size { display: none; } }
 
 /* the letter, opened: over the whole window, a veil that puts what lies behind out of focus, and the
-   paper; beside the book it lies a little to the right, the book having drawn back to the left */
+   paper with its controls beside it; beside the book it lies a little to the right, the book having
+   drawn back to the left */
 .me-letter {
   position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0;
   border: 0; background: transparent; overflow: hidden; color: var(--ink); display: grid; place-items: center;
@@ -1214,70 +1215,98 @@ html.bound .head-tools > .type-size::before { content: ""; position: absolute; l
   position: absolute; inset: 0; background: rgba(46, 32, 16, .2);
   -webkit-backdrop-filter: blur(3px) saturate(.94); backdrop-filter: blur(3px) saturate(.94);
 }
-.me-paper {   /* the blank page of the letter that came in the envelope (assets/book/letter.webp), in its own proportions */
-  --lw: min(37rem, calc(100vw - 32px)); --crease-1: 28.3%; --crease-2: 65.5%;
-  position: relative; z-index: 1; box-sizing: border-box; display: flex; flex-direction: column;
-  width: var(--lw); height: min(calc(var(--lw) / .6357), calc(100vh - 48px)); height: min(calc(var(--lw) / .6357), calc(100dvh - 48px));
-  background: #F4ECCD url("/assets/book/letter.webp") 0 0 / 100% 100% no-repeat; border-radius: 1px;
-  box-shadow: 0 0 0 .5px rgba(90, 70, 45, .2), 0 1px 2px rgba(60, 44, 28, .18), 0 26px 60px -20px rgba(40, 28, 14, .6);
+.me-hold { position: relative; z-index: 1; display: grid; }
+.me-letter.beside .me-hold { left: min(9vw, 150px); }
+/* The paper: the blank page of the letter that came in the envelope (assets/book/letter.webp), in its own
+   proportions and with its own edges, casting its shadow as the book does, away from the day's light
+   (--sun); the reading is set within its margins and moves within them, the page staying still. */
+.me-paper {
+  --lw: min(37rem, calc(100vw - 32px)); --crease-1: 28.6%; --crease-2: 65.3%;
+  position: relative; box-sizing: border-box; display: flex; flex-direction: column;
+  width: var(--lw); height: min(calc(var(--lw) / .641), calc(100vh - 48px)); height: min(calc(var(--lw) / .641), calc(100dvh - 48px));
 }
-.me-letter.beside .me-paper { left: min(9vw, 150px); }
+.me-paper::before {   /* (and where it was folded, each crease catches the light above it and is shaded below) */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent calc(var(--crease-1) - 9px), rgba(255, 252, 238, .38) calc(var(--crease-1) - 1px), rgba(90, 70, 45, .11) calc(var(--crease-1) + 1px), transparent calc(var(--crease-1) + 11px)) 1% 0 / 98% 100% no-repeat,
+    linear-gradient(to bottom, transparent calc(var(--crease-2) - 9px), rgba(255, 252, 238, .38) calc(var(--crease-2) - 1px), rgba(90, 70, 45, .11) calc(var(--crease-2) + 1px), transparent calc(var(--crease-2) + 11px)) 1% 0 / 98% 100% no-repeat,
+    url("/assets/book/letter.webp") 0 0 / 100% 100% no-repeat;
+  filter: drop-shadow(calc(var(--sun, 0) * -1.5px) 1px 1.2px rgba(60, 44, 28, .28)) drop-shadow(calc(var(--sun, 0) * -12px) 20px 22px rgba(40, 28, 14, .34));
+}
 .me-paper::after {   /* the evening light, as over the page (the letter lies above it) */
-  content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none; opacity: var(--dusk, 0);
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--dusk, 0);
   background: radial-gradient(ellipse 120% 100% at 50% 42%, transparent 60%, rgba(66, 40, 14, .1) 100%), linear-gradient(rgba(255, 170, 90, .05), rgba(255, 170, 90, .05));
 }
 .me-scroll {
-  flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; padding: 2.6rem 3rem 2.4rem;
-  scrollbar-width: thin; scrollbar-color: rgba(90, 70, 45, .3) transparent;
+  position: relative; z-index: 1; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none;
+  padding: 2.4rem 3.1rem 2.6rem 3.3rem; scrollbar-width: thin; scrollbar-color: rgba(90, 70, 45, .3) transparent;
 }
-.me-close {
-  position: absolute; z-index: 4; top: 8px; right: 8px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px;
-  display: grid; place-items: center; background: none; color: var(--muted); cursor: pointer; transition: color .2s ease, background-color .2s ease;
-}
-.me-close svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
-.me-close:hover { color: var(--ink); background: rgba(90, 70, 45, .07); }
-.me-close:focus-visible, .me-which button:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 1px; }
-.me-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1.2rem; margin: 0 1.8rem 1.5rem 0; }
-.me-when { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .7rem; font-size: 1rem; font-weight: 400; }
-.me-period { font-family: var(--rubric); font-variant-caps: all-small-caps; font-weight: 500; letter-spacing: .1em; font-size: 1.2rem; color: var(--vermilion); }
-.me-date { font-style: italic; color: var(--muted); }
-.me-which { display: flex; margin-right: -8px; }
-.me-which button {
-  padding: 8px; border: 0; background: none; cursor: pointer; color: var(--muted);
-  font: 500 .95rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em;
-}
-.me-which button + button { position: relative; }
-.me-which button + button::before { content: ""; position: absolute; left: 0; top: 30%; bottom: 30%; width: 1px; background: rgba(90, 70, 45, .25); }
-.me-which button:hover { color: var(--ink); }
-.me-which button[aria-pressed="true"] { color: var(--ink); text-decoration: underline 1px var(--vermilion); text-underline-offset: .35em; }
-.me-text { margin: 0 0 1.5rem; padding: 0 0 1.35rem; border-bottom: 1px solid var(--rule); }
-.me-text p { margin: 0; font-style: italic; font-size: 1.55rem; line-height: 1.36; text-wrap: balance; }
+/* as a letter is written: its date at the right of its head */
+.me-when { margin: 0 0 1.7rem; text-align: right; font: italic 400 1.08rem/1.3 var(--text); color: #4A4036; }
+/* the text of Scripture as its motto, in the middle of the line, and an ornament before the reading */
+.me-text { margin: 0 auto; max-width: 26em; text-align: center; }
+.me-text p { margin: 0; font-style: italic; font-size: 1.45rem; line-height: 1.36; text-wrap: balance; }
 .me-text cite {
-  display: block; margin-top: .6rem; font-style: normal; font-family: var(--rubric); font-variant-caps: all-small-caps;
+  display: block; margin-top: .55rem; font-style: normal; font-family: var(--rubric); font-variant-caps: all-small-caps;
   font-variant-numeric: lining-nums; font-weight: 500; letter-spacing: .08em; color: var(--muted);
 }
+.me-orn { display: block; width: auto; height: 2.6rem; margin: 1.1rem auto 1.4rem; mix-blend-mode: multiply; opacity: .82; }
 .me-body { font-size: 1.2rem; line-height: 1.6; text-align: justify; hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
 .me-body p { margin: 0; }
 .me-body p + p { text-indent: 1.4em; }
 .me-body .stanza { display: grid; margin: .75em 0 .75em 1.6em; text-indent: 0; text-align: left; font-style: italic; font-size: .97em; line-height: 1.5; color: #3F362E; hyphens: manual; }
 .me-body .stanza + p, .me-body p.cont { text-indent: 0; }
 .me-body .first::first-letter { float: left; margin: .07em .09em 0 0; font-size: 3.3em; line-height: .78; font-weight: 500; color: var(--vermilion); }
-.me-sign { margin: 1.5rem 0 0; text-align: right; font-size: .95rem; color: var(--muted); }
+/* a line that begins with a quotation mark hangs the mark in the margin, so that the line's letters keep the edge */
+.hang { margin-left: -.42em; }
+/* and its writer's name at its foot */
+.me-sign { margin: 1.7rem 0 0; display: grid; justify-items: end; gap: .3rem; }
+.me-name { font: italic 400 1.35rem/1.2 var(--text); color: #3A3129; padding-right: 1.2em; }
+.me-from { font: 500 .85rem/1.2 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: var(--muted); }
+.me-from i { font-variant-caps: normal; letter-spacing: 0; font-size: 1.08em; }
 .me-failed { font-style: italic; color: var(--muted); }
 
+/* its controls, beside it, off the paper: the ×, the morning's or the evening's reading, and larger type,
+   on a slip of the book's paper as the controls over the book are; they come once it is open */
+.me-controls {
+  position: absolute; left: calc(100% + 14px); top: 0; display: grid; justify-items: center; gap: 2px; padding: 4px;
+  border-radius: 24px; background: rgba(250, 247, 240, .95) url("/assets/book/paper.webp") 0 0 / 360px auto;
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .12), calc(var(--sun, 0) * -4px) 8px 18px -10px rgba(60, 44, 28, .4);
+  opacity: 0; transition: opacity .25s ease;
+}
+.me-letter.ready .me-controls { opacity: 1; }
+.me-close {
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px; display: grid; place-items: center;
+  background: none; color: var(--muted); cursor: pointer; transition: color .2s ease, background-color .2s ease;
+}
+.me-close svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.me-close:hover, .me-which button:hover { color: var(--ink); background: rgba(90, 70, 45, .07); }
+.me-close:focus-visible, .me-which button:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 1px; }
+.me-which { display: grid; gap: 2px; padding: 4px 0; border-block: 1px solid rgba(90, 70, 45, .16); width: 100%; }
+.me-which button {
+  padding: 9px 12px; border: 0; border-radius: 999px; background: none; cursor: pointer; color: var(--muted);
+  font: 500 .95rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; transition: color .2s ease, background-color .2s ease;
+}
+.me-which button[aria-pressed="true"] { color: var(--vermilion); }
+.me-controls .me-type { height: 38px; min-width: 40px; padding: 0 7px; }
+.me-controls .me-type .ts-a { font-size: 12px; }
+.me-controls .me-type .ts-b { font-size: 18px; }
+
 /* the letter folded in three, as it comes out of the envelope and goes back into it */
-.me-fold { --crease-1: 28.3%; --crease-2: 65.5%; position: fixed; z-index: 3; pointer-events: none; transform-origin: 50% 46.9%; }
-.me-panel { position: absolute; left: 0; right: 0; background: #F4ECCD url("/assets/book/letter.webp") no-repeat; box-shadow: 0 0 0 .5px rgba(90, 70, 45, .16); }
+.me-fold { --crease-1: 28.6%; --crease-2: 65.3%; position: fixed; z-index: 3; pointer-events: none; transform-origin: 50% 46.95%; }
+.me-panel { position: absolute; left: 0; right: 0; background: url("/assets/book/letter.webp") no-repeat; }
 .me-panel.top { top: 0; height: calc(var(--crease-1) + .5px); transform-origin: 50% 100%; }
-.me-panel.mid { top: var(--crease-1); height: calc(var(--crease-2) - var(--crease-1)); box-shadow: 0 0 0 .5px rgba(90, 70, 45, .16), 0 20px 44px -18px rgba(40, 28, 14, .5); }
+.me-panel.mid { top: var(--crease-1); height: calc(var(--crease-2) - var(--crease-1)); filter: drop-shadow(calc(var(--sun, 0) * -8px) 16px 16px rgba(40, 28, 14, .3)); }
 .me-panel.bot { top: calc(var(--crease-2) - .5px); bottom: 0; transform-origin: 50% 0; }
 
-/* on a phone, a sheet risen from the foot of the screen */
-.me-letter.sheet { place-items: end center; }
-.me-letter.sheet .me-paper { --lw: 100vw; width: 100%; height: min(calc(100vw / .6357), 92vh); height: min(calc(100vw / .6357), 92dvh); border-radius: 10px 10px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-/* a grip to draw it down by */
-.me-letter.sheet .me-paper::before { content: ""; position: absolute; z-index: 4; top: 8px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: rgba(90, 70, 45, .24); }
-.me-letter.sheet .me-scroll { padding: 2.1rem max(20px, env(safe-area-inset-left, 0px)) 2rem; }
-.me-letter.sheet .me-close { top: 12px; right: 6px; width: 44px; height: 44px; }
-.me-letter.sheet .me-text p { font-size: 1.4rem; }
+/* on a phone, a sheet risen from the foot of the screen, its controls above it at the right */
+.me-letter.sheet { place-items: end stretch; }
+.me-letter.sheet .me-hold { width: 100%; }
+.me-letter.sheet .me-paper { --lw: 100vw; width: 100%; height: min(calc(100vw / .641), 88vh); height: min(calc(100vw / .641), 88dvh); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.me-letter.sheet .me-controls { left: auto; right: 10px; top: auto; bottom: calc(100% + 10px); grid-auto-flow: column; align-items: center; }
+.me-letter.sheet .me-which { grid-auto-flow: column; border-block: 0; border-inline: 1px solid rgba(90, 70, 45, .16); padding: 0 4px; width: auto; }
+.me-grip { display: none; }
+.me-letter.sheet .me-grip { display: block; position: absolute; z-index: 4; top: 9px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: rgba(90, 70, 45, .26); }
+.me-letter.sheet .me-scroll { padding: 2.2rem max(22px, env(safe-area-inset-left, 0px)) 2rem; }
+.me-letter.sheet .me-text p { font-size: 1.35rem; }
 .me-letter.sheet .me-body { font-size: 1.15rem; text-align: left; }

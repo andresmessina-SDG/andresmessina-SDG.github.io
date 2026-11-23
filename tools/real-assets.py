@@ -184,10 +184,21 @@ def main(src):
     save(e.resize((960, round(960 * e.height / e.width)), Image.LANCZOS), "envelope.webp", 78)   # (sharp at twice the size it is shown at, about 400px)
 
     # the letter's paper: the right-hand page of the sheet (from Commons' 1920px rendering), which she left
-    # blank, cut just inside its edges. It was folded in three to go into the envelope: its creases lie at
-    # 28.3% and 65.5% of its height (measured on the scan), where site.css folds it (--crease-1, --crease-2)
-    page = Image.open(s / "letter-1843-1920.jpg").convert("RGB").crop((972, 70, 1876, 1492))
-    save(page.resize((900, round(900 * page.height / page.width)), Image.LANCZOS), "letter.webp", 80)
+    # blank, with its own edges: cut from the scanner's white (the paper is what is cream, not white) on
+    # three sides, and on the fourth at the fold between its two pages. It was folded in three to go into
+    # the envelope: its creases lie at 28.6% and 65.3% of its height (measured on the scan), where site.css
+    # folds it (--crease-1, --crease-2)
+    page = Image.open(s / "letter-1843-1920.jpg").convert("RGB").crop((963, 58, 1890, 1504))
+    a = np.asarray(page).astype(np.float32)
+    cream = Image.fromarray((((a[..., 0] - a[..., 2]) > 18) * 255).astype(np.uint8), "L")
+    cream = cream.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(5))
+    outside = ImageOps.expand(cream, 3, 0)
+    outside.paste(255, (0, 0, 4, outside.height))   # (the fold: paper to the very edge)
+    ImageDraw.floodfill(outside, (outside.width - 1, 0), 128)
+    sheet = outside.point(lambda v: 0 if v == 128 else 255).crop((3, 3, 3 + page.width, 3 + page.height))
+    page = page.convert("RGBA")
+    page.putalpha(sheet.filter(ImageFilter.GaussianBlur(.7)))
+    save(page.resize((900, round(900 * page.height / page.width)), Image.LANCZOS), "letter.webp", 80, 90)
 
 
 if __name__ == "__main__":

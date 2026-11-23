@@ -1152,17 +1152,27 @@
     env.addEventListener('focus', early);
     env.addEventListener('touchstart', early, { passive: true });
 
-    // the letter: a dialog over the whole window, a veil over what lies behind it, and the paper
+    // The letter: a dialog over the whole window, a veil over what lies behind it, and the paper, written
+    // as a letter is: its date at its head, the text of Scripture as its motto, a printer's ornament, the
+    // reading, and Spurgeon's name at its foot. Its controls are not on the paper but beside it (above it,
+    // on a phone): the ×, the morning's or the evening's reading, and larger type.
     const dlg = el('dialog', 'me-letter', { 'aria-labelledby': 'me-when' });
     const veil = el('div', 'me-veil');
+    const hold = el('div', 'me-hold');
     const paper = el('div', 'me-paper');
-    const shut = el('button', 'me-close', { type: 'button', 'aria-label': W.close });
-    shut.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
-    const scroll = el('article', 'me-scroll', { tabindex: '-1', lang: 'en' });
-    const head = el('header', 'me-head');
+    const scroll = el('article', 'me-scroll', { tabindex: '0', lang: 'en' });   // (a stop for the keys, which scroll it)
     const title = el('h2', 'me-when', { id: 'me-when' });
-    const period = el('span', 'me-period'), dated = el('span', 'me-date');
-    title.append(period, dated);
+    const text = el('blockquote', 'me-text');
+    const orn = el('img', 'me-orn', { src: '/assets/book/fleuron.webp', alt: '', width: '300', height: '370', decoding: 'async' });
+    const body = el('div', 'me-body');
+    const sign = el('p', 'me-sign');
+    // (his name as he signed it, and beneath it where the reading is from; the page's own strings, escaped by tools/build.py)
+    sign.innerHTML = `<span class="me-name">${W.by}</span><span class="me-from">${W.from || ''}</span>`;
+    scroll.append(title, text, orn, body, sign);
+    paper.append(el('span', 'me-grip', { 'aria-hidden': 'true' }), scroll);   // (a grip, to draw it down by on a phone)
+    const controls = el('div', 'me-controls');
+    const shut = el('button', 'me-close', { type: 'button', 'aria-label': W.close, title: W.close });
+    shut.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
     const which = el('div', 'me-which', { role: 'group', 'aria-label': W.which });
     const bM = el('button', '', { type: 'button' }), bE = el('button', '', { type: 'button' });
     bM.textContent = W.morning; bE.textContent = W.evening;
@@ -1170,41 +1180,50 @@
     const larger = el('button', 'type-size me-type', { type: 'button', 'aria-pressed': String(root.classList.contains('large-type')), 'aria-label': W.larger || 'Larger type', title: W.larger || 'Larger type' });
     larger.innerHTML = '<span class="ts-a" aria-hidden="true">A</span><span class="ts-b" aria-hidden="true">A</span>';
     larger.addEventListener('click', () => setType(!root.classList.contains('large-type')));
-    which.append(larger);
-    head.append(title, which);
-    const text = el('blockquote', 'me-text');
-    const body = el('div', 'me-body');
-    const sign = el('p', 'me-sign');
-    sign.innerHTML = W.by;   // (from the page's own strings, escaped by tools/build.py)
-    scroll.append(head, text, body, sign);
-    paper.append(shut, scroll);
-    dlg.append(veil, paper);
+    controls.append(shut, which, larger);
+    hold.append(paper, controls);
+    dlg.append(veil, hold);
     document.body.append(dlg);
 
-    // Lord in small capitals where the King James sets LORD for the Name, as the calendar's verse has it
+    // Lord in small capitals where the King James sets LORD for the Name, as the calendar's verse has it;
+    // and a line that begins with a quotation mark, where it begins flush, hangs the mark in the margin
     const lorded = (node, s) => s.split(/\bLORD\b/).forEach((part, i) => {
       if (i) { const l = el('span', 'lord'); l.textContent = 'Lord'; node.append(l); }
       node.append(part);
     });
+    const hung = (node, s) => {
+      const m = /^[\u201c\u2018]+/.exec(s);
+      if (m) { const h = el('span', 'hang'); h.textContent = m[0]; node.append(h); s = s.slice(m[0].length); }
+      lorded(node, s);
+    };
+    // the date, as a letter is dated: "Monday morning, 23rd November"
+    const dateline = (d, eve) => {
+      const n = d.getDate(), th = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
+      const f = (o) => new Intl.DateTimeFormat('en-GB', o).format(d);
+      return `${f({ weekday: 'long' })} ${(eve ? W.evening : W.morning).toLowerCase()}, ${n}${th} ${f({ month: 'long' })}`;
+    };
     let shown = null;   // { data, eve, d }
     function render() {
       const { data, eve, d } = shown;
-      period.textContent = eve ? W.evening : W.morning;
-      dated.textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+      title.textContent = dateline(d, eve);
       bM.setAttribute('aria-pressed', String(!eve));
       bE.setAttribute('aria-pressed', String(eve));
       text.textContent = ''; body.textContent = '';
       if (!data) { const p = el('p', 'me-failed'); p.textContent = W.failed; body.append(p); return; }
       const r = data[eve ? 'e' : 'm'];
       const tp = el('p'), tc = el('cite');
-      lorded(tp, r.text.replace(/^“([\s\S]*)”$/, '$1'));
+      lorded(tp, r.text.replace(/^\u201c([\s\S]*)\u201d$/, '$1'));
       tc.textContent = r.ref;
       text.append(tp, tc);
+      let flush = false;
       r.body.forEach((p, i) => {
         // (a sentence taken up again after a line of a hymn begins flush, as it began before the hymn)
-        const n = el('p', Array.isArray(p) ? 'stanza' : i === 0 ? 'first' : /^[a-z]/.test(p) ? 'cont' : '');
-        if (Array.isArray(p)) p.forEach((line) => { const s = el('span'); lorded(s, line); n.append(s); });
+        const stanza = Array.isArray(p);
+        const n = el('p', stanza ? 'stanza' : i === 0 ? 'first' : /^[a-z]/.test(p) ? 'cont' : '');
+        if (stanza) p.forEach((line) => { const s = el('span'); hung(s, line); n.append(s); });
+        else if (i > 0 && (flush || /^[a-z]/.test(p))) hung(n, p);
         else lorded(n, p);
+        flush = stanza;
         body.append(n);
       });
     }
@@ -1237,9 +1256,9 @@
     const onPhone = () => root.classList.contains('leaves') && !root.classList.contains('spread');
     let state = 'shut', pushed = false, rest = null, away = null, flight = null, later = false, since = 0;
 
-    // the folded letter: the page cut at its two creases (at 28.3% and 65.5% of its height: site.css), each
+    // the folded letter: the page cut at its two creases (at 28.6% and 65.3% of its height: site.css), each
     // panel its own part of the page, the upper and lower folded over the middle
-    const CREASES = [0.283, 0.655];
+    const CREASES = [0.286, 0.653];
     function folded(r, shut = false) {
       const f = el('div', 'me-fold', { 'aria-hidden': 'true' });
       Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
@@ -1266,7 +1285,9 @@
     const turn = (deg) => `perspective(1400px) rotateX(${deg}deg)`;
     const fold = (f, open, ms) => {
       const top = f.querySelector('.top'), bot = f.querySelector('.bot');
-      const swing = (p, folded, delay) => done(p.animate(open ? [{ transform: turn(folded) }, { transform: turn(0) }] : [{ transform: turn(0) }, { transform: turn(folded) }],
+      // (a panel darkens as it turns from the light, edge on, and comes back into it as it lies flat)
+      const frames = (folded) => [{ transform: turn(folded), filter: 'brightness(.97)' }, { transform: turn(folded / 2), filter: 'brightness(.86)', offset: 0.5 }, { transform: turn(0), filter: 'brightness(1)' }];
+      const swing = (p, folded, delay) => done(p.animate(open ? frames(folded) : frames(folded).reverse(),
         { duration: ms, delay, easing: SWING, fill: 'both' }));
       return Promise.all([swing(bot, 179.5, open ? 0 : ms * 0.5), swing(top, -179.5, open ? ms * 0.5 : 0)]);
     };
@@ -1322,6 +1343,7 @@
       }
       if (state !== 'opening') return;
       state = 'open';
+      dlg.classList.add('ready');   // (its controls, beside it)
       scroll.focus({ preventScroll: true });
       watch();
       if (later) { later = false; close(); }   // (asked to be put away while it was still coming)
@@ -1331,6 +1353,7 @@
       if (state === 'opening') { later = true; return; }
       if (state !== 'open') return;
       state = 'closing';
+      dlg.classList.remove('ready');
       clearTimeout(dwell);
       if (pushed) { pushed = false; history.back(); }
       // (read to its end, the envelope is now to be left open, which may move it: the letter goes back to it there)
@@ -1382,6 +1405,7 @@
       paper.style.transform = ''; paper.style.opacity = '';
       env.classList.remove('open');
       state = 'shut'; later = false;
+      dlg.classList.remove('ready');
       if (dlg.open) dlg.close();
       env.focus({ preventScroll: true });
     }
@@ -1391,7 +1415,7 @@
     // a click on the desk beyond the paper puts it away; Esc does (the browser's own cancel, taken over to
     // fold it up first); and Back does, for the letter took a step in the history as it opened
     // (but not the second click of a double click on the envelope, which lands on the letter as it comes)
-    dlg.addEventListener('click', (e) => { if (!paper.contains(e.target) && state === 'open' && performance.now() - since > 700) close(); });
+    dlg.addEventListener('click', (e) => { if (!hold.contains(e.target) && state === 'open' && performance.now() - since > 700) close(); });
     dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
     dlg.addEventListener('close', () => { if (state !== 'shut') { pushed = false; finish(); } });
     window.addEventListener('popstate', () => { if (state === 'open' || state === 'opening') { pushed = false; close(); } });
@@ -1402,7 +1426,7 @@
     let drag = null;
     paper.addEventListener('touchstart', (e) => {
       if (!dlg.classList.contains('sheet') || state !== 'open' || e.touches.length !== 1) return;
-      if (scroll.scrollTop > 0 && !e.target.closest('.me-head')) return;
+      if (scroll.scrollTop > 0 && !e.target.closest('.me-when')) return;
       drag = { y: e.touches[0].clientY, dy: 0 };
     }, { passive: true });
     paper.addEventListener('touchmove', (e) => {
