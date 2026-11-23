@@ -57,6 +57,8 @@ thumbs_label = "Thumb index"
 # (on the English page only, until there is a Spanish text free to use)
 me_morning = "Morning"
 me_evening = "Evening"
+# beneath the envelope: {period} is "morning" or "evening"
+me_word = "This {period}’s reading"
 me_open = "Read this {period}’s portion of Spurgeon’s Morning and Evening"
 me_close = "Close the letter"
 me_which = "Morning or evening"

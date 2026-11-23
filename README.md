@@ -20,9 +20,14 @@ and a calendar with the day's verse, a sealed letter and the contents),
 one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
 
-Beside the calendar's date, on the English page, lies a real envelope (the
-back of one of 1843, from the Longfellow house) closed with a seal of real red
-wax; its own flap, clipped from the same picture, is the one that lifts. In it is the reading from C. H. Spurgeon's *Morning
+On the calendar page, on the English page, lies a real envelope (the back of
+one of 1843, from the Longfellow house) closed with a seal of real red wax; its
+own flap, clipped from the same picture, is the one that lifts. It is as large
+as an envelope would be on such a page: in the book it lies beside the
+contents, which give it the outer two fifths of the line, unless a title would
+then break or the page spill, when it lies beside the date instead (`place()`
+in `assets/site.js`); on a phone it lies across the page beneath the verse.
+In it is the reading from C. H. Spurgeon's *Morning
 and Evening* (1865–68) for the reader's hour: the evening's from five, or from
 noon once the evening light has come, and until four in the morning still the
 evening's of the day before; else the morning's. Pressed, its flap lifts and

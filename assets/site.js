@@ -550,6 +550,8 @@
   // line, they are set so, in one column or else in two, whichever the page holds without spilling.
   function fitWithin() {
     const fits = (p) => p.scrollHeight <= p.clientHeight + 1;
+    // (each page fitted as it stands without the letter, which is set on the calendar page afterwards)
+    for (const s of book.spreads) s.r.classList.remove('letter-beside', 'letter-small');
     for (const s of book.spreads) {
       s.v.classList.remove('tight');
       const w = s.r.querySelector('.within'), parts = s.r.querySelector('.parts');
@@ -582,6 +584,7 @@
       }
       if (!fits(s.v)) s.v.classList.add('tight');
     }
+    document.dispatchEvent(new Event('pagesfitted'));
   }
 
   // ---- where the book lies open ----
@@ -981,7 +984,7 @@
   else shown();
 
   // ---------------------------------------------------------------------------------------------
-  // The letter. Beside the calendar's date lies a sealed envelope, and in it the reading from Spurgeon's
+  // The letter. Beneath the calendar's verse lies a sealed envelope, and in it the reading from Spurgeon's
   // Morning and Evening for the reader's hour (assets/morning-evening/, a file to each day, fetched only
   // when a pointer or a finger comes near it). Opened, its flap lifts and the letter, folded in three,
   // rises out of it; the book draws back to the left and out of focus, and the letter comes forward and
@@ -1008,11 +1011,53 @@
     const word = env.querySelector('.env-word');
     const label = () => {
       const p = when.eve ? W.evening : W.morning;
-      word.textContent = p;
+      // (in full beneath it; beside the date, where there is less room, the hour alone: site.css)
+      word.textContent = '';
+      const long = el('span', 'w-long'), short = el('span', 'w-short');
+      long.textContent = (W.word || '{period}').replace('{period}', p.toLowerCase());
+      short.textContent = p;
+      word.append(long, short);
       env.setAttribute('aria-label', W.open.replace('{period}', p.toLowerCase()));
     };
     label();
     env.hidden = false;
+
+    // In the book it lies beside the contents, which give it the outer two fifths of the line, and is as
+    // large as that column allows, set midway down the room from the verse to the foot of the contents.
+    // Where the contents cannot make that room without a title breaking or the page spilling, or where
+    // the envelope would be no larger there than beside the date, it lies beside the date instead, its
+    // foot level with the date's. Laid out again whenever the page is (the observer, below).
+    const kal = env.closest('.kalendar'), room = env.closest('.kal-letter'), face = env.querySelector('.env-body');
+    function place() {
+      if (!kal || !room) return;
+      kal.classList.remove('letter-small', 'letter-beside');
+      env.style.top = ''; face.style.width = '';
+      if (!env.closest('.book')) return;
+      const em = parseFloat(getComputedStyle(kal).fontSize) || 16;
+      const list = kal.querySelector('.contents');
+      const titles = list ? [...list.querySelectorAll('a')] : [];
+      const before = titles.map((a) => a.offsetHeight);
+      kal.classList.add('letter-beside');
+      const cs = getComputedStyle(kal);
+      const line = kal.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const top = room.offsetTop, foot = list ? list.offsetTop + list.offsetHeight : top;
+      const below = env.offsetHeight - face.offsetHeight;   // its word, and the room about it
+      const w = Math.min(line * 0.4, (foot - top - below) * 1.479);
+      const broke = titles.some((a, i) => a.offsetHeight > before[i] + 1) || kal.scrollHeight > kal.clientHeight + 1;
+      if (list && !broke && w >= 8 * em) {
+        face.style.width = `${w.toFixed(1)}px`;
+        env.style.top = `${(top + (foot - top - env.offsetHeight) / 2).toFixed(1)}px`;
+        return;
+      }
+      kal.classList.replace('letter-beside', 'letter-small');
+      const d = kal.querySelector('.kal-date');
+      env.style.top = `${d.offsetTop + d.offsetHeight - env.offsetHeight + 0.1 * em}px`;
+    }
+    // (the page's own size, which the envelope's place does not change, so that setting it never asks for
+    // another; and once the type has come, which changes what the titles need)
+    if (kal && window.ResizeObserver) new ResizeObserver(() => place()).observe(kal);
+    document.addEventListener('pagesfitted', place);   // (the book's pages fitted again: see fitWithin)
+    if (document.fonts) document.fonts.ready.then(place);
 
     const got = {};
     const get = (k) => got[k] || (got[k] = fetch(`/assets/morning-evening/${k}.json`)
@@ -1068,7 +1113,8 @@
       tc.textContent = r.ref;
       text.append(tp, tc);
       r.body.forEach((p, i) => {
-        const n = el('p', Array.isArray(p) ? 'stanza' : i === 0 ? 'first' : '');
+        // (a sentence taken up again after a line of a hymn begins flush, as it began before the hymn)
+        const n = el('p', Array.isArray(p) ? 'stanza' : i === 0 ? 'first' : /^[a-z]/.test(p) ? 'cont' : '');
         if (Array.isArray(p)) p.forEach((line) => { const s = el('span'); lorded(s, line); n.append(s); });
         else lorded(n, p);
         body.append(n);
@@ -1091,7 +1137,7 @@
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const done = (a) => a.finished.catch(() => {});
     const onPhone = () => root.classList.contains('leaves') && !root.classList.contains('spread');
-    let state = 'shut', pushed = false, rest = null, away = null, flight = null, later = false;
+    let state = 'shut', pushed = false, rest = null, away = null, flight = null, later = false, since = 0;
 
     // the folded letter: three panels the size of the paper, the upper and lower folded over the middle
     function folded(r, shut = false) {
@@ -1121,6 +1167,7 @@
     async function open() {
       if (state !== 'shut' || (book && book.busy)) return;
       state = 'opening';
+      since = performance.now();
       when = hour(); label();
       let data = null;
       env.classList.add('waiting');
@@ -1225,7 +1272,8 @@
     shut.addEventListener('click', close);
     // a click on the desk beyond the paper puts it away; Esc does (the browser's own cancel, taken over to
     // fold it up first); and Back does, for the letter took a step in the history as it opened
-    dlg.addEventListener('click', (e) => { if (!paper.contains(e.target)) close(); });
+    // (but not the second click of a double click on the envelope, which lands on the letter as it comes)
+    dlg.addEventListener('click', (e) => { if (!paper.contains(e.target) && state === 'open' && performance.now() - since > 700) close(); });
     dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
     dlg.addEventListener('close', () => { if (state !== 'shut') { pushed = false; finish(); } });
     window.addEventListener('popstate', () => { if (state === 'open' || state === 'opening') { pushed = false; close(); } });

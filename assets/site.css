@@ -1102,24 +1102,29 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   .creds .kept { white-space: normal; }   /* (beside the medallion even a short item may not fit whole) */
 }
 
-/* ---------- The letter: Spurgeon's Morning and Evening, sealed beside the calendar's date ----------
+/* ---------- The letter: Spurgeon's Morning and Evening, sealed on the calendar page ----------
    The envelope is a real one, seen from the back: Fanny Appleton's to Longfellow, of 1843, cut from its
    scan (assets/book/envelope.webp), lying a little askew on the page with the shadow a sheet of paper
-   casts. Its own flap, clipped from the same picture, is hinged at its top to lift; where its point
-   meets the others (--tip), it is closed with a seal of real red wax (assets/book/seal.webp), and under
-   it, once lifted, is the envelope's shadowed inside. It stands at the right of the date and takes no
-   room of its own. site.js shows it, and opens it. */
+   casts, and as large as an envelope would be on such a page. Its own flap, clipped from the same
+   picture, is hinged at its top to lift; where its point meets the others (--tip), it is closed with a
+   seal of real red wax (assets/book/seal.webp), and under it, once lifted, is the envelope's shadowed
+   inside. It lies beneath the day's verse; in the book, beside the contents, which give it the outer
+   two fifths of the line, and as large as that column allows (site.js sizes it and sets it there:
+   .letter-beside), or, where the contents cannot give it that room without a title breaking or the
+   page spilling, beside the date instead (.letter-small). */
+.kal-letter { margin: 30px 0 6px; }
+.kal-letter:has(> .envelope[hidden]) { display: none; }
 .envelope {
   --tip: 49.46% 60.33%;
-  flex: none; align-self: center; margin: -.2em 0 -.2em auto; padding: 4px 2px 2px; border: 0; background: none; cursor: pointer;
-  display: grid; justify-items: center; gap: 6px; color: var(--muted); -webkit-tap-highlight-color: transparent;
+  margin: 0 auto; padding: 6px; border: 0; background: none; cursor: pointer; width: fit-content;
+  display: grid; justify-items: center; gap: 12px; color: var(--muted); -webkit-tap-highlight-color: transparent;
 }
 .envelope[hidden] { display: none; }
 .env-body {
-  position: relative; display: block; width: 78px; aspect-ratio: 480 / 325; perspective: 280px;
+  position: relative; display: block; width: clamp(200px, 72vw, 340px); aspect-ratio: 960 / 649; perspective: 900px;
   background: url("/assets/book/envelope.webp") 0 0 / 100% 100% no-repeat;
-  transform: rotate(-2.5deg);
-  filter: drop-shadow(0 .6px .5px rgba(50, 36, 20, .3)) drop-shadow(0 4px 6px rgba(50, 36, 20, .16));
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 .8px .6px rgba(50, 36, 20, .3)) drop-shadow(0 7px 10px rgba(50, 36, 20, .17));
   transition: transform .3s ease, filter .3s ease;
 }
 .env-inside, .env-flap::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, var(--tip)); }
@@ -1127,26 +1132,34 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   background: linear-gradient(rgba(48, 40, 28, .5), rgba(48, 40, 28, .24) 70%, rgba(48, 40, 28, .34));
   opacity: 0; transition: opacity .22s ease .06s;
 }
-.env-flap { position: absolute; inset: 0; transform-origin: 50% 0; transform-style: preserve-3d; transition: transform .38s cubic-bezier(.45, 0, .2, 1); }
-.env-seal { transform: translateZ(.5px); }   /* (on the flap's outer side, and so out of sight once it is lifted) */
+.env-flap { position: absolute; inset: 0; transform-origin: 50% 0; transform-style: preserve-3d; transition: transform .4s cubic-bezier(.45, 0, .2, 1); }
 .env-flap::before { background: url("/assets/book/envelope.webp") 0 0 / 100% 100% no-repeat; }
-.env-seal {
-  position: absolute; left: 49.46%; top: 60.33%; width: 23%; height: auto; translate: -50% -50%;
-  backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 .5px .6px rgba(60, 16, 8, .45));
+.env-seal {   /* on the flap's outer side, and so out of sight once it is lifted */
+  position: absolute; left: 49.46%; top: 60.33%; width: 23%; height: auto; translate: -50% -50%; transform: translateZ(.5px);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 .6px .8px rgba(60, 16, 8, .45));
 }
 .envelope.open .env-flap { transform: rotateX(180deg); }
 .envelope.open .env-inside { opacity: 1; }
-.envelope:hover .env-body { transform: rotate(-1.5deg) translateY(-1.5px); filter: drop-shadow(0 1px .8px rgba(50, 36, 20, .3)) drop-shadow(0 7px 9px rgba(50, 36, 20, .2)); }
+.envelope:hover .env-body { transform: rotate(-1.2deg) translateY(-2px); filter: drop-shadow(0 1px .8px rgba(50, 36, 20, .3)) drop-shadow(0 11px 14px rgba(50, 36, 20, .2)); }
 .envelope.waiting .env-body { opacity: .85; }
-.env-word { font: 500 .8rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .09em; color: var(--muted); transition: color .2s ease; }
+.env-word { font: 500 .9rem/1.2 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .09em; color: var(--muted); transition: color .2s ease; }
 .envelope:hover .env-word { color: var(--vermilion); }
 .envelope:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 3px; border-radius: 3px; }
-/* in the book, at the page's own scale: its foot level with the date's, and rising beside the heading
-   above it, where the page is bare (so that it takes no room from the lines), its word beside it */
-.book .envelope { grid-auto-flow: column; align-items: center; gap: .9em; padding: .1em; align-self: end; margin: -1.55em 0 -.1em auto; }
-.book .env-word { order: -1; font-size: max(.7em, calc(12px / var(--z, 1))); }
+@media (prefers-reduced-motion: reduce) { .envelope:hover .env-body { transform: rotate(-2deg); } }
+/* in the book the envelope is set by site.js, its top and its width; the room between the verse and the
+   contents is the page's to spare, as before */
+.book .kal-letter { flex: 1 1 0; min-height: 0; margin: 0; }
+.book .envelope { position: absolute; right: var(--mo); gap: .5em; padding: .2em; }
+.book .env-word { font-size: max(.75em, calc(12.5px / var(--z, 1))); line-height: 1.2; }
 .book .env-body { width: 6.6em; }
-@media print { .envelope, .me-letter { display: none !important; } }
+.book .letter-beside .contents { margin-right: 44%; }
+/* or beside the date, as tall as it and rising beside the heading, its word before it */
+.book .letter-small .envelope { grid-auto-flow: column; align-items: center; gap: .9em; }
+.book .letter-small .env-word { order: -1; }
+.env-word .w-short, .book .letter-small .env-word .w-long { display: none; }
+.book .letter-small .env-word .w-short { display: inline; }
+.book .letter-small .env-body { width: 6.6em; }
+@media print { .kal-letter, .me-letter { display: none !important; } }
 
 /* the letter, opened: over the whole window, a veil that puts what lies behind out of focus, and the
    paper; beside the book it lies a little to the right, the book having drawn back to the left */
@@ -1211,7 +1224,7 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .me-body p { margin: 0; }
 .me-body p + p { text-indent: 1.4em; }
 .me-body .stanza { display: grid; margin: .75em 0 .75em 1.6em; text-indent: 0; text-align: left; font-style: italic; font-size: .97em; line-height: 1.5; color: #3F362E; hyphens: manual; }
-.me-body .stanza + p { text-indent: 0; }
+.me-body .stanza + p, .me-body p.cont { text-indent: 0; }
 .me-body .first::first-letter { float: left; margin: .07em .09em 0 0; font-size: 3.3em; line-height: .78; font-weight: 500; color: var(--vermilion); }
 .me-sign { margin: 1.5rem 0 0; text-align: right; font-size: .95rem; color: var(--muted); }
 .me-failed { font-style: italic; color: var(--muted); }

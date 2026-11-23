@@ -141,7 +141,7 @@ def main(src):
     side = max(w.size)
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sq.paste(w, ((side - w.width) // 2, (side - w.height) // 2), w)
-    save(sq.resize((128, 128), Image.LANCZOS), "seal.webp", 86)
+    save(sq.resize((208, 208), Image.LANCZOS), "seal.webp", 86)   # (the size it was scanned at)
 
     # the envelope: what is not the scanner's white, its edge softened a little; its black wax seal (the
     # dark piece about the middle, grown a little to take its shadow) filled from clean paper higher on the
@@ -179,7 +179,7 @@ def main(src):
     bb = env.getbbox()
     e = e.crop(bb)
     print(f"envelope: flap's point at {((where[0] + where[2]) / 2 - bb[0]) / e.width:.4f}, {((where[1] + where[3]) / 2 - bb[1]) / e.height:.4f}; {e.width / e.height:.4f} wide to high")
-    save(e.resize((480, round(480 * e.height / e.width)), Image.LANCZOS), "envelope.webp", 84)
+    save(e.resize((960, round(960 * e.height / e.width)), Image.LANCZOS), "envelope.webp", 78)   # (sharp at twice the size it is shown at, about 400px)
 
 
 if __name__ == "__main__":

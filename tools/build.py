@@ -306,16 +306,16 @@ def kalendar_js(verses: list, t: dict) -> str:
 
 
 def envelope(t: dict) -> str:
-    """Beside the calendar's date, a sealed letter: the reading from Spurgeon's Morning and Evening for the
+    """Beneath the calendar's verse, a sealed letter: the reading from Spurgeon's Morning and Evening for the
     reader's hour (assets/morning-evening/, made by tools/morning-evening.py). site.js shows it and opens it;
     a page whose strings have no words for it has none."""
     if "me_morning" not in t:
         return ""
-    words = {k[3:]: t[k] for k in ("me_morning", "me_evening", "me_open", "me_close", "me_which", "me_failed")}
+    words = {k[3:]: t[k] for k in ("me_morning", "me_evening", "me_word", "me_open", "me_close", "me_which", "me_failed")}
     words["by"] = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["me_by"]))
-    return (f'<button class="envelope" type="button" aria-haspopup="dialog" hidden data-me=\'{esc(json.dumps(words, ensure_ascii=False, separators=(",", ":")))}\'>'
-            '<span class="env-body" aria-hidden="true"><span class="env-inside"></span><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="128" height="128" decoding="async"></span></span>'
-            '<span class="env-word" aria-hidden="true"></span></button>')
+    return (f'<div class="kal-letter"><button class="envelope" type="button" aria-haspopup="dialog" hidden data-me=\'{esc(json.dumps(words, ensure_ascii=False, separators=(",", ":")))}\'>'
+            '<span class="env-body" aria-hidden="true"><span class="env-inside"></span><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="208" height="208" decoding="async"></span></span>'
+            '<span class="env-word" aria-hidden="true"></span></button></div>')
 
 
 def ui_json(t: dict) -> str:
