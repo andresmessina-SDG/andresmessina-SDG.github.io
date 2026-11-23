@@ -1,6 +1,6 @@
 // The little that moves on this page, and the book it becomes on a wide screen. Nothing here is
 // needed to read it: without this script the page is one finished leaf. Nothing moves for readers
-// who ask for stillness, and nothing sounds unless it is asked for.
+// who ask for stillness, and nothing sounds.
 (() => {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
   const root = document.documentElement;
@@ -19,271 +19,6 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
 
-
-  // ---------------------------------------------------------------------------------------------
-  // The organ: a real one, the open stop of a pipe organ sampled in the room it stands in (VSCO 2:
-  // Community Edition, CC0; assets/organ/, made by tools/organ-assets.py). Its pipes are fetched only
-  // when music is near (a pointer on a staff, the organ drawn out) and played at the pitch each note
-  // asks; when a note is let go, the pipe's own release into that room follows. Until they have come, a
-  // small principal chorus made in the browser stands in for them. It plays what a staff carries in its
-  // data-play attribute (from tools/engrave.py): every voice as [start, length, MIDI note, voice] in
-  // beats, the breath after a line, and the times at which each of its written notes sounds, to light
-  // them. It is played as an organist plays: each key sounds once however many voices are on it, a key
-  // struck again is first let up, and a 16' stop sounds under the bass part throughout.
-  const Organ = (() => {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    let ctx = null, out = null, wave = null, current = null;
-    // the pipes: fetched as soon as they may be wanted, decoded once there is a hand to wake the sound
-    let fetched = null, pipes = null, decoding = null, pipesOut = null;
-    function fetchPipes() {
-      if (fetched || !Ctx || !window.fetch) return;
-      fetched = fetch('/assets/organ/pipes.json').then((r) => r.json()).then((info) =>
-        Promise.all(info.pipes.map((n) => fetch(`/assets/organ/${String(n).padStart(2, '0')}.mp3`).then((r) => {
-          if (!r.ok) throw new Error(r.status);
-          return r.arrayBuffer();
-        }).then((b) => [info.base + n, b]))).then((files) => ({ info, files }))).catch(() => null);
-    }
-    function decodePipes() {
-      fetchPipes();
-      if (decoding || !fetched) return;
-      decoding = fetched.then((got) => got && Promise.all(got.files.map(([m, b]) =>
-        new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)).then((buf) => [m, buf]))).then((bufs) => {
-        // each pipe's tuning as it was recorded, in cents from equal temperament, corrected as it plays
-        const cents = new Map(got.info.pipes.map((n, i) => [got.info.base + n, (got.info.cents || [])[i] || 0]));
-        pipes = { info: got.info, bufs: new Map(bufs), keys: bufs.map(([m]) => m), cents };
-      })).catch(() => { pipes = null; });
-    }
-    function room() {
-      ctx = new Ctx();
-      const len = Math.floor(ctx.sampleRate * 3.2);
-      const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const d = ir.getChannelData(ch);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
-      }
-      const verb = ctx.createConvolver();
-      verb.buffer = ir;
-      const wet = ctx.createGain(); wet.gain.value = 0.4;
-      const dry = ctx.createGain(); dry.gain.value = 0.75;
-      const limit = ctx.createDynamicsCompressor();
-      limit.threshold.value = -14; limit.ratio.value = 6;
-      out = ctx.createGain(); out.gain.value = 0.42;
-      out.connect(dry).connect(limit);
-      out.connect(verb).connect(wet).connect(limit);
-      limit.connect(ctx.destination);
-      // the real pipes carry their room in them, and go straight to the limiter
-      pipesOut = ctx.createGain(); pipesOut.gain.value = 0.7;
-      pipesOut.connect(limit);
-      const real = new Float32Array(9), imag = new Float32Array(9);
-      [0, 1, 0.55, 0.3, 0.34, 0.07, 0.14, 0, 0.1].forEach((v, i) => { imag[i] = v; });
-      wave = ctx.createPeriodicWave(real, imag);
-    }
-    function pipe(midi, at, len, level, nodes) {
-      const freq = 440 * Math.pow(2, (midi - 69) / 12);
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0, at);
-      env.gain.linearRampToValueAtTime(level, at + 0.05);
-      env.gain.setValueAtTime(level, at + len);
-      env.gain.exponentialRampToValueAtTime(0.0001, at + len + 0.28);
-      env.connect(out);
-      const o = ctx.createOscillator();
-      o.setPeriodicWave(wave);
-      o.frequency.value = freq;
-      o.connect(env);
-      o.start(at); o.stop(at + len + 0.32);
-      nodes.push(o);
-      // the breath of air as the pipe speaks
-      const n = ctx.createBufferSource();
-      const b = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.07), ctx.sampleRate);
-      const d = b.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-      n.buffer = b;
-      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq * 4; bp.Q.value = 3;
-      const ng = ctx.createGain(); ng.gain.value = 0.08 * level;
-      n.connect(bp).connect(ng).connect(out);
-      n.start(at);
-      nodes.push(n);
-      nodes.push(env);
-    }
-    // a note on the real organ: the pipe nearest its pitch, retuned to it, speaking for as long as the
-    // note is held, and then its release into the room
-    function sounded(midi, at, len, level, nodes) {
-      const { info, bufs, keys, cents } = pipes;
-      const near = keys.reduce((a, b) => (Math.abs(b - midi) < Math.abs(a - midi) ? b : a));
-      const buf = bufs.get(near), rate = Math.pow(2, (midi - near) / 12 - cents.get(near) / 1200);
-      const held = Math.min(len * rate, info.head - 0.06);           // in the pipe's own time
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(level, at);
-      env.gain.setValueAtTime(level, at + held / rate);
-      env.gain.linearRampToValueAtTime(0, at + held / rate + 0.06);
-      env.connect(pipesOut);
-      const speak = ctx.createBufferSource();
-      speak.buffer = buf; speak.playbackRate.value = rate;
-      speak.connect(env);
-      speak.start(at, 0, held + 0.08);
-      // the release: taken from the moment the key was let go (the file keeps a few hundredths before it,
-      // passed over here), faded in under the sustain's fading out
-      const rel = ctx.createGain();
-      const r0 = at + held / rate - 0.02;
-      rel.gain.setValueAtTime(0, r0);
-      rel.gain.linearRampToValueAtTime(level, r0 + 0.05);
-      rel.connect(pipesOut);
-      const ring = ctx.createBufferSource();
-      ring.buffer = buf; ring.playbackRate.value = rate;
-      ring.connect(rel);
-      ring.start(r0, info.head + info.gap + 0.03);
-      nodes.push(speak, ring, env, rel);
-    }
-    let waiting = null;
-    function stop() {
-      waiting = null;
-      if (!current) return;
-      const c = current;
-      current = null;
-      c.timers.forEach(clearTimeout);
-      c.lights.forEach((e) => e.classList.remove('lit'));
-      c.done();
-      if (ctx) {
-        const t = ctx.currentTime;
-        for (const n of c.nodes) {
-          if (n.gain) { try { n.gain.cancelScheduledValues(t); n.gain.setTargetAtTime(0, t, 0.06); } catch (e) {} }
-          else { try { n.stop(t + 0.3); } catch (e) {} }
-        }
-      }
-    }
-    // play(svg, lightsFor, done): lightsFor(i) gives the elements to light for note i
-    function play(svg, lightsFor, done = () => {}) { playAll([{ svg, lightsFor }], { done }); }
-    // playAll(lines, { done, onLine, whole }): the lines one after another as one piece, each [svg,
-    // lightsFor]; a breath between them, as a congregation takes one at each fermata; onLine(k) as
-    // line k begins. A whole piece is let alone by the turning of pages (see stopLine).
-    function playAll(lines, { done = () => {}, onLine = () => {}, whole = false } = {}) {
-      if (!Ctx) return;
-      const parts = [];
-      for (const l of lines) {
-        if (!l.svg || !l.svg.dataset.play) continue;
-        try { parts.push({ data: JSON.parse(l.svg.dataset.play), lightsFor: l.lightsFor }); } catch (e) {}
-      }
-      if (!parts.length) return;
-      stop();
-      if (!ctx) room();
-      if (ctx.state === 'suspended') ctx.resume();
-      decodePipes();
-      // the first time, the pipes are given a moment to be ready, so that a line is not begun on one
-      // organ and heard next on another
-      if (!pipes && decoding) {
-        const token = { whole };
-        waiting = token;
-        Promise.race([decoding, new Promise((r) => setTimeout(r, 1000))]).then(() => { if (waiting === token) { waiting = null; begin(parts, done, onLine, whole); } });
-        return;
-      }
-      begin(parts, done, onLine, whole);
-    }
-    const BREATH = 0.45;
-    // the notes as an organist's hands give them to the pipes, in seconds: [rank, MIDI note, from, to,
-    // level]. Where two voices meet on one key it sounds once, from the first to the last of them; where
-    // a key is struck again, it is let up a little before (nearly a third of the note, at most 0.2 s,
-    // as an organist lifts in a room that rings), so that the second is heard; and the bass part has a
-    // 16' stop under it, the length of the line.
-    function keyboard(notes) {
-      const keys = new Map();
-      for (const n of notes) {
-        const id = `${n[0]}:${n[1]}`;
-        if (!keys.has(id)) keys.set(id, []);
-        keys.get(id).push(n);
-      }
-      const out = [];
-      for (const list of keys.values()) {
-        list.sort((a, b) => a[2] - b[2]);
-        let cur = null;
-        for (const n of list) {
-          if (cur && n[2] < cur[3] - 0.01) { cur[3] = Math.max(cur[3], n[3]); cur[4] = Math.max(cur[4], n[4]); continue; }
-          if (cur && n[2] - cur[3] < 0.02) cur[3] -= Math.min(0.2, (cur[3] - cur[2]) * 0.3);
-          cur = n.slice();
-          out.push(cur);
-        }
-      }
-      return out;
-    }
-    function begin(parts, done, onLine, whole) {
-      const t0 = ctx.currentTime + 0.08;
-      const c = { nodes: [], timers: [], lights: [], done, whole };
-      // what lights is kept with what is heard, through whatever lies between (a Bluetooth headset's delay)
-      const late = ctx.outputLatency || ctx.baseLatency || 0;
-      const at = (sec, f) => c.timers.push(setTimeout(f, (sec + late) * 1000));
-      let off = 0, breath = BREATH;
-      const notes = [];
-      parts.forEach(({ data, lightsFor }, k) => {
-        const beat = data.beat;
-        const voices = new Set(data.events.map((e) => e[3] || 0));
-        const level = voices.size > 1 ? 0.6 : 1, bass = voices.size > 1 ? Math.max(...voices) : -1;
-        for (const [s, l, m, v = 0] of data.events) {
-          const from = t0 + off + s * beat, to = from + l * beat;
-          notes.push([8, m, from, to, level]);
-          if (v === bass) notes.push([16, m - 12, from, to, level * 0.35]);
-        }
-        at(0.08 + off, () => onLine(k));
-        data.lights.forEach((s, i) => at(0.08 + off + s * beat, () => {
-          c.lights.forEach((e) => e.classList.remove('lit'));
-          c.lights = lightsFor(i);
-          c.lights.forEach((e) => e.classList.add('lit'));
-        }));
-        const end = Math.max(...data.events.map(([s, l]) => s + l)) * beat;
-        at(0.08 + off + end + 0.1, () => c.lights.forEach((e) => e.classList.remove('lit')));
-        breath = data.breath != null ? data.breath * beat : BREATH;   // the same breath as at a fermata within a line
-        off += end + breath;
-      });
-      for (const [, m, from, to, level] of keyboard(notes)) {
-        const len = Math.max(0.08, to - from - 0.03);
-        if (pipes) sounded(m, from, len, level, c.nodes);
-        else pipe(m, from, len, 0.5 * level, c.nodes);
-      }
-      // the piece is over when its last chord has died away in the room (the real pipes' release), and
-      // is then let go without cutting anything short
-      const ring = pipes ? pipes.info.tail : 0.4;
-      at(0.08 + off - breath + ring, () => {
-        if (current !== c) return;
-        current = null; c.lights.forEach((e) => e.classList.remove('lit')); c.done();
-      });
-      current = c;
-    }
-    // a page turned, or a layout changed: a single line stops; the whole chorale plays on
-    const stopLine = () => { if ((waiting && !waiting.whole) || (current && !current.whole)) stop(); };
-    return { ok: !!Ctx, play, playAll, stop, stopLine, playing: () => !!current || !!waiting, fetchPipes, wake: () => { if (!Ctx) return; if (!ctx) room(); if (ctx.state === 'suspended') ctx.resume(); decodePipes(); } };
-  })();
-
-  // every staff is an instrument: press it to hear its line in Bach's four parts
-  function playStaff(score) {
-    const svg = score.querySelector('svg[data-play]');
-    const notes = svg ? svg.querySelectorAll('.n') : [];
-    Organ.play(svg, (i) => (notes[i] ? [notes[i]] : []));
-  }
-  if (Organ.ok) {
-    for (const score of document.querySelectorAll('.score')) {
-      const svg = score.querySelector('svg[data-play]');
-      if (!svg) continue;
-      score.setAttribute('role', 'button');
-      score.tabIndex = 0;
-      score.setAttribute('aria-label', `${UI.play_line || 'Play'}: ${svg.getAttribute('aria-label') || ''}`);
-      score.addEventListener('click', () => playStaff(score));
-      score.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
-      score.addEventListener('focus', Organ.fetchPipes, { once: true });
-      score.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playStaff(score); }
-      });
-    }
-    // B-A-C-H, his name in German note names, each note and letter lit as it sounds
-    const motif = document.querySelector('.motif-play');
-    if (motif) {
-      motif.hidden = false;
-      const svg = motif.querySelector('svg.motif');
-      const notes = motif.querySelectorAll('.motif .n'), letters = motif.querySelectorAll('.motif-letters text');
-      motif.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
-      motif.addEventListener('click', () => {
-        motif.classList.add('playing');
-        Organ.play(svg, (i) => [notes[i], letters[i]].filter(Boolean), () => motif.classList.remove('playing'));
-      });
-    }
-  }
 
   // ---------------------------------------------------------------------------------------------
   // Moving plates: a short silent clip of each work, laid over its picture. Where a pointer can rest
@@ -403,10 +138,9 @@
   }
   // On the leaves read on a phone the index is not spines at the edge (where a thumb's swipe means Back,
   // and where they read as a fault in the page) but a sheet, opened by a Contents button in the window's
-  // lower corner beside the organ: the dock. In the book the organ goes back to the strip above it.
-  let dock = null, toc = null, organHome = null;
+  // lower corner: the dock.
+  let dock = null, toc = null;
   function placeControls() {
-    const organ = document.querySelector('.organ');
     if (!dock) {
       dock = el('div', 'dock');
       dock.hidden = true;
@@ -422,14 +156,12 @@
       });
       dock.append(toc);
       document.body.append(dock);
-      if (organ) organHome = [organ.parentElement, organ.nextSibling];
       // On a phone the dock steps out of the way while the reader reads on down the page, so that it is
       // not over the lines they are reading, and comes back when they turn back up, tap the page, or come
-      // to its end. It stays while the contents are open, while the organ plays (it says the line, and
-      // stops it), and while it holds the keyboard's focus (site.css).
+      // to its end. It stays while the contents are open, and while it holds the keyboard's focus (site.css).
       let lastY = window.scrollY, run = 0, tapped = -1e9;
       const away = (on) => dock.classList.toggle('away', on);
-      const stays = () => (thumbs && thumbs.classList.contains('open')) || (organ && organ.getAttribute('aria-pressed') === 'true');
+      const stays = () => thumbs && thumbs.classList.contains('open');
       window.addEventListener('scroll', () => {
         const y = window.scrollY, dy = y - lastY;
         lastY = y;
@@ -445,10 +177,6 @@
     }
     const docked = root.classList.contains('leaves');
     dock.hidden = !docked;
-    if (organ && !organ.hidden) {
-      if (docked && organ.parentElement !== dock) dock.append(organ);
-      else if (!docked && organHome && organ.parentElement === dock) organHome[0].insertBefore(organ, organHome[1]);
-    }
   }
   // (folded spines no longer stand at the edge of a phone's page, so there is nothing to show at first)
   function hintThumbs() {
@@ -600,11 +328,15 @@
   let book = null, printing = false;
 
   // The book's measures, from the window (site.css explains each as it uses it). The book fills the
-  // window but for a band of 36px above it for the controls and 10px of desk round the rest.
+  // window but for a band of 36px above it for the controls and 10px of desk at the sides; below it, 10px
+  // of desk in a short window, rising to 30 in a tall one, so that the book lies on the desk rather than
+  // against the window's edge.
   //  - Zoom: the square root of the window's height over 900, so the book grows more slowly than the
   //    window does.
   //  - Pages: as tall as the window allows, and as wide, but no wider than a squarish codex (0.88 of
-  //    their height) and no narrower than a book of hours (2:3); never less than 740 by 494 in the
+  //    their height) where the window is short, and in a taller one, which has the height to spare for
+  //    it, no wider than a quarto's 3:4 (0.76 from a page 880 high, from 0.88 at 760); and no narrower
+  //    than a book of hours (2:3); never less than 740 by 494 in the
   //    book's own pixels, the room their contents need; where that cannot be had at a zoom of 0.78
   //    or more, the page stays a page.
   //  - Type: the page's width over 36, which sets about 66 to 70 characters a line; from 17 up to 20,
@@ -618,15 +350,17 @@
   //    to the outer margin, as the canon of manuscript margins has it; head 7.2% and foot 10% of the
   //    height.
   //  - The thumb index stands 42 of the book's pixels out from its left board, and the desk gives it room.
-  const TOP = 36, SIDE = 10, FOOT = 10, BOARD = 13, EDGE = 12, THUMBS = 42;
-  const MIN_PH = 740, TALLEST = 2 / 3, WIDEST = 0.88, MIN_PW = Math.ceil(MIN_PH * TALLEST);
+  const TOP = 36, SIDE = 10, BOARD = 13, EDGE = 12, THUMBS = 42;
+  const MIN_PH = 740, TALLEST = 2 / 3, MIN_PW = Math.ceil(MIN_PH * TALLEST);
+  const foot = (H) => Math.round(Math.min(30, Math.max(10, 10 + (H - 680) * 0.07)));
+  const widest = (ph) => 0.88 - 0.12 * Math.min(1, Math.max(0, (ph - 760) / 120));
   function measure(W, H) {
-    const aw = W - 2 * SIDE, ah = H - TOP - FOOT;
+    const aw = W - 2 * SIDE, ah = H - TOP - foot(H);
     let z = Math.min(1.4, Math.max(0.8, Math.sqrt(H / 900)));
     z = Math.min(z, ah / (MIN_PH + 2 * BOARD), aw / (2 * MIN_PW + 2 * BOARD + 2 * EDGE + THUMBS));
     let ph = ah / z - 2 * BOARD;
     let pw = (aw / z - 2 * BOARD - 2 * EDGE - THUMBS) / 2;
-    pw = Math.min(pw, ph * WIDEST);
+    pw = Math.min(pw, ph * widest(ph));
     ph = Math.min(ph, pw / TALLEST);
     const most = Math.min(22, Math.max(20, 20 + (H - 1080) / 180));
     const u = Math.min(most, Math.max(17, pw / 36));
@@ -774,7 +508,6 @@
 
   function unbuild() {
     if (!book) return;
-    Organ.stopLine();
     // (the keys are the document's, so their listener goes with the book, or a book bound again would hear each key twice)
     document.removeEventListener('keydown', book.onKey);
     const { spreads, stage } = book;
@@ -807,6 +540,7 @@
     b.style.setProperty('--sz', g.sz.toFixed(3));
     b.style.setProperty('--z', g.z.toFixed(3));
     book.stage.style.paddingLeft = `${Math.round(SIDE + THUMBS * g.z)}px`;
+    book.stage.style.paddingBottom = `${foot(window.innerHeight)}px`;
     // the controls above the book end where the book does
     root.style.setProperty('--book-r', `${Math.max(14, Math.round(window.innerWidth - b.getBoundingClientRect().right))}px`);
     fitWithin();
@@ -999,7 +733,6 @@
     if (book.busy) { if (k !== book.target) book.queued = [k, opts]; return; }
     if (k === book.cur) return;
     book.target = k;
-    Organ.stopLine();
     const from = book.cur;
     const fwd = k > from;
     const js = fwd ? range(from, k) : range(k, from).reverse();
@@ -1044,7 +777,7 @@
   }
 
   // when the book lies open at a spread: show only its two pages to the keyboard and to readers
-  // of the screen, say where it is, draw in what is new, and play its clip and its line
+  // of the screen, say where it is, draw in what is new, and play its clip
   function arrive(turned) {
     const k = book.cur, s = book.spreads[k];
     markThumb(k);
@@ -1144,7 +877,6 @@
         block.classList.add('dragging');
         stack([j]);
         try { block.setPointerCapture(e.pointerId); } catch (err) {}
-        Organ.stopLine();
       }
       const d = book.drag;
       const x = (e.clientX - p.left) / p.width * 2;   // 0 at the left edge, 1 at the gutter, 2 at the right edge
@@ -1185,52 +917,6 @@
   window.addEventListener('popstate', () => { if (book) go(spreadFromHash()); });
   window.addEventListener('hashchange', () => { if (book) go(spreadFromHash()); });
 
-  // ---- the organ stop ----
-  const organBtn = document.querySelector('.organ');
-  // The organ: the chorale played through, all seven lines as one piece, from the line of the page the
-  // reader is at to the Fine. Turning pages leaves it playing; the staff that sounds lights when its page
-  // is open; beside the switch, the line it has come to. Pressing a staff plays that line alone instead.
-  const organAt = organBtn && el('span', 'organ-at', { 'aria-hidden': 'true' });
-  if (organAt) organBtn.append(organAt);
-  const staves = () => [...document.querySelectorAll('svg.score-notes[data-line]')]
-    .filter((v) => !v.closest('.copy, .nf')).sort((a, b) => a.dataset.line - b.dataset.line)
-    .filter((v, i, all) => i === 0 || v.dataset.line !== all[i - 1].dataset.line);
-  function lineHere() {
-    if (book) return book.cur;
-    // on the leaves: the folio that fills the upper half of the window
-    const folios = [...main.querySelectorAll(':scope > .folio')];
-    let k = 0;
-    folios.forEach((f, i) => { if (f.getBoundingClientRect().top < window.innerHeight * 0.5) k = i; });
-    return k;
-  }
-  function organState(on, k) {
-    organBtn.setAttribute('aria-pressed', String(on));
-    organBtn.classList.toggle('sounding', on);
-    if (organAt) organAt.textContent = on && k != null ? (UI.organ_at || '{k}/{n}').replace('{k}', k + 1).replace('{n}', 7) : '';
-  }
-  function playChorale() {
-    const all = staves();
-    const from = Math.min(lineHere(), all.length - 1);
-    const lines = all.slice(from).map((svg) => { const notes = svg.querySelectorAll('.n'); return { svg, lightsFor: (i) => (notes[i] ? [notes[i]] : []) }; });
-    organState(true, from);
-    Organ.playAll(lines, { whole: true, onLine: (i) => organState(true, from + i), done: () => organState(false) });
-  }
-  // on the leaves the organ is a round button in the dock; the first time a staff comes into view it
-  // says for a few seconds what it is, and is then round again, out of the reader's way
-  if (organBtn && Organ.ok && 'IntersectionObserver' in window) {
-    let told = false;
-    try { told = !!sessionStorage.getItem('organ-named'); } catch (e) {}
-    const io = told ? null : new IntersectionObserver((es) => {
-      if (told || !es.some((e) => e.isIntersecting) || !root.classList.contains('leaves')) return;
-      if (dock && dock.classList.contains('away')) return;   // (it names itself where it can be seen)
-      told = true;
-      try { sessionStorage.setItem('organ-named', '1'); } catch (e) {}
-      io.disconnect();
-      organBtn.classList.add('near');
-      setTimeout(() => organBtn.classList.remove('near'), 5000);
-    }, { rootMargin: '0px 0px -15% 0px' });
-    if (io) document.querySelectorAll('.score').forEach((sc) => io.observe(sc));
-  }
   // a long list, read down a phone, shows its first six and the rest on asking
   for (const parts of document.querySelectorAll('.parts')) {
     const items = parts.querySelectorAll('li');
@@ -1246,17 +932,6 @@
     });
     parts.querySelector('ol').after(more);
   }
-  if (organBtn && Organ.ok) {
-    organBtn.hidden = false;
-    organBtn.addEventListener('pointerenter', Organ.fetchPipes, { once: true });
-    organBtn.addEventListener('focus', Organ.fetchPipes, { once: true });
-    organBtn.addEventListener('click', () => {
-      if (organBtn.getAttribute('aria-pressed') === 'true') { Organ.stop(); organState(false); return; }
-      Organ.wake();
-      playChorale();
-    });
-  }
-
   // ---- reading full screen: the browser's own bars go, and the book takes the whole screen ----
   const fsBtn = document.querySelector('.fs');
   const canFull = !!(document.fullscreenEnabled && root.requestFullscreen);

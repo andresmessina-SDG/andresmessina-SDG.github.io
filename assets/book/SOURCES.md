@@ -27,9 +27,8 @@ and run:
 python3 tools/real-assets.py path/to/originals
 ```
 
-## The organ and the words
+## The words
 
 | File | What it is | Source | Licence |
 |---|---|---|---|
-| `assets/organ/*.mp3` | Eighteen pipes of the open stop of a real pipe organ, a minor third apart, each its speech and sustain and then its release into the room it was recorded in, which is the only reverb (made by `tools/organ-assets.py`) | VSCO 2: Community Edition, Versilian Studios; organ sampled by Simon Dalzell of Ivy Audio ([VSCO 2 CE](https://github.com/sgossner/VSCO-2-CE), `Keys/Organ/Loud/Rode_Man3Open_*`) | CC0 |
 | The words beside the staves | Luther's *Ein feste Burg ist unser Gott* in English as Frederick H. Hedge made it (1853), and in Spanish as Juan Bautista Cabrera made it (19th century), each written to be sung to this tune | | Public domain |

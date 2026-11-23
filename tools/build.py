@@ -93,7 +93,7 @@ ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"]
 def chorale(k: int) -> str:
     """Line k of the chorale (1 to 7), engraved by tools/engrave.py. After the last line's double bar
     stands Fine., as Bach wrote it at the end of his scores, before his S.D.Gl."""
-    svg = (SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip()
+    svg = unplayed((SRC / "chorale" / f"{k}.svg").read_text(encoding="utf-8").rstrip())
     w0 = re.search(r'viewBox="0 0 ([\d.]+)', svg)[1]
     svg = svg.replace('<svg class="score-notes"', f'<svg class="score-notes" data-line="{k}" style="--vbw: {w0}"', 1)   # its place in the strophe, for site.js; its width, for site.css
     if k == 7:
@@ -105,11 +105,26 @@ def chorale(k: int) -> str:
     return svg
 
 
+def unplayed(svg: str) -> str:
+    """A staff as it is read: tools/engrave.py also writes the notes for playing (data-play), which the
+    page does not play."""
+    return re.sub(r" data-play='[^']*'", "", svg)
+
+
 def gloss(k: int, t: dict) -> str:
-    """Beside each staff, its words put plainly into the page's language, and (once site.js has made the
-    staff an instrument) a word that it can be heard."""
-    return (f'\n<p class="score-gloss"><span class="score-say">{esc(t["chorale_gloss"][k - 1])}</span>'
-            f'<span class="score-hear" aria-hidden="true">{esc(t["hear"])}</span></p>')
+    """Beside each staff, its words put plainly into the page's language."""
+    return f'\n<p class="score-gloss"><span class="score-say">{esc(t["chorale_gloss"][k - 1])}</span></p>'
+
+
+def creds(lines: list) -> str:
+    """The degree, its school and the rest, a line each: *...* is set in italic (the Latin of an honour),
+    and "~" is a space that never breaks (no "Southern | Seminary")."""
+    out = []
+    for i, line in enumerate(lines):
+        html = kept(line) if "·" in line else esc(line)
+        html = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", html).replace("~", "\u00a0")
+        out.append(f'<span class="cred-line">{html}</span>')
+    return " ".join(out)
 
 
 def kept(line: str) -> str:
@@ -292,7 +307,7 @@ def kalendar_js(verses: list, t: dict) -> str:
 
 def ui_json(t: dict) -> str:
     """The words site.js needs for the book's own controls, kept with the page's other words."""
-    keys = ["contents", "organ", "turn_next", "turn_prev", "folio", "play_line", "organ_at", "show_all", "opening_name", "colophon_name", "thumbs_label"]
+    keys = ["contents", "turn_next", "turn_prev", "folio", "show_all", "opening_name", "colophon_name", "thumbs_label"]
     return esc(json.dumps({k: t[k] for k in keys}, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -416,7 +431,7 @@ def main() -> None:
     head = (SRC / "head.html").read_text(encoding="utf-8")
     page = (SRC / "page.html").read_text(encoding="utf-8")
     notfound = (SRC / "404.html").read_text(encoding="utf-8")
-    motif = indent((SRC / "bach.svg").read_text(encoding="utf-8").rstrip(), 10)
+    motif = indent(unplayed((SRC / "bach.svg").read_text(encoding="utf-8").rstrip()), 10)
     sdg = indent((SRC / "sdg.svg").read_text(encoding="utf-8").rstrip(), 14)
     v = version()
 
@@ -428,7 +443,7 @@ def main() -> None:
         url = BASE + t["path"]
         values = {**{k: v_ for k, v_ in t.items() if isinstance(v_, str)},
                   "page_title": t["title"], "v": v,
-                  "cred_fields_html": kept(t["cred_fields"]), "cred_degrees_html": kept(t["cred_degrees"]),
+                  "cred_fields_html": kept(t["cred_fields"]), "cred_degrees_html": creds(t["cred_degrees"]),
                   "jj_gloss_html": kept(t["jj_gloss"]),
                   "head_links": head_links(t, url, strings),
                   # site.js from the head, fetched first: on a slow line the book waits on it

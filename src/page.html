@@ -26,11 +26,6 @@
       <button class="fs" type="button" aria-label="{{fullscreen}}" title="{{fullscreen}} (F)" hidden>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path class="in" d="M1.5 5.5v-4h4M10.5 1.5h4v4M14.5 10.5v4h-4M5.5 14.5h-4v-4"/><path class="out" d="M5.5 1.5v4h-4M14.5 5.5h-4v-4M10.5 14.5v-4h4M1.5 10.5h4v4"/></svg>
       </button>
-      <button class="organ" type="button" aria-pressed="false" title="{{organ_hint}}" hidden>
-        <svg class="stop" viewBox="0 0 24 14" aria-hidden="true"><rect class="track" x=".75" y=".75" width="22.5" height="12.5" rx="6.25"/><circle class="knob" cx="7" cy="7" r="4.2"/></svg>
-        <svg class="pipes" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.2" y="7" width="2.6" height="10.5" rx="1.3"/><rect x="6.1" y="4" width="2.6" height="13.5" rx="1.3"/><rect x="10" y="2" width="2.6" height="15.5" rx="1.3"/><rect x="13.9" y="5" width="2.6" height="12.5" rx="1.3"/><path d="M1.5 18.6h17"/></svg>
-        <span class="organ-name">{{organ}}</span>
-      </button>
       {{{langs}}}
     </div>
   </header>
@@ -95,10 +90,9 @@
         <h2 class="rubric">{{colophon_name}}</h2>
         <p class="promise">{{promise}}</p>
         <p class="bach">{{{bach_html}}}</p>
-        <button class="motif-play" type="button" hidden>
+        <p class="motif-fig">
 {{{motif}}}
-          <span>{{bach_play}}</span>
-        </button>
+        </p>
         <p class="imprint">{{imprint}}</p>
         <p class="materials">{{materials}} <a href="https://github.com/andresmessina-SDG/andresmessina-SDG.github.io/blob/main/assets/book/SOURCES.md">{{materials_link}}</a></p>
         <nav class="foot-links">

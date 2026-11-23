@@ -72,29 +72,8 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .langs span { display: none; }
 .langs a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 1px; }
 
-/* the organ stop: drawn out, each page's line of the chorale sounds as the book opens to it */
-.organ {
-  display: inline-flex; align-items: center; gap: 7px; padding: 4px 8px; border: 0; background: none; cursor: pointer;
-  font: 0.95rem/1 var(--rubric); letter-spacing: 0.05em; color: var(--muted); transition: color .2s ease;
-}
-.organ[hidden] { display: none; }
-.organ:hover { color: var(--ink); }
-/* the organ: a switch, off to the left, on to the right and red */
-.organ .stop { width: 24px; height: 14px; overflow: visible; }
-.organ .stop .track { fill: none; stroke: currentColor; stroke-width: 1.1; opacity: .75; transition: fill .2s ease, stroke .2s ease, opacity .2s ease; }
-.organ .stop .knob { fill: currentColor; transition: transform .22s cubic-bezier(.3, .7, .3, 1), fill .2s ease; }
-.organ[aria-pressed="true"] { color: var(--ink); }
-.organ[aria-pressed="true"] .track { fill: var(--vermilion); stroke: var(--vermilion); opacity: 1; }
-.organ[aria-pressed="true"] .knob { fill: #FFFDF8; transform: translateX(10px); }
-@media (prefers-reduced-motion: reduce) { .organ .stop .knob { transition: none; } }
-/* while the chorale plays, the line it has come to, after the label */
-.organ-at { color: var(--muted); font-variant-numeric: lining-nums; white-space: nowrap; }
-.organ-at:empty { display: none; }
-.organ-at::before { content: "·\00a0"; content: "·\00a0" / ""; }
-.organ .pipes { display: none; }
-/* the dock: on the leaves (the phone, the desk) the page's head scrolls away, so the organ, and on a
-   phone the contents, are kept in the window's lower corner as round buttons on slips of the paper, a
-   fingertip wide; the organ says what it is when a staff is in view, and while it plays, the line */
+/* the dock: on a phone the page's head scrolls away, so the contents are kept in the window's lower
+   corner as a round button on a slip of the paper, a fingertip wide */
 .dock {
   position: fixed; z-index: 24; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; gap: 8px;
@@ -105,7 +84,7 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .dock.away:not(:focus-within) { transform: translateY(calc(100% + 28px)); opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .dock.away:not(:focus-within) { transform: none; } }
 html.spread .dock .toc { display: none; }   /* on the desk the index stands lettered at the left */
-.dock .toc, .dock .organ {
+.dock .toc {
   box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font: 500 .9375rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; color: #5F5345;
@@ -113,22 +92,13 @@ html.spread .dock .toc { display: none; }   /* on the desk the index stands lett
   box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .14), 0 10px 22px -10px rgba(60, 44, 28, .45);
   transition: color .2s ease;
 }
-.dock .toc:hover, .dock .organ:hover { color: var(--ink); }
-.dock .toc:focus-visible, .dock .organ:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; border-radius: 999px; }
-.dock .toc svg, .dock .organ .pipes { flex: none; width: 20px; height: 20px; }
+.dock .toc:hover { color: var(--ink); }
+.dock .toc:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; border-radius: 999px; }
+.dock .toc svg { flex: none; width: 20px; height: 20px; }
 .dock .toc path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
-.dock .toc circle, .dock .organ .pipes rect { fill: currentColor; }
-.dock .organ .pipes path { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
+.dock .toc circle { fill: currentColor; }
 .dock .toc[aria-expanded="true"] { color: var(--vermilion); }
-.dock .organ .stop { display: none; }
-.dock .organ .pipes { display: block; }
-.dock .organ .organ-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.dock .organ.near:not([aria-pressed="true"]) .organ-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
-.dock .organ.near, .dock .organ[aria-pressed="true"] { padding: 0 15px 0 13px; }
-.dock .organ[aria-pressed="true"] { color: var(--vermilion); }
-.dock .organ-at { color: var(--ink); }
-.dock .organ-at::before { content: none; }
-@media print { .organ, .dock { display: none !important; } }
+@media print { .dock { display: none !important; } }
 /* the contents, on a phone: a sheet over the dock, a line to each folio, the open one in red */
 html.leaves:not(.spread) .thumbs.slim { display: none; }
 html.leaves:not(.spread) .thumbs.slim.open {
@@ -152,8 +122,6 @@ html.leaves:not(.spread) .thumbs.slim .thumb[aria-current="true"] { background: 
 html.leaves:not(.spread) .thumbs.slim .thumb[aria-current="true"] span { color: var(--vermilion); }
 /* and each leaf's foot leaves room for the dock, so that a leaf holding still is not read under it */
 @media screen { html.leaves:not(.spread) main > .folio { padding-bottom: 76px; } }
-
-.organ:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; border-radius: 2px; }
 
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 30; padding: 6px 12px; background: var(--vellum); color: var(--ink); font-family: var(--rubric); letter-spacing: 0.05em; border: 1px solid var(--rule); }
 .skip:focus { left: max(16px, env(safe-area-inset-left, 0px)); }
@@ -191,6 +159,7 @@ h1 {
 .cred-title { text-wrap: balance; font-family: var(--rubric); font-size: 1.02rem; letter-spacing: 0.07em; color: var(--ink); line-height: 1.3; }
 .cred-fields { margin-top: 3px !important; font-size: 1.02rem; line-height: 1.4; }
 .cred-degrees { margin-top: 2px !important; font-size: 0.95rem; line-height: 1.4; color: var(--muted); }
+.cred-line { display: block; }   /* the degree, its school, the rest: a line each */
 .cred-link { margin-top: 6px !important; font-family: var(--rubric); font-size: 0.98rem; letter-spacing: 0.05em; }
 .cred-fields .kept, .cred-degrees .kept, .jj .kept { white-space: nowrap; }
 .cred-link a::after { content: "\00a0›"; content: "\00a0›" / ""; }
@@ -225,22 +194,11 @@ h1 {
 .score-notes { display: block; max-width: 100%; height: auto; overflow: visible; }
 .score-words { font-family: var(--text); font-style: italic; font-size: 11.5px; }
 .score-fine { font-family: var(--text); font-style: italic; font-size: 13.5px; }
-.score .n { transition: fill .25s ease; }
-.score .n.lit { fill: var(--vermilion); transition-duration: .05s; }
-/* site.js makes each staff a button that plays its line */
-.score[role="button"] { cursor: pointer; }
-.score[role="button"]:hover .score-staff { fill: var(--gilt); }
-.score[role="button"]:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; }
-/* beside each staff (or beneath it, where the page is narrow) its words in the page's language; and,
-   once the staff can be played, a word to say so, inked red when a pointer rests on the staff */
+/* beside each staff (or beneath it, where the page is narrow) its words in the page's language */
 .score { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; }
 .score-notes { flex: none; }
 .score-gloss { flex: 1 1 10rem; max-width: 17rem; margin: 0; display: grid; gap: 3px; font-size: 0.9rem; line-height: 1.35; color: var(--muted); }
 .score-say { font-style: italic; text-wrap: balance; }
-.score-hear { display: none; font-family: var(--rubric); font-size: .92em; letter-spacing: .06em; white-space: nowrap; color: var(--muted); transition: color .2s ease; }
-.score-hear::before { content: "◎\00a0"; content: "◎\00a0" / ""; font-family: var(--text); }
-.score[role="button"] .score-hear { display: block; }
-.score[role="button"]:hover .score-hear, .score[role="button"]:focus-visible .score-hear { color: var(--vermilion); }
 
 /* ---------- The works ---------- */
 .work { position: relative; margin-top: 72px; padding: 0 0 0 calc(var(--ini-col) + var(--ini-gap)); }
@@ -321,24 +279,13 @@ h1 {
 .promise { margin: 0; text-wrap: pretty; }
 .bach { margin: 0; font-size: 0.95rem; color: var(--muted); text-wrap: pretty; }
 .foot-links { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 26px; font-family: var(--rubric); letter-spacing: 0.05em; }
-/* every way out of the book, and every button that sounds, in red as the way into each work is */
+/* every way out of the book in red, as the way into each work is */
 .foot-links a, .cred-link a { color: var(--vermilion); text-decoration: none; text-underline-offset: .22em; text-decoration-thickness: 1px; transition: color .2s ease; }
 .foot-links a:hover, .cred-link a:hover { color: #8E2914; text-decoration-line: underline; }
-/* B-A-C-H: his name in notes; site.js shows the button and plays it */
-.motif-play {
-  display: inline-flex; align-items: center; gap: 14px; justify-self: start;
-  margin: 0; padding: 2px 8px 2px 0; border: 0; background: none; cursor: pointer;
-  color: var(--ink); font: 1.02rem/1.3 var(--rubric); letter-spacing: 0.05em; text-align: left;
-}
-.motif-play[hidden] { display: none; }
-.motif-play span { color: var(--vermilion); transition: color .2s ease; }
-.motif-play span::after { content: "\00a0›"; content: "\00a0›" / ""; }
-.motif-play:hover span, .motif-play.playing span { color: #8E2914; }
-.motif-play:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-radius: 2px; }
+/* B-A-C-H: his name in notes, its letters beneath */
+.motif-fig { margin: 0; justify-self: start; }
 .motif { display: block; flex: none; width: 115.9px; height: 57.5px; overflow: visible; }
 .motif-letters { font: italic 11.5px var(--text); fill: var(--muted); }
-.motif .n, .motif-letters text { transition: fill .25s ease; }
-.motif .n.lit, .motif-letters text.lit { fill: var(--vermilion); transition-duration: .05s; }
 
 .finis { margin-top: 40px; }
 .signature { display: flex; flex-direction: column; align-items: flex-end; margin-top: 22px; text-align: right; }
@@ -593,22 +540,21 @@ html.bound .head {
   justify-content: flex-end; pointer-events: none;   /* its right end over the book's (site.js sets --book-r) */
 }
 html.bound .head > * { pointer-events: auto; }
-/* over the book, the controls on a strip of the paper: the full page, the organ and the language, each
+/* over the book, the controls on a strip of the paper: the full page and the language, each
    kept apart from the next by a hairline */
 html.bound .head-tools {
   align-items: center; gap: 0; padding: 2px; border-radius: 999px;
   background: rgba(250, 247, 240, .9) url("/assets/book/paper.webp") 0 0 / 360px auto;
   box-shadow: inset 0 0 0 1px rgba(90, 70, 45, .16), 0 1px 2px rgba(60, 44, 28, .12), 0 8px 18px -10px rgba(60, 44, 28, .4);
 }
-html.bound .langs, html.bound .organ { font-size: 13.5px; }
-html.bound .fs, html.bound .organ, html.bound .langs a { height: 24px; box-sizing: border-box; border-radius: 999px; }
+html.bound .langs { font-size: 13.5px; }
+html.bound .fs, html.bound .langs a { height: 24px; box-sizing: border-box; border-radius: 999px; }
 html.bound .fs { width: 32px; }
-html.bound .organ { padding: 0 11px 0 10px; gap: 8px; }
-html.bound .organ:hover, html.bound .fs:hover { background: rgba(90, 70, 45, .07); }
+html.bound .fs:hover { background: rgba(90, 70, 45, .07); }
 html.bound .langs { align-items: center; gap: 2px; padding: 0 1px; }
 html.bound .langs a { display: inline-flex; align-items: center; padding: 0 11px; }
-html.bound .head-tools > .organ:not([hidden]), html.bound .head-tools > .langs { position: relative; margin-left: 7px; }
-html.bound .head-tools > .organ:not([hidden])::before, html.bound .head-tools > .langs::before {
+html.bound .head-tools > .langs { position: relative; margin-left: 7px; }
+html.bound .head-tools > .langs::before {
   content: ""; position: absolute; left: -4px; top: 5px; bottom: 5px; width: 1px; background: rgba(90, 70, 45, .2);
 }
 html.bound .folio { display: none; }
@@ -632,8 +578,8 @@ html.bound .folio { display: none; }
   background: radial-gradient(ellipse 90% 85% at 25% 15%, rgba(255, 253, 248, .28), transparent 70%),
               radial-gradient(ellipse 125% 115% at 45% 40%, transparent 55%, rgba(80, 58, 36, .16) 100%);
 }
-html.bound .langs a, html.bound .organ, html.bound .fs { color: #5F5345; }
-html.bound .langs a:hover, html.bound .organ:hover, html.bound .fs:hover, html.bound .langs a[aria-current="page"], html.bound .organ[aria-pressed="true"] { color: var(--ink); }
+html.bound .langs a, html.bound .fs { color: #5F5345; }
+html.bound .langs a:hover, html.bound .fs:hover, html.bound .langs a[aria-current="page"] { color: var(--ink); }
 .book {
   --pw: 680px; --ph: 830px; --board: 13px; --u: 18px; --mi: 42px; --mo: 75px; --mt: 60px; --mb: 83px;
   position: relative; width: calc(2 * var(--pw) + 2 * var(--board)); height: calc(var(--ph) + 2 * var(--board));
@@ -847,7 +793,7 @@ html.thumbable .thumbs.slim {
 .book .contents .c-fol, .book .kal-names, .book .go, .book .foot-links { font-size: max(.75em, calc(13.5px / var(--z, 1))); letter-spacing: .07em; }
 .book .cred-fields, .book .cred-degrees, .book .facts, .book .bach { font-size: max(.833em, calc(14.5px / var(--z, 1))); }
 .book .kal-names .kal-ad { font-size: max(.833em, calc(12.5px / var(--z, 1))); }
-.book .page .score, .book .motif-play .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
+.book .page .score, .book .motif-fig .motif { zoom: var(--sz, 1.3); }   /* a staff space of about a third of the unit */
 
 /* the maker, on the first verso: the name and the lede gathered in the middle of the page, under J.J. */
 .book .maker .jj { font-size: 1.1em; }
@@ -856,13 +802,13 @@ html.thumbable .thumbs.slim {
 .book .maker .initial { position: relative; left: 0; right: auto; top: 0; width: 6em; grid-row: 1 / span 2; }
 .book .maker h1 { padding: 0; font-size: 2.488em; line-height: 1; align-self: end; }
 .book .maker .subtitle { margin: .9em 0 0; align-self: start; }
-.book .maker .lede { margin: 2em 0 0; font-size: 1.25em; line-height: 1.5; }
-.book .maker .byline { margin: 1.6em 0 auto; gap: 1em; }
+.book .maker .lede { margin: 2em 0 1.6em; font-size: 1.25em; line-height: 1.5; }
+/* the byline at the foot of the text, where the facing page ends: the room to spare above the name and above the byline */
+.book .maker .byline { margin: auto 0 0; gap: 1em; }
 .book .maker .portrait { width: 4.6em; height: 4.6em; }
 .book .maker .creds p { line-height: 1.4; }
 /* where the maker's page is short for its words, the lede is set a size smaller and closer */
-.book .maker.tight .lede { margin-top: 1.4em; font-size: 1.12em; line-height: 1.45; }
-.book .maker.tight .byline { margin-top: 1.1em; }
+.book .maker.tight .lede { margin: 1.4em 0 1.1em; font-size: 1.12em; line-height: 1.45; }
 /* (and the initial a little smaller, and the credentials' lines a little closer) */
 .book .maker.tight .initial { width: 5.4em; }
 .book .maker.tight .opening { grid-template-columns: 5.4em 1fr; }
@@ -892,12 +838,12 @@ html.thumbable .thumbs.slim {
 .book .kalendar.tight .contents { padding-top: .8em; }
 .book .kalendar.tight .contents ol { margin-top: .3em; }
 .book .kalendar.tight .contents a { padding: .1em 0; }
-.book .kalendar.tight .score { padding-top: .5em; }
+.book .kalendar.tight .score, .book .page-r.modern.tight .score { padding-top: .5em; }
 /* in the book the gloss never adds to the page's depth: it takes what room the staff leaves beside it,
    and where that is too narrow to hold a phrase, it is left out */
 .book .page .score { margin-top: auto; padding-top: .9em; column-gap: 1.1em; flex-wrap: nowrap; width: auto; }
 .book .page .score-gloss { flex: 1 1 0; min-width: 0; max-width: calc(var(--u) * 13 / var(--sz, 1)); container-type: inline-size; font-size: calc(max(var(--u) * .82, 13.5px / var(--z, 1)) / var(--sz, 1)); }
-@container (max-width: 10.5em) { .score-say, .score[role="button"] .score-hear { display: none; } }
+@container (max-width: 10.5em) { .score-say { display: none; } }
 .book .page .score-notes { max-width: none; }
 
 /* a work: on the verso its title, its miniature the width of the text, and a verse of Scripture centred
@@ -960,7 +906,6 @@ html.thumbable .thumbs.slim {
 .book .colophon { margin: 0; gap: .8em; }
 .book .colophon .promise { font-size: 1.25em; line-height: 1.45; }
 .book .colophon .bach { font-size: 1em; line-height: 1.6; }
-.book .colophon .motif-play { font-size: .9em; }
 .book .colophon.tight { gap: .5em; }
 .book .colophon.tight .bach { font-size: .92em; line-height: 1.5; }
 .book .colophon .foot-links { margin-top: .6em; }
@@ -1071,7 +1016,7 @@ html.leaves.spread .modern .epigraph p { line-height: 1.55; }
 /* the title plain, at the size of a heading and no larger: no initial */
 .modern h2 { letter-spacing: -.012em; }
 /* the page's furniture in the same small capitals as its labels, quieter */
-.face.modern .folnum, .face.modern .catch, .modern .score-hear {
+.face.modern .folnum, .face.modern .catch {
   font-family: var(--text); font-variant-caps: all-small-caps; font-variant-numeric: lining-nums;
   letter-spacing: .08em; font-weight: 500;
 }
@@ -1085,8 +1030,8 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 
 /* ---------- one family: wherever the labels' face is set, it is EB Garamond's own small capitals,
    with lining figures, a little heavier so as to stand at the size of the text's lower case ---------- */
-.langs, .organ, .skip, .subtitle, .cred-title, .cred-link, .rubric, .kal-names, .verse cite, .epigraph cite,
-.contents .c-fol, .score-hear, .kind, .go, .within .pil.num, .foot-links, .motif-play, .leafnum,
+.langs, .skip, .subtitle, .cred-title, .cred-link, .rubric, .kal-names, .verse cite, .epigraph cite,
+.contents .c-fol, .kind, .go, .within .pil.num, .foot-links, .leafnum,
 .folnum, .catch, .thumb span {
   font-variant-caps: all-small-caps; font-variant-numeric: lining-nums; font-weight: 500;
 }
@@ -1108,7 +1053,6 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   /* a name in a table that cannot fit its line whole is broken rather than run off the page */
   html.leaves:not(.spread) .modern .st-name { min-width: 0; overflow-wrap: break-word; }
   html.leaves:not(.spread) .kal-names .kal-ad, html.leaves:not(.spread) .materials, html.leaves:not(.spread) .imprint { font-size: .9375rem; }
-  html.leaves:not(.spread) .score-hear { font-size: 1em; }
   html.leaves:not(.spread) .score-gloss { font-size: .95rem; }
   /* every staff at one scale: as large as a third again, or as the widest of them fits the line */
   html.leaves:not(.spread) .score-notes {

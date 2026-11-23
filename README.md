@@ -26,7 +26,9 @@ window: a spread to each folio. Its measures come from the window, by rules
 set out at `geometry()` in `assets/site.js` and at the head of the book's
 styles in `assets/site.css`: the zoom grows as the square root of the
 window's height; the pages fill the window, shaped anywhere from a book of
-hours' 2:3 to a squarish 0.88; the text is a 36th of the page's width, so a
+hours' 2:3 to a squarish 0.88 in a short window, and no wider than a
+quarto's 3:4 in a tall one, which leaves the desk showing round the book
+and 10 to 30px of it below; the text is a 36th of the page's width, so a
 line holds about 66 to 70 characters, and every other size is a step of a
 minor third from it, never less than 15px on the screen, the small
 capitals never less than 13.5 and a work's contents 15; the margins widen from the gutter outward and
@@ -58,21 +60,8 @@ worldviews' paintings), each opens its own. Beneath it, the work's
 particulars in a row (`details` in the strings) and the way in. The window's title names the open folio.
 At the foot of every right page is a line of Bach's chorale, Luther's words
 beside it where the staff leaves room in Frederick Hedge's English or Juan
-Bautista Cabrera's Spanish (each made to be sung to the tune), and a word
-that it can be pressed to be heard, on a real pipe organ, sampled in its
-room, its pipes fetched only when music is near. The organ switch (top
-right over the book; in the lower corner on the leaves) plays the chorale
-through as one piece, from the line of the page the reader is at to the
-*Fine*, a breath at each fermata: turning pages leaves it playing, the staff
-that sounds lights when its page is open, and the switch shows the line it
-has come to. Pressing a staff plays that line alone. It is played as an
-organist plays it (`keyboard()` in `assets/site.js`): two voices meeting on
-one key sound it once, a key struck again is first let up (longer than in a
-dry room, for this room rings), a 16' stop sounds under the bass part from
-end to end, each pipe is set true to equal temperament from its own measured
-tuning, every fermata takes the same breath, and the last line broadens into
-its final chord, held longer. What lights is kept with what is heard, through
-a wireless headset's delay too. The last
+Bautista Cabrera's Spanish (each made to be sung to the tune). The music is
+to be read, not heard: the page makes no sound. The last
 line ends, as Bach ended his scores, with *Fine.* and his S.D.G.
 
 The book is made as books were: its paper the real parchment of
@@ -90,13 +79,12 @@ On a phone, or a narrow or short window, the same document is read down the
 page, a folio to a leaf, as the church history's eras are: each leaf holds
 still at its foot for a moment's scrolling, then the next rises over it and
 the one beneath dims. Each work's line of the chorale is at the foot of its
-leaf. In the window's lower corner a dock holds two round buttons, a fingertip
+leaf. In the window's lower corner a dock holds a round button, a fingertip
 wide: Contents, which opens the thumb index as a sheet (a line to each folio, the
-open one in red), and the organ, which names itself once when the first staff
-comes into view. Each leaf's foot leaves room for the dock. On a phone the dock
+open one in red). Each leaf's foot leaves room for the dock. On a phone the dock
 steps below the window's edge while the reader reads on down, and comes back
 when they scroll back up, tap the page, or reach its end; it stays while the
-contents are open or the organ plays. On a phone the type
+contents are open. On a phone the type
 is no smaller than reads easily in the hand, the staves are drawn at one scale
 as large as the line allows, every row of a work's list opens its place wherever
 it is touched, and a list of more than ten shows its first six and the rest on
@@ -118,14 +106,13 @@ another, but without the shade.
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
 | `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G. and the fleuron. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
-| `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish; the organ. Nothing moves for readers who ask for stillness. |
-| `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words, and all four voices as data for the organ (each note with its voice, tied notes as one, the fermatas, breaths and closing broadening timed). Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
+| `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish. Nothing moves for readers who ask for stillness. |
+| `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words (the tool also writes all four voices as data for playing, which `tools/build.py` leaves out of the page). Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |
 | `src/sdg.svg` | S.D.G. as paths with the pen strokes that write it, gilded with the real gold in `assets/book/gold.webp`; drawn by `tools/quill.py` from the page's own EB Garamond. |
 | `assets/works/` | The plate beside each work, at 1200 and 640 pixels wide. The river, the Revelation guide (question 20), The Pilgrim's Road and Worldviews in Motion (Christian theism, at Redemption) were captured from the sites themselves at double resolution; Scriptura's is its own screenshot of the Greek interlinear. To change one, replace both sizes and keep the 16:9 shape. Beside them, `<id>.mp4` is the short silent clip that plays over a plate while a pointer rests on it (fetched only then, and never on touch screens), recorded from each work's own site by `tools/record-clips.js`. Scriptura has no clip, since its plate is a desktop app. |
 | `assets/fonts/` | EB Garamond, its headings in the face’s own small capitals (the Latin cut keeps `smcp`, `c2sc`, lining and tabular figures), served from this site under the SIL Open Font License. The page loads nothing from any other site. The roman Cyrillic is served cut to the letters the pages set (`-used`, 3 KB, for «Русский»), cut by `tools/build.py` from the full face beside it whenever fontTools is installed. |
 | `index.html`, `es/index.html`, `404.html`, `sitemap.xml` | Built by `tools/build.py`. Don't edit by hand. |
-| `tools/organ-assets.py` | Makes the organ's pipes, `assets/organ/`, from the open stop of the pipe organ in VSCO 2: Community Edition (CC0): for each note the chorale needs, the pipe's speech, its sustain and its release into the room, and each pipe's tuning as recorded, measured from its harmonics, for the page to correct. |
 | `tools/paper.py` | Makes the book's paper, `assets/book/paper.webp`, from the real parchment: the same skin, quieter and lighter. |
 | `tools/check.js` | Checks that the pages ask for the stylesheet and script as they now are (so no browser keeps an old script cached against new pages), then checks the built site in a real browser: errors and missing files, the layout at each size (and the book's first pages on the fullest day the kalendar has, a Sunday with one of the longest verses, whatever day the check is run), pages that spill or text that collides, the book bound before it is seen, zoom, Back, names for screen readers, the weight of a first visit, and print. |
 | `robots.txt` | Governs the whole `andresmessina-sdg.github.io` host, project sites included, so it lists every sitemap on it. |
