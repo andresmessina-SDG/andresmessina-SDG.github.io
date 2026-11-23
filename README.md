@@ -21,27 +21,41 @@ one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
 
 On the calendar page, on the English page, lies a real envelope (the back of
-one of 1843, from the Longfellow house) closed with a seal of real red wax; its
-own flap, clipped from the same picture, is the one that lifts. It is as large
-as an envelope would be on such a page: in the book it lies beside the
-contents, which give it the outer two fifths of the line, unless a title would
-then break or the page spill, when it lies beside the date instead (`place()`
-in `assets/site.js`); on a phone it lies across the page beneath the verse.
+one of 1843, Fanny Appleton's to Longfellow) closed with a seal of real red wax;
+its own flap, clipped from the same picture, is the one that lifts. It is as
+large as an envelope would be on such a page: in the book it lies in the room
+between the verse and the contents, reaching down beside the contents where
+it must, the rows it lies beside drawing in to give it the outer two fifths
+of the line; where no title may then keep to its line, or the page would
+spill, it lies beside the date instead (`place()` in `assets/site.js`). On a
+phone it lies across the page beneath the verse.
 In it is the reading from C. H. Spurgeon's *Morning
 and Evening* (1865–68) for the reader's hour: the evening's from five, or from
 noon once the evening light has come, and until four in the morning still the
 evening's of the day before; else the morning's. Pressed, its flap lifts and
 the letter, folded in three, rises out of it; the book draws back to the left,
 a little smaller and out of focus, and the letter comes forward and unfolds,
-its text of Scripture at its head and Spurgeon's reading beneath, with a
+along the creases it was really folded by: it is written on the blank page of
+the very letter that came in that envelope, her stationer's emboss at its head.
+Its text of Scripture is at its head and Spurgeon's reading beneath, with a
 switch for the other reading of the day. The ×, a click on the desk beyond it,
 Esc or Back fold it up and put it back. On a phone it rises from the foot of
 the screen instead, and can also be drawn down. For readers who ask for
 stillness it simply comes and goes. It is a dialog to a screen reader, and
-gives the focus back to the envelope when it is put away. Each day's two
-readings are a file of their own (`assets/morning-evening/MM-DD.json`, about
-4 KB), fetched only when a pointer or a finger comes near the envelope. The
-Spanish page has none until there is a Spanish text free to use.
+gives the focus back to the envelope when it is put away. Read to its end
+(its signature come into sight; or, where the whole of it is in sight from the
+first, a minute open), the envelope is left open, the letter put back in it and
+its seal broken, until the next reading comes, sealed; which readings have been
+read is kept in the reader's browser alone. Each day's two readings are a file
+of their own (`assets/morning-evening/MM-DD.json`, about 4 KB), fetched only
+when a pointer or a finger comes near the envelope, as is the letter's paper.
+The Spanish page has none until there is a Spanish text free to use.
+
+Beside the language, a control for larger type (and the same within the
+letter): everything a step larger, kept in the reader's browser and taken up
+before the page is drawn. In the book the type is set an eighth larger, or
+half that where the pages cannot hold the whole step at that window, or as
+the window gives it; the book is never laid aside for it alone.
 
 On a screen wide and tall enough (a window from about 1024 by 768),
 `assets/site.js` binds those pages into a book lying open across the whole

@@ -381,11 +381,14 @@
     return SCREENS.some((d) => Math.abs(d - dpr) < 0.03) ? f : 1;
   }
   function geometry() {
-    const W = window.innerWidth, H = window.innerHeight, f = readerZoom();
+    // (the reader's own larger type, a step up from what the window would give, or as near it as the
+    // pages can hold at this window: see setType() and check())
+    const big = root.classList.contains('large-type') ? LARGER[larger] : 1;
+    const W = window.innerWidth, H = window.innerHeight, f = readerZoom() * big;
     const g = measure(W, H);
     const at100 = f === 1 ? g : measure(W * f, H * f);
     const z = g.z;
-    const u = Math.max(15, at100.u * at100.z) / z;
+    const u = Math.max(15, at100.u * at100.z) / z * big;
     const { pw, ph } = g;
     const block = Math.min(pw * (1 - 0.062 - 0.11), 31 * u);
     const mi = Math.max(pw * 0.062, (pw - block) / 3), mo = pw - block - mi;
@@ -936,6 +939,22 @@
     });
     parts.querySelector('ol').after(more);
   }
+  // ---- larger type: the reader's choice, a step larger everywhere (the book's type, the leaves', the
+  // letter's), kept in this browser and taken up before the page is drawn (src/page.html). In the book,
+  // where the pages cannot hold it at this window, the book is laid aside for the leaves, as for the
+  // reader's own zoom; it is bound again when the choice is undone.
+  function setType(large) {
+    root.classList.toggle('large-type', large);
+    store.set('type', large ? 'large' : '');
+    document.querySelectorAll('.type-size').forEach((b) => b.setAttribute('aria-pressed', String(large)));
+    tooFull = null;
+    if (main && main.querySelector('.folio')) decide();
+  }
+  document.querySelectorAll('.type-size').forEach((b) => {
+    b.setAttribute('aria-pressed', String(root.classList.contains('large-type')));
+    b.addEventListener('click', () => setType(!root.classList.contains('large-type')));
+  });
+
   // ---- reading full screen: the browser's own bars go, and the book takes the whole screen ----
   const fsBtn = document.querySelector('.fs');
   const canFull = !!(document.fullscreenEnabled && root.requestFullscreen);
@@ -952,12 +971,25 @@
   let tooFull = null;
   const typeIn = () => !document.fonts || document.fonts.status === 'loaded';
   const holds = () => book.spreads.every((s) => s.v.scrollHeight <= s.v.clientHeight + 1 && s.r.scrollHeight <= s.r.clientHeight + 1);
+  // The reader's larger type, in the book: a step larger (an eighth), or where the pages cannot hold that
+  // at this window, half a step, or the type the window gives; never the book laid aside for it alone.
+  const LARGER = [1.125, 1.0625, 1];
+  let larger = 0;
   function check() {
     if (!book || !typeIn() || holds()) return;
+    if (root.classList.contains('large-type') && larger < LARGER.length - 1) {
+      larger++;
+      const g = geometry();
+      book.f = g.f;
+      layout();
+      check();
+      return;
+    }
     tooFull = { w: window.innerWidth, h: window.innerHeight, f: book.f };
     unbuild();
   }
   function decide() {
+    larger = 0;
     const g = geometry();
     const crowded = tooFull && tooFull.f === g.f && window.innerWidth < tooFull.w + 40 && window.innerHeight < tooFull.h + 16;
     const want = !printing && main && wideEnough.matches && g.ok && !crowded;
@@ -1022,48 +1054,100 @@
     label();
     env.hidden = false;
 
-    // In the book it lies beside the contents, which give it the outer two fifths of the line, and is as
-    // large as that column allows, set midway down the room from the verse to the foot of the contents.
-    // Where the contents cannot make that room without a title breaking or the page spilling, or where
-    // the envelope would be no larger there than beside the date, it lies beside the date instead, its
-    // foot level with the date's. Laid out again whenever the page is (the observer, below).
+    // In the book it lies where the page has room for it to be as large as an envelope would be: in the
+    // room between the verse and the contents, on the middle of the line, if that room is deep enough;
+    // else from the top of that room down beside the contents, the rows it lies beside drawing in to
+    // give it the outer two fifths of the line (no title may break for it, nor the page spill); else
+    // beside the date, its foot level with the date's. Once read, its flap stands open above it, and the
+    // room for that is kept too. Laid out again whenever the page is (the observer, below).
     const kal = env.closest('.kalendar'), room = env.closest('.kal-letter'), face = env.querySelector('.env-body');
+    const ASPECT = 960 / 649, LIFT = 0.6033;   // the envelope's width to its height; its flap's depth, to its height
     function place() {
       if (!kal || !room) return;
-      kal.classList.remove('letter-small', 'letter-beside');
-      env.style.top = ''; face.style.width = '';
+      kal.classList.remove('letter-small', 'letter-beside', 'letter-band');
+      kal.querySelectorAll('.by-letter').forEach((li) => li.classList.remove('by-letter'));
+      env.style.top = env.style.left = ''; face.style.width = '';
       if (!env.closest('.book')) return;
       const em = parseFloat(getComputedStyle(kal).fontSize) || 16;
-      const list = kal.querySelector('.contents');
-      const titles = list ? [...list.querySelectorAll('a')] : [];
-      const before = titles.map((a) => a.offsetHeight);
-      kal.classList.add('letter-beside');
       const cs = getComputedStyle(kal);
-      const line = kal.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      const top = room.offsetTop, foot = list ? list.offsetTop + list.offsetHeight : top;
+      const padL = parseFloat(cs.paddingLeft), line = kal.clientWidth - padL - parseFloat(cs.paddingRight);
+      const lift = env.classList.contains('read') ? LIFT : 0;
       const below = env.offsetHeight - face.offsetHeight;   // its word, and the room about it
-      const w = Math.min(line * 0.4, (foot - top - below) * 1.479);
-      const broke = titles.some((a, i) => a.offsetHeight > before[i] + 1) || kal.scrollHeight > kal.clientHeight + 1;
-      if (list && !broke && w >= 8 * em) {
+      const need = (w) => (w / ASPECT) * (1 + lift) + below;   // the depth it takes, flap and word with it
+      const per = (1 + lift) / ASPECT;
+      const set = (w, top, left) => {
         face.style.width = `${w.toFixed(1)}px`;
-        env.style.top = `${(top + (foot - top - env.offsetHeight) / 2).toFixed(1)}px`;
+        env.style.top = `${(top + (w / ASPECT) * lift).toFixed(1)}px`;
+        if (left != null) env.style.left = `${left.toFixed(1)}px`;
+      };
+      const list = kal.querySelector('.contents');
+      const gap = 0.5 * em, top = room.offsetTop + gap, band = room.offsetHeight - 2 * gap;
+      // in the room above the contents
+      let w = Math.min(line * 0.6, (band - below) / per);
+      if (w >= line * 0.38) {
+        kal.classList.add('letter-band');
+        set(w, top + (band - need(w)) / 2, padL + (line - env.offsetWidth + face.offsetWidth - w) / 2);
         return;
       }
-      kal.classList.replace('letter-beside', 'letter-small');
+      // beside the contents
+      if (list) {
+        const foot = list.offsetTop + list.offsetHeight;
+        const most = Math.min(line * 0.42, (foot - top - below) / per);
+        const rows = [...list.querySelectorAll('li')], titles = rows.map((li) => li.querySelector('a'));
+        const before = titles.map((a) => a.offsetHeight);
+        // (smaller, if a title it would lie beside could not then keep to its line: it lies beside fewer)
+        for (const k of [1, 0.9, 0.8, 0.7]) {
+          w = most * k;
+          if (w < 7 * em) break;
+          const bottom = top + need(w);
+          kal.classList.add('letter-beside');
+          for (const li of rows) li.classList.toggle('by-letter', li.offsetTop < bottom && li.offsetTop + li.offsetHeight > top);
+          if (!titles.some((a, i) => a.offsetHeight > before[i] + 1) && kal.scrollHeight <= kal.clientHeight + 1) { set(w, top); return; }
+          kal.classList.remove('letter-beside');
+          rows.forEach((li) => li.classList.remove('by-letter'));
+        }
+      }
+      // beside the date
+      kal.classList.add('letter-small');
       const d = kal.querySelector('.kal-date');
       env.style.top = `${d.offsetTop + d.offsetHeight - env.offsetHeight + 0.1 * em}px`;
     }
+
+    // Read to its end, the envelope is left open, the letter put back in it and its seal broken, until the
+    // next reading comes (the evening's, or the next morning's), sealed. The end is its signature come
+    // into sight; where the whole letter is in sight from the first, a minute open counts as reading it.
+    // Which readings have been read is kept in this browser alone, the last few of them, and sent nowhere.
+    const READ = 'letters-read';
+    const readKey = (d, eve) => `${d.getFullYear()}-${dayKey(d)}-${eve ? 'e' : 'm'}`;
+    const readList = () => { try { const a = JSON.parse(store.get(READ) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+    const wasRead = (d, eve) => readList().includes(readKey(d, eve));
+    const markRead = (d, eve) => {
+      const a = readList(), k = readKey(d, eve);
+      if (!a.includes(k)) { a.push(k); store.set(READ, JSON.stringify(a.slice(-8))); }
+    };
+    const showRead = () => {
+      const r = wasRead(when.d, when.eve);
+      if (r === env.classList.contains('read')) return false;
+      env.classList.toggle('read', r);
+      place();
+      return true;
+    };
     // (the page's own size, which the envelope's place does not change, so that setting it never asks for
     // another; and once the type has come, which changes what the titles need)
     if (kal && window.ResizeObserver) new ResizeObserver(() => place()).observe(kal);
     document.addEventListener('pagesfitted', place);   // (the book's pages fitted again: see fitWithin)
     if (document.fonts) document.fonts.ready.then(place);
+    showRead();
 
     const got = {};
     const get = (k) => got[k] || (got[k] = fetch(`/assets/morning-evening/${k}.json`)
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .catch((e) => { delete got[k]; throw e; }));
-    const early = () => { get(dayKey(when.d)).catch(() => {}); };
+    let paperCame = false;
+    const early = () => {
+      get(dayKey(when.d)).catch(() => {});
+      if (!paperCame) { paperCame = true; new Image().src = '/assets/book/letter.webp'; }   // (the page it is written on)
+    };
     env.addEventListener('pointerenter', early);
     env.addEventListener('focus', early);
     env.addEventListener('touchstart', early, { passive: true });
@@ -1083,6 +1167,10 @@
     const bM = el('button', '', { type: 'button' }), bE = el('button', '', { type: 'button' });
     bM.textContent = W.morning; bE.textContent = W.evening;
     which.append(bM, bE);
+    const larger = el('button', 'type-size me-type', { type: 'button', 'aria-pressed': String(root.classList.contains('large-type')), 'aria-label': W.larger || 'Larger type', title: W.larger || 'Larger type' });
+    larger.innerHTML = '<span class="ts-a" aria-hidden="true">A</span><span class="ts-b" aria-hidden="true">A</span>';
+    larger.addEventListener('click', () => setType(!root.classList.contains('large-type')));
+    which.append(larger);
     head.append(title, which);
     const text = el('blockquote', 'me-text');
     const body = el('div', 'me-body');
@@ -1120,10 +1208,20 @@
         body.append(n);
       });
     }
+    // (the end of the letter come into sight, or a minute with all of it in sight)
+    let dwell = 0;
+    const atEnd = () => scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 4;
+    function watch() {
+      clearTimeout(dwell);
+      if (!shown || !shown.data) return;
+      const { d, eve } = shown;
+      if (scroll.scrollHeight <= scroll.clientHeight + 4) dwell = setTimeout(() => { if (state === 'open' && shown && shown.eve === eve) markRead(d, eve); }, 60000);
+    }
+    scroll.addEventListener('scroll', () => { if (state === 'open' && shown && shown.data && atEnd() && scroll.scrollHeight > scroll.clientHeight + 4) markRead(shown.d, shown.eve); }, { passive: true });
     const swap = (eve) => {
       if (!shown || shown.eve === eve) return;
       shown.eve = eve;
-      const go = () => { render(); scroll.scrollTop = 0; };
+      const go = () => { render(); scroll.scrollTop = 0; watch(); };
       if (still.matches) { go(); return; }
       scroll.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: 'ease-in' }).finished.then(() => {
         go(); scroll.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
@@ -1139,20 +1237,29 @@
     const onPhone = () => root.classList.contains('leaves') && !root.classList.contains('spread');
     let state = 'shut', pushed = false, rest = null, away = null, flight = null, later = false, since = 0;
 
-    // the folded letter: three panels the size of the paper, the upper and lower folded over the middle
+    // the folded letter: the page cut at its two creases (at 28.3% and 65.5% of its height: site.css), each
+    // panel its own part of the page, the upper and lower folded over the middle
+    const CREASES = [0.283, 0.655];
     function folded(r, shut = false) {
       const f = el('div', 'me-fold', { 'aria-hidden': 'true' });
       Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
-      for (const c of ['mid', 'top', 'bot']) f.append(el('div', `me-panel ${c}`));   // (the outer two painted over the middle)
+      for (const [c, at] of [['mid', CREASES[0]], ['top', 0], ['bot', CREASES[1]]]) {   // (the outer two painted over the middle)
+        const panel = el('div', `me-panel ${c}`);
+        panel.style.backgroundSize = `${r.width}px ${r.height}px`;
+        panel.style.backgroundPosition = `0 ${(-at * r.height).toFixed(1)}px`;
+        f.append(panel);
+      }
       if (shut) { f.querySelector('.top').style.transform = turn(-179.5); f.querySelector('.bot').style.transform = turn(179.5); }
       dlg.append(f);
       return f;
     }
-    // where a letter lies in the envelope, as a transform of the folded letter (its middle third)
+    // where a letter lies in the envelope, as a transform of the folded letter (its middle panel, about
+    // whose middle it turns: site.css)
+    const MID = (CREASES[0] + CREASES[1]) / 2;
     function inEnvelope(r, e) {
       const s = (e.width * 0.78) / r.width;
-      const dx = e.left + e.width / 2 - (r.left + r.width / 2), dy = e.top + e.height * 0.56 - (r.top + r.height / 2);
-      return { s, dx, dy, rise: (r.height / 3) * 0.95 };
+      const dx = e.left + e.width / 2 - (r.left + r.width / 2), dy = e.top + e.height * 0.56 - (r.top + r.height * MID);
+      return { s, dx, dy, rise: r.height * (CREASES[1] - CREASES[0]) * 0.95 };
     }
     const at = (p, extra = '') => `translate(${p.dx}px, ${p.dy}px) scale(${p.s})${extra}`;
     // unfolding, the lower third comes down and then the upper goes up; folding, the reverse
@@ -1216,6 +1323,7 @@
       if (state !== 'opening') return;
       state = 'open';
       scroll.focus({ preventScroll: true });
+      watch();
       if (later) { later = false; close(); }   // (asked to be put away while it was still coming)
     }
 
@@ -1223,7 +1331,15 @@
       if (state === 'opening') { later = true; return; }
       if (state !== 'open') return;
       state = 'closing';
+      clearTimeout(dwell);
       if (pushed) { pushed = false; history.back(); }
+      // (read to its end, the envelope is now to be left open, which may move it: the letter goes back to it there)
+      const r0 = face.getBoundingClientRect();
+      if (showRead() && rest && flight) {
+        const r1 = face.getBoundingClientRect(), k = away ? 0.92 : 1;
+        rest = new DOMRect(rest.x + (r1.x - r0.x) / k, rest.y + (r1.y - r0.y) / k, rest.width * r1.width / r0.width, rest.height * r1.height / r0.height);
+        flight.p = inEnvelope(flight.r, rest);
+      }
       const phone = dlg.classList.contains('sheet');
       // the book comes forward again from wherever it has got to
       const back = () => {
@@ -1253,10 +1369,12 @@
         ], { duration: 700, easing: SWING, fill: 'both' }));
         f.remove();
       }
-      env.classList.remove('open');   // and the flap comes down
+      env.classList.remove('open');   // and the flap comes down, unless it has been read
       finish();
     }
     function finish() {
+      clearTimeout(dwell);
+      showRead();
       if (away) { away.cancel(); away = null; }
       dlg.querySelectorAll('.me-fold').forEach((f) => f.remove());
       paper.getAnimations().forEach((a) => a.cancel());
@@ -1303,7 +1421,7 @@
     setInterval(() => {
       if (state !== 'shut') return;
       const w = hour();
-      if (w.eve !== when.eve || dayKey(w.d) !== dayKey(when.d)) { when = w; label(); }
+      if (w.eve !== when.eve || dayKey(w.d) !== dayKey(when.d)) { when = w; label(); showRead(); }
     }, 6e4);
   }
 

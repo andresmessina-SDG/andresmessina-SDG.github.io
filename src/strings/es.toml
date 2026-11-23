@@ -36,6 +36,7 @@ opening_name = "Índice"
 colophon_name = "Colofón"
 contents = "Índice"
 fullscreen = "Leer a pantalla completa"
+type_larger = "Letra más grande"
 show_all = "Ver las {n}"
 number = "N.º"
 # cada línea de las palabras de Lutero junto a su pentagrama, en la versión de Juan Bautista Cabrera, hecha para cantarse con esta melodía

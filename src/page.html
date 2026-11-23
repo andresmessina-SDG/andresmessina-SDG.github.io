@@ -7,6 +7,8 @@
   // stands in for it). If site.js never comes, the page shows itself after five seconds.
   (() => {
     const root = document.documentElement;
+    // the reader's own choice of larger type (site.js), taken up before anything is drawn
+    try { if (localStorage.getItem('type') === 'large') root.classList.add('large-type'); } catch (e) {}
     if (!matchMedia('screen and (min-width: 960px) and (min-height: 644px)').matches) return;
     root.classList.add('binding');
     for (const f of ['desk', 'paper', 'cloth']) {
@@ -26,6 +28,7 @@
       <button class="fs" type="button" aria-label="{{fullscreen}}" title="{{fullscreen}} (F)" hidden>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path class="in" d="M1.5 5.5v-4h4M10.5 1.5h4v4M14.5 10.5v4h-4M5.5 14.5h-4v-4"/><path class="out" d="M5.5 1.5v4h-4M14.5 5.5h-4v-4M10.5 14.5v-4h4M1.5 10.5h4v4"/></svg>
       </button>
+      <button class="type-size" type="button" aria-pressed="false" aria-label="{{type_larger}}" title="{{type_larger}}"><span class="ts-a" aria-hidden="true">A</span><span class="ts-b" aria-hidden="true">A</span></button>
       {{{langs}}}
     </div>
   </header>

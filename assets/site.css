@@ -60,10 +60,11 @@ a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 4px; border-
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- Head of the score ---------- */
-.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px 16px; }
+@media (max-width: 340px) { .head { flex-wrap: wrap; } }   /* (on the narrowest screens its tools go down a line, at the right) */
 .jj { margin: 0; font-family: var(--rubric); font-size: 1.3rem; line-height: 1; letter-spacing: 0.1em; color: #7E5D1B; }   /* gilt, deep enough to read: 4.8:1 on the parchment, by candle too */
 .jj > span { display: block; margin-top: 7px; font-family: var(--text); font-style: italic; font-size: 0.875rem; letter-spacing: 0; color: var(--muted); }
-.head-tools { display: flex; align-items: baseline; gap: 10px; }
+.head-tools { display: flex; align-items: baseline; gap: 10px; margin-left: auto; }
 .langs { display: flex; align-items: baseline; font-family: var(--rubric); font-size: 0.95rem; letter-spacing: 0.05em; }
 /* the languages: a choice of two, the one in use marked by a ground of its own */
 .langs a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; transition: color .2s ease, background-color .2s ease; }
@@ -1132,14 +1133,29 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   background: linear-gradient(rgba(48, 40, 28, .5), rgba(48, 40, 28, .24) 70%, rgba(48, 40, 28, .34));
   opacity: 0; transition: opacity .22s ease .06s;
 }
+/* once read, the letter put back in it, its head showing in the opening, a little in the envelope's shadow */
+.env-tucked {
+  position: absolute; left: 7%; right: 7%; top: 8%; height: 100%; opacity: 0; transition: opacity .3s ease;
+  background: #F4ECCD url("/assets/book/letter.webp") 0 0 / 100% auto no-repeat;
+  box-shadow: 0 -1px 2px rgba(40, 30, 18, .22), inset 0 6px 10px -6px rgba(40, 30, 18, .3);
+}
+/* and what is left of the seal where the flap was torn from it */
+.env-crumb {
+  position: absolute; left: 49.46%; top: 60.33%; width: 23%; height: auto; translate: -50% -50%; opacity: 0;
+  clip-path: polygon(0 57%, 12% 52%, 24% 59%, 37% 51%, 50% 58%, 63% 50%, 76% 57%, 88% 51%, 100% 56%, 100% 100%, 0 100%);
+  filter: drop-shadow(0 .6px .8px rgba(60, 16, 8, .45));
+}
 .env-flap { position: absolute; inset: 0; transform-origin: 50% 0; transform-style: preserve-3d; transition: transform .4s cubic-bezier(.45, 0, .2, 1); }
 .env-flap::before { background: url("/assets/book/envelope.webp") 0 0 / 100% 100% no-repeat; }
 .env-seal {   /* on the flap's outer side, and so out of sight once it is lifted */
   position: absolute; left: 49.46%; top: 60.33%; width: 23%; height: auto; translate: -50% -50%; transform: translateZ(.5px);
   backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 .6px .8px rgba(60, 16, 8, .45));
 }
-.envelope.open .env-flap { transform: rotateX(180deg); }
-.envelope.open .env-inside { opacity: 1; }
+.envelope.open .env-flap, .envelope.read .env-flap { transform: rotateX(180deg); }
+.envelope.open .env-inside, .envelope.read .env-inside, .envelope.open .env-crumb, .envelope.read .env-crumb { opacity: 1; }
+.envelope.read:not(.open) .env-tucked { opacity: 1; }
+/* (its flap, lifted, stands above it: on a phone and on the desk the room for it is kept above it) */
+.envelope.read { padding-top: calc(clamp(200px, 72vw, 340px) * .408 + 6px); }
 .envelope:hover .env-body { transform: rotate(-1.2deg) translateY(-2px); filter: drop-shadow(0 1px .8px rgba(50, 36, 20, .3)) drop-shadow(0 11px 14px rgba(50, 36, 20, .2)); }
 .envelope.waiting .env-body { opacity: .85; }
 .env-word { font: 500 .9rem/1.2 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .09em; color: var(--muted); transition: color .2s ease; }
@@ -1149,10 +1165,11 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 /* in the book the envelope is set by site.js, its top and its width; the room between the verse and the
    contents is the page's to spare, as before */
 .book .kal-letter { flex: 1 1 0; min-height: 0; margin: 0; }
-.book .envelope { position: absolute; right: var(--mo); gap: .5em; padding: .2em; }
+.book .envelope, .book .envelope.read { position: absolute; right: var(--mo); gap: .5em; padding: .2em; }
 .book .env-word { font-size: max(.75em, calc(12.5px / var(--z, 1))); line-height: 1.2; }
 .book .env-body { width: 6.6em; }
-.book .letter-beside .contents { margin-right: 44%; }
+.book .letter-band .envelope { right: auto; }
+.book .letter-beside .contents li.by-letter { margin-right: 46%; }
 /* or beside the date, as tall as it and rising beside the heading, its word before it */
 .book .letter-small .envelope { grid-auto-flow: column; align-items: center; gap: .9em; }
 .book .letter-small .env-word { order: -1; }
@@ -1160,6 +1177,30 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .book .letter-small .env-word .w-short { display: inline; }
 .book .letter-small .env-body { width: 6.6em; }
 @media print { .kal-letter, .me-letter { display: none !important; } }
+
+/* ---------- Larger type: the reader's choice (site.js), everything a step larger ---------- */
+html.large-type { font-size: 112.5%; }
+.type-size {
+  display: inline-flex; align-items: baseline; justify-content: center; gap: 1px; min-width: 32px; height: 26px; padding: 0 7px;
+  border: 0; border-radius: 999px; background: none; cursor: pointer; color: var(--muted); font-family: var(--text); line-height: 1;
+  transition: color .2s ease, background-color .2s ease;
+}
+.type-size .ts-a { font-size: 11px; }
+.type-size .ts-b { font-size: 16px; font-weight: 500; }
+.type-size:hover { color: var(--ink); }
+.type-size[aria-pressed="true"] { color: var(--vermilion); }
+.type-size:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; }
+html.bound .type-size { height: 24px; color: #5F5345; }
+html.bound .type-size[aria-pressed="true"] { color: var(--vermilion); }
+html.bound .type-size:hover { background: rgba(90, 70, 45, .07); }
+html.bound .head-tools > .type-size { position: relative; margin-left: 7px; }
+html.bound .head-tools > .type-size::before { content: ""; position: absolute; left: -4px; top: 5px; bottom: 5px; width: 1px; background: rgba(90, 70, 45, .2); }
+/* in the letter, beside the switch, a fingertip wide */
+.me-which .me-type { height: 34px; min-width: 38px; margin-left: 6px; padding: 0 7px; font: 400 1rem/1 var(--text); font-variant-caps: normal; letter-spacing: 0; text-decoration: none; color: var(--muted); }
+.me-which .me-type[aria-pressed="true"] { color: var(--vermilion); text-decoration: none; }
+.me-which .me-type .ts-a { font-size: 12px; }
+.me-which .me-type .ts-b { font-size: 18px; }
+@media print { .type-size { display: none; } }
 
 /* the letter, opened: over the whole window, a veil that puts what lies behind out of focus, and the
    paper; beside the book it lies a little to the right, the book having drawn back to the left */
@@ -1173,25 +1214,20 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
   position: absolute; inset: 0; background: rgba(46, 32, 16, .2);
   -webkit-backdrop-filter: blur(3px) saturate(.94); backdrop-filter: blur(3px) saturate(.94);
 }
-.me-paper {
+.me-paper {   /* the blank page of the letter that came in the envelope (assets/book/letter.webp), in its own proportions */
+  --lw: min(37rem, calc(100vw - 32px)); --crease-1: 28.3%; --crease-2: 65.5%;
   position: relative; z-index: 1; box-sizing: border-box; display: flex; flex-direction: column;
-  width: min(35rem, calc(100vw - 32px)); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
-  background: #FAF6EE url("/assets/book/paper.webp") 0 0 / 720px 720px; border-radius: 2px;
+  width: var(--lw); height: min(calc(var(--lw) / .6357), calc(100vh - 48px)); height: min(calc(var(--lw) / .6357), calc(100dvh - 48px));
+  background: #F4ECCD url("/assets/book/letter.webp") 0 0 / 100% 100% no-repeat; border-radius: 1px;
   box-shadow: 0 0 0 .5px rgba(90, 70, 45, .2), 0 1px 2px rgba(60, 44, 28, .18), 0 26px 60px -20px rgba(40, 28, 14, .6);
 }
 .me-letter.beside .me-paper { left: min(9vw, 150px); }
-.me-paper::before {   /* where it was folded in three: two creases, a light and a shade on either side of each */
-  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none;
-  background:
-    linear-gradient(to bottom, transparent calc(100% / 3 - 6px), rgba(90, 70, 45, .045) calc(100% / 3 - .5px), rgba(255, 253, 248, .5) calc(100% / 3 + .5px), transparent calc(100% / 3 + 7px)),
-    linear-gradient(to bottom, transparent calc(200% / 3 - 6px), rgba(90, 70, 45, .045) calc(200% / 3 - .5px), rgba(255, 253, 248, .5) calc(200% / 3 + .5px), transparent calc(200% / 3 + 7px));
-}
 .me-paper::after {   /* the evening light, as over the page (the letter lies above it) */
   content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none; opacity: var(--dusk, 0);
   background: radial-gradient(ellipse 120% 100% at 50% 42%, transparent 60%, rgba(66, 40, 14, .1) 100%), linear-gradient(rgba(255, 170, 90, .05), rgba(255, 170, 90, .05));
 }
 .me-scroll {
-  min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; padding: 2.6rem 3rem 2.4rem;
+  flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; padding: 2.6rem 3rem 2.4rem;
   scrollbar-width: thin; scrollbar-color: rgba(90, 70, 45, .3) transparent;
 }
 .me-close {
@@ -1215,12 +1251,12 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .me-which button:hover { color: var(--ink); }
 .me-which button[aria-pressed="true"] { color: var(--ink); text-decoration: underline 1px var(--vermilion); text-underline-offset: .35em; }
 .me-text { margin: 0 0 1.5rem; padding: 0 0 1.35rem; border-bottom: 1px solid var(--rule); }
-.me-text p { margin: 0; font-style: italic; font-size: 1.45rem; line-height: 1.38; text-wrap: balance; }
+.me-text p { margin: 0; font-style: italic; font-size: 1.55rem; line-height: 1.36; text-wrap: balance; }
 .me-text cite {
   display: block; margin-top: .6rem; font-style: normal; font-family: var(--rubric); font-variant-caps: all-small-caps;
   font-variant-numeric: lining-nums; font-weight: 500; letter-spacing: .08em; color: var(--muted);
 }
-.me-body { font-size: 1.1rem; line-height: 1.62; text-align: justify; hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
+.me-body { font-size: 1.2rem; line-height: 1.6; text-align: justify; hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
 .me-body p { margin: 0; }
 .me-body p + p { text-indent: 1.4em; }
 .me-body .stanza { display: grid; margin: .75em 0 .75em 1.6em; text-indent: 0; text-align: left; font-style: italic; font-size: .97em; line-height: 1.5; color: #3F362E; hyphens: manual; }
@@ -1230,21 +1266,18 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 .me-failed { font-style: italic; color: var(--muted); }
 
 /* the letter folded in three, as it comes out of the envelope and goes back into it */
-.me-fold { position: fixed; z-index: 3; pointer-events: none; transform-origin: 50% 50%; }
-.me-panel {
-  position: absolute; left: 0; right: 0; height: calc(100% / 3 + .5px);
-  background: #FAF6EE url("/assets/book/paper.webp") 0 0 / 720px 720px; box-shadow: 0 0 0 .5px rgba(90, 70, 45, .18);
-}
-.me-panel.top { top: 0; transform-origin: 50% 100%; background-image: linear-gradient(to bottom, transparent 75%, rgba(90, 70, 45, .07)), url("/assets/book/paper.webp"); background-size: auto, 720px 720px; }
-.me-panel.mid { top: calc(100% / 3); box-shadow: 0 0 0 .5px rgba(90, 70, 45, .18), 0 20px 44px -18px rgba(40, 28, 14, .5); }
-.me-panel.bot { bottom: 0; transform-origin: 50% 0; background-image: linear-gradient(to top, transparent 75%, rgba(90, 70, 45, .07)), url("/assets/book/paper.webp"); background-size: auto, 720px 720px; }
+.me-fold { --crease-1: 28.3%; --crease-2: 65.5%; position: fixed; z-index: 3; pointer-events: none; transform-origin: 50% 46.9%; }
+.me-panel { position: absolute; left: 0; right: 0; background: #F4ECCD url("/assets/book/letter.webp") no-repeat; box-shadow: 0 0 0 .5px rgba(90, 70, 45, .16); }
+.me-panel.top { top: 0; height: calc(var(--crease-1) + .5px); transform-origin: 50% 100%; }
+.me-panel.mid { top: var(--crease-1); height: calc(var(--crease-2) - var(--crease-1)); box-shadow: 0 0 0 .5px rgba(90, 70, 45, .16), 0 20px 44px -18px rgba(40, 28, 14, .5); }
+.me-panel.bot { top: calc(var(--crease-2) - .5px); bottom: 0; transform-origin: 50% 0; }
 
 /* on a phone, a sheet risen from the foot of the screen */
 .me-letter.sheet { place-items: end center; }
-.me-letter.sheet .me-paper { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 14px 14px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-/* (in place of the creases, a grip to draw it down by) */
-.me-letter.sheet .me-paper::before { z-index: 4; inset: 8px auto auto 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: rgba(90, 70, 45, .22); }
+.me-letter.sheet .me-paper { --lw: 100vw; width: 100%; height: min(calc(100vw / .6357), 92vh); height: min(calc(100vw / .6357), 92dvh); border-radius: 10px 10px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* a grip to draw it down by */
+.me-letter.sheet .me-paper::before { content: ""; position: absolute; z-index: 4; top: 8px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: rgba(90, 70, 45, .24); }
 .me-letter.sheet .me-scroll { padding: 2.1rem max(20px, env(safe-area-inset-left, 0px)) 2rem; }
 .me-letter.sheet .me-close { top: 12px; right: 6px; width: 44px; height: 44px; }
-.me-letter.sheet .me-text p { font-size: 1.3rem; }
-.me-letter.sheet .me-body { font-size: 1.0625rem; text-align: left; }
+.me-letter.sheet .me-text p { font-size: 1.4rem; }
+.me-letter.sheet .me-body { font-size: 1.15rem; text-align: left; }

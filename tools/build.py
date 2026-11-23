@@ -312,9 +312,12 @@ def envelope(t: dict) -> str:
     if "me_morning" not in t:
         return ""
     words = {k[3:]: t[k] for k in ("me_morning", "me_evening", "me_word", "me_open", "me_close", "me_which", "me_failed")}
+    words["larger"] = t["type_larger"]
     words["by"] = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["me_by"]))
     return (f'<div class="kal-letter"><button class="envelope" type="button" aria-haspopup="dialog" hidden data-me=\'{esc(json.dumps(words, ensure_ascii=False, separators=(",", ":")))}\'>'
-            '<span class="env-body" aria-hidden="true"><span class="env-inside"></span><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="208" height="208" decoding="async"></span></span>'
+            '<span class="env-body" aria-hidden="true"><span class="env-inside"><span class="env-tucked"></span></span>'
+            '<img class="env-crumb" src="/assets/book/seal.webp" alt="" width="208" height="208" decoding="async">'
+            '<span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="208" height="208" decoding="async"></span></span>'
             '<span class="env-word" aria-hidden="true"></span></button></div>')
 
 

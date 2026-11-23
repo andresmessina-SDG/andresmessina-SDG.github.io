@@ -36,6 +36,7 @@ opening_name = "Contents"
 colophon_name = "Colophon"
 contents = "Contents"
 fullscreen = "Read full screen"
+type_larger = "Larger type"
 show_all = "Show all {n}"
 number = "No."
 # each line of Luther's words beside its staff, in Frederick H. Hedge's English (1853), made to be sung to this tune

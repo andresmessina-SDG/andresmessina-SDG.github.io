@@ -15,6 +15,8 @@ sizes the page uses, in assets/book/:
                   the envelope on the calendar page (from Commons' 960px rendering of the scan)
   envelope.webp   the back of an envelope of 1843 (Fanny Appleton's, to Longfellow), cut from the
                   scanner's white, its own black seal taken out to make way for the red one
+  letter.webp     the blank page of the letter that came in that envelope, with its stationer's
+                  emboss and the creases it was folded in three by: the paper the readings are on
 
 "Lifting out" divides a scan by its own paper colour, so the paper becomes white and only ink,
 paint and gold remain; laid on the page with mix-blend-mode: multiply, the ornament sits on our
@@ -180,6 +182,12 @@ def main(src):
     e = e.crop(bb)
     print(f"envelope: flap's point at {((where[0] + where[2]) / 2 - bb[0]) / e.width:.4f}, {((where[1] + where[3]) / 2 - bb[1]) / e.height:.4f}; {e.width / e.height:.4f} wide to high")
     save(e.resize((960, round(960 * e.height / e.width)), Image.LANCZOS), "envelope.webp", 78)   # (sharp at twice the size it is shown at, about 400px)
+
+    # the letter's paper: the right-hand page of the sheet (from Commons' 1920px rendering), which she left
+    # blank, cut just inside its edges. It was folded in three to go into the envelope: its creases lie at
+    # 28.3% and 65.5% of its height (measured on the scan), where site.css folds it (--crease-1, --crease-2)
+    page = Image.open(s / "letter-1843-1920.jpg").convert("RGB").crop((972, 70, 1876, 1492))
+    save(page.resize((900, round(900 * page.height / page.width)), Image.LANCZOS), "letter.webp", 80)
 
 
 if __name__ == "__main__":
