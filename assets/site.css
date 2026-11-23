@@ -1185,9 +1185,9 @@ html.leaves.spread .modern .parts:has(li:nth-child(13)) ol { display: grid; grid
 
 /* ---------- Larger type: the reader's choice (site.js), everything a step larger ---------- */
 html.large-type { font-size: 112.5%; }
-.type-size {
+.type-size {   /* (its two capitals on one baseline, the line as tall as the button, so that they sit in its middle) */
   display: inline-flex; align-items: baseline; justify-content: center; gap: 1px; min-width: 32px; height: 26px; padding: 0 7px;
-  border: 0; border-radius: 999px; background: none; cursor: pointer; color: var(--muted); font-family: var(--text); line-height: 1;
+  border: 0; border-radius: 999px; background: none; cursor: pointer; color: var(--muted); font-family: var(--text); line-height: 26px;
   transition: color .2s ease, background-color .2s ease;
 }
 .type-size .ts-a { font-size: 11px; }
@@ -1195,11 +1195,15 @@ html.large-type { font-size: 112.5%; }
 .type-size:hover { color: var(--ink); }
 .type-size[aria-pressed="true"] { color: var(--vermilion); }
 .type-size:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: 2px; }
-html.bound .type-size { height: 24px; color: #5F5345; }
+html.bound .type-size { height: 24px; line-height: 25px; color: #5F5345; }
 html.bound .type-size[aria-pressed="true"] { color: var(--vermilion); }
 html.bound .type-size:hover { background: rgba(90, 70, 45, .07); }
 html.bound .head-tools > .type-size { position: relative; margin-left: 7px; }
 html.bound .head-tools > .type-size::before { content: ""; position: absolute; left: -4px; top: 5px; bottom: 5px; width: 1px; background: rgba(90, 70, 45, .2); }
+/* (on the strip, a control's focus is ringed within the strip's own edge) */
+html.bound .head-tools .fs:focus-visible, html.bound .head-tools .type-size:focus-visible, html.bound .langs a:focus-visible { outline: 1.5px solid var(--gilt); outline-offset: -2px; border-radius: 999px; }
+/* on a phone, a fingertip wide, as the language's links beside it are */
+html.leaves:not(.spread) .head .type-size { height: 44px; min-width: 44px; line-height: 45px; }
 @media print { .type-size { display: none; } }
 
 /* the letter, opened: over the whole window, a veil that puts what lies behind out of focus, and the
@@ -1288,7 +1292,7 @@ html.bound .head-tools > .type-size::before { content: ""; position: absolute; l
   font: 500 .95rem/1 var(--rubric); font-variant-caps: all-small-caps; letter-spacing: .08em; transition: color .2s ease, background-color .2s ease;
 }
 .me-which button[aria-pressed="true"] { color: var(--vermilion); }
-.me-controls .me-type { height: 38px; min-width: 40px; padding: 0 7px; }
+.me-controls .me-type { height: 38px; min-width: 40px; padding: 0 7px; line-height: 39px; }
 .me-controls .me-type .ts-a { font-size: 12px; }
 .me-controls .me-type .ts-b { font-size: 18px; }
 

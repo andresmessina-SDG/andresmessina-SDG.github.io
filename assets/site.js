@@ -130,7 +130,13 @@
   // touch draws all the tabs out, a touch on one goes there, and anything else folds them away.
   const thumbs = document.querySelector('.thumbs');
   const tabs = thumbs ? [...thumbs.querySelectorAll('.thumb')] : [];
-  function markThumb(k) { tabs.forEach((t, i) => (i === k ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current'))); }
+  // the folio the reader is at: its tab marked, and the other language's link taking them to the same folio
+  // there (in the book and on the leaves alike)
+  function markThumb(k) {
+    tabs.forEach((t, i) => (i === k ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
+    const id = k > 0 && tabs[k] ? tabs[k].getAttribute('href') : '';
+    for (const a of document.querySelectorAll('.langs a')) a.setAttribute('href', a.getAttribute('href').split('#')[0] + id);
+  }
   function slimThumbs() {
     if (!thumbs) return;
     root.classList.add('thumbable');
@@ -144,7 +150,7 @@
     if (!dock) {
       dock = el('div', 'dock');
       dock.hidden = true;
-      toc = el('button', 'toc', { type: 'button', 'aria-expanded': 'false', 'aria-label': UI.thumbs_label || UI.contents || 'Contents' });
+      toc = el('button', 'toc', { type: 'button', 'aria-expanded': 'false', 'aria-label': UI.contents || UI.thumbs_label || 'Contents' });
       toc.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5.5h10M7 10h10M7 14.5h10"/><circle cx="3.6" cy="5.5" r="1.1"/><circle cx="3.6" cy="10" r="1.1"/><circle cx="3.6" cy="14.5" r="1.1"/></svg>';
       if (thumbs) { thumbs.id = thumbs.id || 'thumb-index'; toc.setAttribute('aria-controls', thumbs.id); }
       toc.addEventListener('click', () => {
@@ -282,16 +288,32 @@
       const a = e.target.closest('a[href^="#"]');
       if (!a) return;
       const id = decodeURIComponent(a.getAttribute('href').slice(1));
+      const was = window.scrollY;   // (where the reader is, before going)
       if (!to(id)) return;
       e.preventDefault();
-      if (location.hash !== `#${id}`) history.pushState(null, '', `#${id}`);
+      // (where the reader was is kept with the page they leave, for Back to bring them to it again)
+      if (location.hash !== `#${id}`) {
+        try { history.replaceState({ ...(history.state || {}), y: was }, ''); } catch (err) {}
+        history.pushState(null, '', `#${id}`);
+        hashWas = location.hash;
+      }
     };
-    const onHash = () => to(decodeURIComponent(location.hash.slice(1)), true);
+    let hashWas = location.hash;
+    const onHash = () => { to(decodeURIComponent(location.hash.slice(1)), true); hashWas = location.hash; };
+    // Back from a folio to the page as it was before it: the place the reader had (not when a letter, whose
+    // step in the history Back also takes, is put away)
+    const onPop = (e) => {
+      const y = e.state && e.state.y;
+      // (after the browser's own restoring of the place it kept for this step, which is where the folio was)
+      if (!location.hash && hashWas && typeof y === 'number') requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'auto' })));
+      hashWas = location.hash;
+    };
     const onResize = () => { layout(); look(); };
     const ro = 'ResizeObserver' in window ? new ResizeObserver(onResize) : null;
     if (ro) { folios.forEach((f) => ro.observe(f)); if (head) ro.observe(head); }
     document.addEventListener('click', onClick);
     window.addEventListener('hashchange', onHash);
+    window.addEventListener('popstate', onPop);
     window.addEventListener('scroll', look, { passive: true });
     window.addEventListener('resize', onResize);
     layout();
@@ -302,6 +324,7 @@
         if (ro) ro.disconnect();
         document.removeEventListener('click', onClick);
         window.removeEventListener('hashchange', onHash);
+        window.removeEventListener('popstate', onPop);
         window.removeEventListener('scroll', look);
         window.removeEventListener('resize', onResize);
         cancelAnimationFrame(raf);
@@ -792,9 +815,6 @@
     edges();
     const live = document.getElementById('turned');
     if (live && turned) live.textContent = `${UI.folio || 'Folio'} ${ROMAN[k]}: ${s.name}`;
-    for (const a of document.querySelectorAll('.langs a')) {
-      a.setAttribute('href', a.getAttribute('href').split('#')[0] + (k ? `#${s.id}` : ''));
-    }
     if (!book.seenSpreads.has(k)) {
       book.seenSpreads.add(k);
       setTimeout(() => { if (book && book.cur === k) { ink(s.v); ink(s.r); } }, turned ? 60 : 250);

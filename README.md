@@ -94,7 +94,10 @@ catchword at its foot; a thumb index of vellum tabs down its left edge
 turns straight to any folio; each spread has its own address
 (`/#worldviews`). Turning a page keeps the address in step without adding to
 the history, so that Back leaves the book in one press; a jump by the
-contents, the thumb index or a link is a step that Back retraces.
+contents, the thumb index or a link is a step that Back retraces (on the
+leaves too, Back bringing the reader to the place they had before the jump).
+The other language's link always opens at the folio the reader is at, in the
+book and on the leaves alike.
 
 The pages are set as a modern book is, in the old materials: one family,
 EB Garamond, its labels in the face's own small capitals with lining
