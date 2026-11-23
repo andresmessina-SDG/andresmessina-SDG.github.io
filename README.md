@@ -20,8 +20,9 @@ and a calendar with the day's verse, a sealed letter and the contents),
 one for each work, and the colophon with the signature. Each folio has a
 left page (`.page-v`) and a right page (`.page-r`).
 
-Beside the calendar's date, on the English page, lies an envelope closed with
-a seal of real red wax. In it is the reading from C. H. Spurgeon's *Morning
+Beside the calendar's date, on the English page, lies a real envelope (the
+back of one of 1843, from the Longfellow house) closed with a seal of real red
+wax; its own flap, clipped from the same picture, is the one that lifts. In it is the reading from C. H. Spurgeon's *Morning
 and Evening* (1865–68) for the reader's hour: the evening's from five, or from
 noon once the evening light has come, and until four in the morning still the
 evening's of the day before; else the morning's. Pressed, its flap lifts and
@@ -123,7 +124,7 @@ another, but without the shade.
 | `src/verses.toml`, `src/kalendar.js` | The kalendar on the first right page: today's date as a book of hours sets it, in red on the Lord's Day and the feasts the Reformed churches kept (Christmas, Good Friday, Easter, Ascension, Pentecost, Reformation Day), and the verse for the day, one for each day in turn (KJV and Reina-Valera 1960), chosen in the reader's browser by their own calendar. The first is the one the page is built with. |
 | `assets/morning-evening/` | Spurgeon's *Morning and Evening*, a file to each day of the year (29 February too): its morning and its evening reading, each its text of Scripture, the reference and the reading, a hymn it quotes kept line by line. Made by `tools/morning-evening.py` from the Christian Classics Ethereal Library's plain text (public domain), with the typewriter's marks set as a printer would set them. |
 | `src/evening.js` | Evening light: after sunset where the reader is, guessed from the browser's time zone alone, the vellum warms as if by candlelight. Add `?evening` to the address to see it at any hour. Inlined into the head of each page by `tools/build.py`. |
-| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G., the fleuron and the red wax seal on the letter. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
+| `assets/book/` | The book's real materials, each a photograph or scan of a real thing: the opening initial A (a 13th-century Bible initial on burnished gold), the gilded ivy in the margins (from a 15th-century Book of Hours), the parchment, the bookcloth of the boards, the oak of the table, the gold of S.D.G., the fleuron, and the envelope of 1843 and the red wax seal on the calendar. `SOURCES.md` there gives each one's source and licence; `tools/real-assets.py`, `tools/paper.py` and `tools/modern-assets.py` prepare them from the originals. |
 | `assets/site.css`, `assets/site.js` | Styles, the book, and the little that moves: the light on the gold, which follows the pointer; staves engraved and S.D.G. written by a quill, as they scroll into view or as the book opens to them; the leaf turning between English and Spanish. Nothing moves for readers who ask for stillness. |
 | `src/chorale/1.svg` to `7.svg` | Bach's four-part setting of Luther's *Ein feste Burg ist unser Gott*, BWV 302, a line to each folio: the soprano engraved with its words (the tool also writes all four voices as data for playing, which `tools/build.py` leaves out of the page). Engraved by `tools/engrave.py` from the music21 edition of the Bach chorales, with note shapes from [Bravura](https://github.com/steinbergmedia/bravura) (SIL Open Font License). |
 | `src/bach.svg` | B-A-C-H, Bach's name in notes, under the colophon; engraved by `tools/engrave.py`. |

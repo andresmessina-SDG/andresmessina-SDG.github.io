@@ -13,6 +13,8 @@ sizes the page uses, in assets/book/:
   fleuron.webp    a printer's ornament from the Kilmarnock Burns of 1786, its paper lifted out
   seal.webp       a seal of red sealing wax on a folded letter of 1846, cut from its paper, to close
                   the envelope on the calendar page (from Commons' 960px rendering of the scan)
+  envelope.webp   the back of an envelope of 1843 (Fanny Appleton's, to Longfellow), cut from the
+                  scanner's white, its own black seal taken out to make way for the red one
 
 "Lifting out" divides a scan by its own paper colour, so the paper becomes white and only ink,
 paint and gold remain; laid on the page with mix-blend-mode: multiply, the ornament sits on our
@@ -140,6 +142,44 @@ def main(src):
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sq.paste(w, ((side - w.width) // 2, (side - w.height) // 2), w)
     save(sq.resize((128, 128), Image.LANCZOS), "seal.webp", 86)
+
+    # the envelope: what is not the scanner's white, its edge softened a little; its black wax seal (the
+    # dark piece about the middle, grown a little to take its shadow) filled from clean paper higher on the
+    # same flap, where no fold line crosses, in the light of the paper about it. Where the seal was, the
+    # flap's point, is where site.css sets the red seal and folds the flap (--tip in site.css).
+    e = Image.open(s / "envelope-1843-1280.jpg").convert("RGB")
+    a = np.asarray(e).astype(np.float32)
+    H, W = a.shape[:2]
+    lum, sat = a.mean(2), a.max(2) - a.min(2)
+    env = Image.fromarray((((lum < 238) | (sat > 12)) * 255).astype(np.uint8), "L").filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(5))
+    outside = ImageOps.expand(env, 3, 0)
+    ImageDraw.floodfill(outside, (0, 0), 128)
+    env = outside.point(lambda v: 0 if v == 128 else 255).crop((3, 3, 3 + W, 3 + H))
+    yy, xx = np.mgrid[0:H, 0:W]
+    black = Image.fromarray((((lum < 125) & ((xx - 626) ** 2 + (yy - 520) ** 2 < 125 ** 2)) * 255).astype(np.uint8), "L")
+    black = black.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MinFilter(3))
+    where = black.getbbox()
+    grown = black.filter(ImageFilter.MaxFilter(13)).filter(ImageFilter.GaussianBlur(4))
+    m = np.asarray(grown).astype(np.float32)[..., None] / 255
+    clean = np.roll(a, 230, axis=0)                                  # the paper 230px above
+
+    def box(x, r):
+        for ax in (0, 1):
+            c = np.cumsum(np.pad(x, [(r + 1, r) if k == ax else (0, 0) for k in range(x.ndim)], mode="edge"), axis=ax)
+            x = (np.take(c, range(2 * r + 1, c.shape[ax]), axis=ax) - np.take(c, range(0, c.shape[ax] - 2 * r - 1), axis=ax)) / (2 * r + 1)
+        return x
+
+    def light(x, w, r=40):                                           # the light at each point, from what w weights
+        return box(box(x * w[..., None], r), r) / np.maximum(box(box(w[..., None], r), r), 1e-6)
+
+    keep = 1 - (np.asarray(grown.filter(ImageFilter.MaxFilter(9))).astype(np.float32) / 255 > .02).astype(np.float32)
+    a = a * (1 - m) + clean * light(a, keep) / np.maximum(light(clean, np.ones_like(keep)), 1) * m
+    e = Image.fromarray(a.clip(0, 255).astype(np.uint8)).convert("RGBA")
+    e.putalpha(env.filter(ImageFilter.GaussianBlur(.8)))
+    bb = env.getbbox()
+    e = e.crop(bb)
+    print(f"envelope: flap's point at {((where[0] + where[2]) / 2 - bb[0]) / e.width:.4f}, {((where[1] + where[3]) / 2 - bb[1]) / e.height:.4f}; {e.width / e.height:.4f} wide to high")
+    save(e.resize((480, round(480 * e.height / e.width)), Image.LANCZOS), "envelope.webp", 84)
 
 
 if __name__ == "__main__":

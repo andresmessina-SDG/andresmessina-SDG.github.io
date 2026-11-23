@@ -314,7 +314,7 @@ def envelope(t: dict) -> str:
     words = {k[3:]: t[k] for k in ("me_morning", "me_evening", "me_open", "me_close", "me_which", "me_failed")}
     words["by"] = re.sub(r"\*([^*]+)\*", r"<i>\1</i>", esc(t["me_by"]))
     return (f'<button class="envelope" type="button" aria-haspopup="dialog" hidden data-me=\'{esc(json.dumps(words, ensure_ascii=False, separators=(",", ":")))}\'>'
-            '<span class="env-body" aria-hidden="true"><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="128" height="128" decoding="async"></span></span>'
+            '<span class="env-body" aria-hidden="true"><span class="env-inside"></span><span class="env-flap"><img class="env-seal" src="/assets/book/seal.webp" alt="" width="128" height="128" decoding="async"></span></span>'
             '<span class="env-word" aria-hidden="true"></span></button>')
 
 
