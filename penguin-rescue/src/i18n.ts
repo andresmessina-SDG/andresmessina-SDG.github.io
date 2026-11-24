@@ -46,6 +46,8 @@ const T: Record<string, [string, string]> = {
   gentle: ['Gentle mode', 'Добрый режим'],
   gentleNote: ['(a kinder Grimfin, for little readers)', '(Гримфин подобрее, для маленьких читателей)'],
   start: ['Open the book', 'Открыть книгу'],
+  startOver: ['Start over', 'Начать сначала'],
+  cont: ['Continue', 'Продолжить'],
   help: [
     'Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · F to toss a fish · M for sound',
     'Нажимай, чтобы идти, говорить или толкать · Можно и стрелками или WASD<br>Пробел — дальше или пропустить ход · L — прикрыть фонарик · F — бросить рыбку · M — звук',
