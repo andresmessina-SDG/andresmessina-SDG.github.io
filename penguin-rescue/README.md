@@ -3,17 +3,23 @@
 A small pop-up book adventure in Three.js. Two paper penguins, Pip and Pebble,
 ask you to rescue their friend Tuck from Grimfin, an orca in a pirate hat.
 
+Each chapter is a 24 by 14 board across the whole spread, and the camera
+follows you around the open book.
+
 - **Chapter One, The Snowy Shore.** An open little world with quests in any
   order. Pip gives you a lantern. Push an ice block into the water to make a
   stepping-stone to the island where the paper boat blew away. Optionally,
-  use the lantern to search the dark igloo for Auntie Puffin's yarn; she pays
-  you in fish. Five paper stars are hidden around the page.
-- **Chapter Two, Grimfin's Cove.** Night. Hop across the ice floes to Tuck's
-  cage. Grimfin swims one stroke for every hop you take; a red ring marks the
-  floes beside where he will be next. Each fish you toss in the fishing hole
-  keeps him busy for six hops, or you can time your crossing without any.
+  use the lantern to search the dark igloo for Auntie Puffin's yarn (she pays
+  you in fish), and build a second ice bridge across the pond to fetch Bobble
+  the seal pup's ball (he promises to splash Grimfin once). Eight paper stars
+  are hidden around the page.
+- **Chapter Two, Grimfin's Cove.** Night. Cross the bay in two legs, resting
+  on the island halfway. Grimfin swims one stroke for every hop you take; a
+  red ring marks the floes beside where he will be next. Each fish tossed in
+  a fishing hole keeps him busy for six hops, or you can time your crossing
+  without any.
 - **Finale.** Raise the lantern and the shadows of everyone you helped tower
-  over Grimfin. Help Auntie Puffin and she joins the shadow army.
+  over Grimfin.
 
 Controls: click or tap to walk, talk or push; hovering shows where a click goes; arrow keys or WASD to step;
 Space to continue dialogue or to wait a turn; M to mute.
@@ -53,10 +59,12 @@ Everything is generated at runtime. There are no image or sound files yet.
 | `src/paper.ts` | Tileable paper-fibre texture (also the bump map), paper materials, and die-cut stand-ups: art with a white cut border, an edge line, paper grain and a plain mirrored back |
 | `src/art.ts` | Every character, prop and scenery flat, drawn as layered cut paper in canvas |
 | `src/book.ts` | The table, the hard-cover book that opens and closes, and the page that curls over between chapters |
-| `src/game.ts` | Board building, hinged tiles that unfold from the spine, pop-up animations, walking, Grimfin's patrol and the story |
-| `src/levels.ts` | The two chapter maps as text grids |
+| `src/terrain.ts` | The board as cut paper: per-page sheets for water (with shallows), a shadowed rim, snow, and terraced snowbanks, with wobbly hand-cut coastlines that fold out from the spine |
+| `src/weather.ts` | Falling paper snowflakes around the camera |
+| `src/game.ts` | Board building, pop-up animations, walking, ice blocks, quests, Grimfin's patrol and the story |
+| `src/levels.ts` | The two chapter maps as text grids, plus Grimfin's swim lanes and finale positions |
 | `src/audio.ts` | Web Audio: paper rustles, fold snaps, page turns, footsteps, splashes, voices, and a music-box score for day and night |
-| `src/fx.ts` | Tilt-shift blur that follows the hero, plus a warm grade, vignette and grain |
+| `src/fx.ts` | Bloom on the lantern and moon, tilt-shift blur that follows the hero, and a warm grade, vignette and grain |
 | `src/ui.ts` | Dialogue, choices, objective label, inventory, toasts |
 
 ## Swapping in real assets (Blender and image generation)

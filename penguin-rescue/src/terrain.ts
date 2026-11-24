@@ -123,14 +123,16 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number): Te
   const grain = paperCanvas(256, seed + 3, 250);
   const pal = night
     ? { snow: '#c4d0e6', rim: '#6c80a6', bank: '#d2dcee', deep: '#1d406e', shallow: '#3f6ca4' }
-    : { snow: '#f6f8fa', rim: '#b4c3d4', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
+    : { snow: '#eef3f8', rim: '#adbdd0', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
   const deep = hex(pal.deep), shallow = hex(pal.shallow);
   const halves: THREE.Group[] = [];
 
   for (let h = 0; h < 2; h++) {
     const N = W * H;
     const landA = new Uint8ClampedArray(N), rimA = new Uint8ClampedArray(N);
-    const bankA = new Uint8ClampedArray(N), bankRimA = new Uint8ClampedArray(N);
+    // snowbanks are cut as a stack of nested contours, like layered card
+    const TIERS = [0.4, 0.55, 0.7, 0.84];
+    const tierA = TIERS.map(() => new Uint8ClampedArray(N));
     const waterC = makeCanvas(W, H);
     const wimg = ctx2d(waterC).createImageData(W, H);
     for (let y = 0; y < H; y++) {
@@ -143,8 +145,7 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number): Te
         if (f > 0.5) landA[i] = 255;
         if (f > 0.4) rimA[i] = 255;
         const bf = sample(bank, u, v) + nz * 0.8;
-        if (bf > 0.5) bankA[i] = 255;
-        if (bf > 0.4) bankRimA[i] = 255;
+        for (let t = 0; t < TIERS.length; t++) if (bf > TIERS[t]) tierA[t][i] = 255;
         // water: lighter shallows hugging the coast, a little mottling
         const t = Math.min(1, Math.max(0, (0.42 - f) / 0.32));
         const m = n2(X / 60, y / 60) * 10;
@@ -210,10 +211,9 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number): Te
       { canvas: paperLayer(W, H, pal.rim, maskCanvas(W, H, rimA), grain), y: 0.04 },
       { canvas: paperLayer(W, H, pal.snow, landMask, grain, snowDetails), y: LAND_Y },
     ];
-    if (bankA.some((a) => a)) {
-      const bankRim = paperLayer(W, H, pal.rim, maskCanvas(W, H, bankRimA), grain);
-      const bankTop = paperLayer(W, H, pal.bank, maskCanvas(W, H, bankA), grain);
-      layers.push({ canvas: bankRim, y: 0.14 }, { canvas: bankTop, y: 0.165 }, { canvas: bankRim, y: 0.24 }, { canvas: bankTop, y: 0.265 });
+    if (tierA[0].some((a) => a)) {
+      const tones = night ? ['#7d90b4', '#9cadcc', '#b7c5de', '#d6e0f0'] : ['#a9bccf', '#c6d4e2', '#e0e8f1', '#ffffff'];
+      tierA.forEach((a, t) => layers.push({ canvas: paperLayer(W, H, tones[t], maskCanvas(W, H, a), grain), y: 0.13 + t * 0.11 }));
     }
 
     const side = h === 0 ? -1 : 1;

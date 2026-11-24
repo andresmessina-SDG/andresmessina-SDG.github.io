@@ -405,7 +405,7 @@ export class Game {
             break;
           }
           case '*': {
-            const pv = this.stand(L, A.star(), 0.32, p.clone().setY(LAND_Y + 0.03), later, 4);
+            const pv = this.stand(L, A.star(), 0.46, p.clone().setY(LAND_Y + 0.03), later, 4);
             L.stars.set(key(c), pv);
             L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
             break;
@@ -789,7 +789,7 @@ export class Game {
     const ch = this.level!.grid[c[1]][c[0]];
     if (ch === 'o') return 0.11;
     if (ch === '~' || ch === 'H') return 0.02;
-    if (ch === '=') return 0.27;
+    if (ch === '=') return 0.5;
     return LAND_Y;
   }
 
