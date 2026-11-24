@@ -42,29 +42,119 @@
     box-shadow: var(--shadow);
   }
   #hud { position: fixed; inset: 0; pointer-events: none; }
+  /* the tracker: what to do on this page; tap it for the whole journal */
   #objective {
-    position: absolute; left: var(--left); top: var(--top); max-width: min(360px, calc(100vw - 32px));
-    margin: 0; padding: 10px 14px 10px 12px; border-radius: 3px; font-size: 15px; line-height: 1.3;
+    position: absolute; left: var(--left); top: var(--top); width: max-content; max-width: min(340px, calc(100vw - 32px));
+    margin: 0; padding: 8px 12px 9px; border-radius: 4px; font-size: 14.5px; line-height: 1.3;
     transform: rotate(-1deg); list-style: none; pointer-events: auto; cursor: pointer;
+    background-image: repeating-linear-gradient(transparent 0 25px, rgba(120,150,190,.14) 25px 26px);
+    transition: transform .15s;
   }
-  #objective li { position: relative; padding-left: 24px; margin: 3px 0; }
-  #objective li::before {
-    content: ""; position: absolute; left: 2px; top: 2px; width: 13px; height: 13px;
-    border: 1.5px solid var(--ink-soft); border-radius: 2px;
+  #objective:hover { transform: rotate(-1deg) translateY(-1px); }
+  #objective li { display: flex; align-items: center; gap: 7px; margin: 4px 0; }
+  #objective li.head { justify-content: space-between; margin: 0 0 5px; padding-bottom: 4px; border-bottom: 1.5px dashed var(--edge);
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  #objective li.head b { font-size: 15px; filter: saturate(.8); }
+  #objective li.q::before {
+    content: ""; flex: none; width: 13px; height: 13px; border: 1.5px solid var(--ink-soft); border-radius: 3px; background: rgba(255,255,255,.5);
   }
-  #objective li.done { color: var(--ink-soft); text-decoration: line-through; }
-  #objective li.done::before { content: "✓"; border-color: var(--accent); color: var(--accent); font-size: 13px; line-height: 12px; text-align: center; text-decoration: none; }
-  #objective li.optional { font-style: italic; }
-  /* tapped (and on phones by default): only what to do next */
-  #objective.mini li.done, #objective.mini li.optional { display: none; }
-  #objective.mini { padding-right: 26px; }
-  #objective.mini::after { content: "▾"; position: absolute; right: 9px; bottom: 7px; font-size: 12px; color: var(--ink-soft); }
+  #objective li.q.side::before { border-radius: 50%; }
+  #objective li.q img { order: -1; width: 24px; height: 24px; object-fit: contain; flex: none; margin-right: -2px; filter: drop-shadow(0 1px 1px rgba(40,25,10,.3)); }
+  #objective li.q.side img + .t, #objective li.q.side .t { font-style: italic; }
+  #objective li.stars .t { color: var(--ink-soft); font-size: 13px; }
+  #objective li.done .t { color: var(--ink-soft); text-decoration: line-through; }
+  #objective li.done::before { content: "✓"; border-color: var(--accent); color: var(--accent); font-size: 12px; line-height: 11px; text-align: center; }
+  #objective .pips { display: inline-flex; gap: 3px; margin-left: auto; padding-left: 6px; }
+  #objective .pips i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink-soft); }
+  #objective .pips i.on { background: var(--accent); border-color: var(--accent); }
+  /* on phones: just the main goals until tapped open */
+  #objective.mini li.side, #objective.mini li.stars, #objective.mini li.done { display: none; }
+
+  /* "New quest!" / "Quest complete!" */
+  #questPop {
+    position: fixed; left: 50%; top: calc(var(--top) + 4px); transform: translate(-50%, -140%) rotate(-1deg); z-index: 6;
+    display: flex; align-items: center; gap: 12px; padding: 10px 22px 10px 12px; border-radius: 4px; min-width: 240px; max-width: calc(100vw - 32px);
+    transition: transform .45s cubic-bezier(.2, 1.4, .4, 1); pointer-events: none;
+  }
+  #questPop.show { transform: translate(-50%, 0) rotate(-1deg); }
+  #questPop img { width: 48px; height: 56px; object-fit: contain; flex: none; filter: drop-shadow(1px 2px 2px rgba(40,25,10,.35)); }
+  #questPop .k { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  #questPop .n { font-size: 18px; font-style: italic; }
+  #questPop .st { position: absolute; right: -10px; top: -12px; width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--accent);
+    color: var(--accent); display: none; place-items: center; font-size: 24px; font-weight: 700; background: rgba(255,250,240,.9); transform: rotate(14deg) scale(1.6); opacity: 0; }
+  #questPop.done .st { display: grid; animation: stamp .35s .35s forwards; }
+  @keyframes stamp { to { transform: rotate(14deg) scale(1); opacity: 1; } }
+
+  /* the journal */
+  #journal {
+    position: fixed; inset: 0; z-index: 8; display: flex; padding: 16px; overflow-y: auto;
+    background: rgba(20,12,6,.55); opacity: 0; transition: opacity .25s;
+  }
+  #journal.show { opacity: 1; }
+  #journal .book {
+    margin: auto; width: min(720px, 100%); max-height: calc(100dvh - 32px); display: flex; flex-direction: column;
+    background: var(--paper); border-radius: 6px 10px 10px 6px; box-shadow: var(--shadow), inset 14px 0 0 #c8413b, inset 17px 0 0 rgba(0,0,0,.12);
+    padding: 16px 18px 14px 34px; transform: translateY(14px) rotate(-.6deg); transition: transform .3s cubic-bezier(.2, 1.3, .4, 1);
+    background-image: repeating-linear-gradient(transparent 0 27px, rgba(120,150,190,.16) 27px 28px);
+  }
+  #journal.show .book { transform: none; }
+  #journal header { display: flex; align-items: center; gap: 12px; }
+  #journal h2 { margin: 0; font-size: 26px; font-style: italic; flex: 1; }
+  #journal h2::before { content: "📖 "; font-style: normal; }
+  #journalStars { color: var(--ink-soft); font-size: 14px; white-space: nowrap; }
+  #journalClose { font: inherit; font-size: 22px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--edge); background: #fff; cursor: pointer; color: var(--ink); }
+  #journal .tabs { display: flex; gap: 6px; margin: 12px 0 10px; border-bottom: 2px solid var(--edge); }
+  #journal .tabs button {
+    font: inherit; font-size: 16px; padding: 7px 14px 6px; border: 1px solid var(--edge); border-bottom: 0; border-radius: 6px 6px 0 0;
+    background: #efe6d2; color: var(--ink-soft); cursor: pointer; margin-bottom: -2px;
+  }
+  #journal .tabs button[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 700; border-bottom: 2px solid var(--paper); }
+  #journal .tabs small { font-weight: 400; color: var(--accent); margin-left: 4px; }
+  #journalBody { overflow-y: auto; padding: 2px 4px 6px 0; min-height: 200px; }
+  #journal .chap { padding: 8px 0 10px; border-bottom: 1px dashed var(--edge); }
+  #journal .chap h3 { margin: 0 0 4px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  #journal .chap.done h3 { color: var(--ink-soft); }
+  #journal .chap .tick { color: var(--accent); font-size: 18px; }
+  #journal .chap .sum { margin: 0; font-style: italic; color: var(--ink-soft); font-size: 15px; }
+  #journal .chap ul { list-style: none; margin: 4px 0 0; padding: 0; }
+  #journal .chap li { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 16px; }
+  #journal .chap li::before { content: ""; width: 14px; height: 14px; border: 1.5px solid var(--ink-soft); border-radius: 3px; flex: none; }
+  #journal .chap li.done span { text-decoration: line-through; color: var(--ink-soft); }
+  #journal .chap li.done::before { content: "✓"; color: var(--accent); border-color: var(--accent); font-size: 12px; line-height: 13px; text-align: center; }
+  #journal .chap li img { order: -1; width: 26px; height: 26px; object-fit: contain; }
+  #journal .chapHead { margin: 12px 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  #journal .side {
+    position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; margin: 0 0 8px; border-radius: 4px;
+    background: #fffdf7; border: 1px solid var(--edge); box-shadow: 0 1px 0 rgba(90,65,40,.12);
+  }
+  #journal .side:nth-child(odd) { transform: rotate(-.4deg); }
+  #journal .side:nth-child(even) { transform: rotate(.35deg); }
+  #journal .who { width: 56px; height: 64px; flex: none; display: grid; place-items: center; border-radius: 4px; background: #f3ead6; }
+  #journal .who img { max-width: 52px; max-height: 60px; filter: drop-shadow(1px 2px 1px rgba(40,25,10,.3)); }
+  #journal .who.q { font-size: 30px; color: var(--ink-soft); font-weight: 700; }
+  #journal .side .b { flex: 1; min-width: 0; }
+  #journal .side h5 { margin: 0 0 2px; font-size: 17px; }
+  #journal .side p { margin: 0; font-size: 14.5px; line-height: 1.35; color: var(--ink); }
+  #journal .side p.reward { margin-top: 5px; color: var(--ink-soft); font-size: 13.5px; }
+  #journal .side.locked { opacity: .7; border-style: dashed; background: transparent; }
+  #journal .side.locked p { color: var(--ink-soft); font-style: italic; }
+  #journal .side.missed { opacity: .65; }
+  #journal .bar { position: relative; height: 14px; margin: 6px 0 2px; border-radius: 7px; background: #eadfc8; overflow: hidden; max-width: 260px; }
+  #journal .bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #e7774a, var(--accent)); border-radius: 7px; }
+  #journal .bar span { position: relative; display: block; text-align: center; font-size: 11px; line-height: 14px; color: #fff8ec; text-shadow: 0 1px 1px rgba(0,0,0,.35); }
+  #journal .stamp {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(-12deg); padding: 3px 10px; border: 3px double var(--accent);
+    color: var(--accent); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 14px; border-radius: 4px; background: rgba(255,250,240,.85);
+  }
+  #journal .stamp.missed { border-color: var(--ink-soft); color: var(--ink-soft); }
+  #journal .hint { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); font-style: italic; text-align: center; }
 
   #inv {
     position: absolute; right: calc(var(--right) + 50px); top: var(--top); display: flex; gap: 6px; padding: 6px 8px; border-radius: 3px;
     transform: rotate(0.8deg);
   }
   .slot { width: 46px; height: 52px; display: grid; place-items: center; position: relative; }
+  .slot:not(.got) { display: none; }
   .slot img { max-width: 40px; max-height: 40px; opacity: 0.18; filter: grayscale(1); transition: opacity .4s, filter .4s, transform .4s; }
   .slot.got img { opacity: 1; filter: none; transform: rotate(-4deg) scale(1.05); }
   .slot span { position: absolute; bottom: -2px; font-size: 10px; color: var(--ink-soft); letter-spacing: .04em; white-space: nowrap; }
@@ -181,9 +271,16 @@
     .slot img { max-width: 30px; max-height: 30px; }
     .slot span { display: none; }
     .slot b { font-size: 11px; }
-    #objective { top: calc(var(--top) + 58px); font-size: 13px; max-width: calc(100vw - 86px); padding: 7px 10px 7px 8px; }
-    #objective li { padding-left: 20px; }
-    #objective li::before { width: 11px; height: 11px; }
+    #objective { top: calc(var(--top) + 58px); font-size: 13px; max-width: calc(100vw - 86px); padding: 6px 10px 7px; }
+    #journal { padding: 8px; }
+    #journal .book { padding: 12px 12px 10px 26px; max-height: calc(100dvh - 16px); }
+    #journal h2 { font-size: 21px; }
+    #journal .tabs button { font-size: 14px; padding: 6px 10px 5px; }
+    #journal .who { width: 44px; height: 52px; }
+    #journal .who img { max-width: 40px; max-height: 48px; }
+    #journal .side.done, #journal .side.missed { padding-top: 26px; }
+    #journal .stamp { top: 5px; right: 10px; transform: rotate(-4deg); font-size: 10px; padding: 1px 8px; border-width: 2px; }
+    #questPop .n { font-size: 16px; }
     #line { font-size: 16px; min-height: 44px; }
     #portrait { width: 56px; height: 72px; }
     #toast { bottom: 110px; font-size: 14px; }
@@ -194,10 +291,19 @@
   }
   /* short screens (phones held sideways) */
   @media (max-height: 500px) {
-    #objective { font-size: 12.5px; padding: 6px 10px 6px 8px; max-width: min(300px, 40vw); }
-    #objective li { margin: 1px 0; padding-left: 19px; }
-    #objective li::before { width: 10px; height: 10px; top: 2px; }
-    #objective.mini { padding-right: 24px; }
+    #objective { font-size: 12.5px; padding: 5px 10px 6px; max-width: min(300px, 40vw); }
+    #objective li { margin: 2px 0; }
+    #objective li.q img { width: 20px; height: 20px; }
+    #journal { padding: 6px; }
+    #journal .book { padding: 8px 12px 8px 26px; max-height: calc(100dvh - 12px); }
+    #journal h2 { font-size: 19px; }
+    #journal .tabs { margin: 6px 0 6px; }
+    #journal .tabs button { font-size: 14px; padding: 4px 10px 3px; }
+    #journal .side { padding: 6px 10px; }
+    #journal .who { width: 40px; height: 46px; }
+    #journal .who img { max-width: 36px; max-height: 42px; }
+    #questPop { padding: 6px 18px 6px 10px; }
+    #questPop img { width: 36px; height: 42px; }
     #inv { gap: 3px; padding: 4px 6px; }
     .slot { width: 34px; height: 38px; }
     .slot img { max-width: 30px; max-height: 30px; }
@@ -241,6 +347,10 @@
     <div class="slot" data-id="yarn"><img alt=""><span data-i18n="yarn">yarn</span></div>
     <div class="slot" data-id="ball"><img alt=""><span data-i18n="ball">ball</span></div>
     <div class="slot" data-id="fish" data-i18n-label="a:fish"><img alt=""><span data-i18n="fish">fish</span><b></b></div>
+    <div class="slot" data-id="specs"><img alt=""><span data-i18n="specs">spectacles</span></div>
+    <div class="slot" data-id="bunting"><img alt=""><span data-i18n="bunting">bunting</span><b></b></div>
+    <div class="slot" data-id="berries"><img alt=""><span data-i18n="berries">berries</span><b></b></div>
+    <div class="slot" data-id="present"><img alt=""><span data-i18n="present">present</span></div>
   </div>
   <div id="actions">
     <button id="fishBtn" class="act" data-i18n-label="a:fish" hidden><i aria-hidden="true">🐟</i><span data-i18n="fishAct">Fish</span><b></b></button>
@@ -255,6 +365,24 @@
     <svg class="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>
   </button>
   <button id="mute" class="chip" data-i18n-label="a:mute" aria-pressed="false">♪</button>
+</div>
+
+<div id="questPop" class="label" hidden aria-live="polite"><img alt=""><div><div class="k"></div><div class="n"></div></div><div class="st" aria-hidden="true">✓</div></div>
+
+<div id="journal" hidden role="dialog" aria-modal="true" aria-labelledby="journalTitle">
+  <div class="book">
+    <header>
+      <h2 id="journalTitle" data-i18n="journal">Journal</h2>
+      <span id="journalStars"></span>
+      <button id="journalClose" data-i18n-label="a:close">×</button>
+    </header>
+    <div class="tabs" role="tablist">
+      <button data-tab="story" role="tab" aria-selected="true"><span data-i18n="tabStory">Story</span></button>
+      <button data-tab="side" role="tab" aria-selected="false"><span data-i18n="tabSide">Side quests</span><small></small></button>
+    </div>
+    <div id="journalBody"></div>
+    <p class="hint" data-i18n-html="journalHint">Press J or tap the to-do list to open the journal.</p>
+  </div>
 </div>
 
 <div id="banner"></div>

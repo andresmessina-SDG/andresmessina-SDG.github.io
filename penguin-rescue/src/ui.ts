@@ -11,6 +11,37 @@ export interface Quest {
   text: string;
   done?: boolean;
   optional?: boolean;
+  /** Stable id, so the page can tell when a quest is new or just finished. */
+  id?: string;
+  kind?: 'main' | 'side' | 'stars';
+  /** Portrait of whoever asked. */
+  icon?: string;
+  /** Short name for the pop-ups and the journal. */
+  title?: string;
+  progress?: [number, number];
+}
+
+export interface JournalSide {
+  id: string;
+  title: string;
+  desc: string;
+  reward: string;
+  icon?: string;
+  chapter: string;
+  state: 'locked' | 'active' | 'done' | 'missed';
+  progress?: [number, number];
+}
+export interface JournalChapter {
+  title: string;
+  state: 'done' | 'current';
+  summary: string;
+  steps: Quest[];
+}
+export interface Journal {
+  chapters: JournalChapter[];
+  side: JournalSide[];
+  stars: [number, number];
+  labels: Record<string, string>;
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -28,14 +59,26 @@ export class UI {
   private advance: (() => void) | null = null;
   private toastTimer = 0;
   private isOpen = false;
+  private journalEl = $('journal');
+  private journalOpen = false;
+  private popEl = $('questPop');
+  private popQueue: (() => Promise<void>)[] = [];
+  private popping = false;
+  private seen = new Map<string, boolean>();
+  /** Supplies the journal's contents when it opens. */
+  journalSource: (() => Journal) | null = null;
+  private tab: 'story' | 'side' = 'story';
 
-  /** True while a line or question is showing. The page hides the action buttons meanwhile. */
+  /** True while a line, a question or the journal is showing: the game waits meanwhile. */
   get open() {
-    return this.isOpen;
+    return this.isOpen || this.journalOpen;
   }
   set open(v: boolean) {
     this.isOpen = v;
-    document.body.classList.toggle('talking', v);
+    this.syncBody();
+  }
+  private syncBody() {
+    document.body.classList.toggle('talking', this.isOpen || this.journalOpen);
   }
 
   /** A tap anywhere on the page moves the story on (but never picks a choice). */
@@ -48,7 +91,24 @@ export class UI {
       e.stopPropagation();
       this.advance?.();
     });
+    this.journalEl.addEventListener('click', (e) => {
+      if (e.target === this.journalEl) this.closeJournal();
+    });
+    $('journalClose').addEventListener('click', () => this.closeJournal());
+    this.journalEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) =>
+      b.addEventListener('click', () => {
+        this.tab = b.dataset.tab as 'story' | 'side';
+        this.renderJournal();
+      }),
+    );
     window.addEventListener('keydown', (e) => {
+      if (this.journalOpen) {
+        if (e.key === 'Escape' || e.key === 'j' || e.key === 'J') {
+          e.preventDefault();
+          this.closeJournal();
+        }
+        return;
+      }
       if (!this.open) return;
       // With choice buttons showing, let the focused button take Space/Enter itself.
       if (this.choices.childElementCount > 0) return;
@@ -128,18 +188,195 @@ export class UI {
     return choice;
   }
 
-  /** The journal: a short checklist of what to do next. */
-  setQuests(quests: Quest[]) {
-    this.objective.replaceChildren(
-      ...quests.map((q) => {
-        const li = document.createElement('li');
-        li.textContent = q.text;
-        if (q.done) li.classList.add('done');
-        if (q.optional) li.classList.add('optional');
-        return li;
-      }),
-    );
+  /** The tracker: what to do next on this page. New and finished side quests get a pop-up. */
+  setQuests(quests: Quest[], header = '') {
+    const items: HTMLElement[] = [];
+    if (header) {
+      const h = document.createElement('li');
+      h.className = 'head';
+      h.innerHTML = `<span></span><b aria-hidden="true">📖</b>`;
+      h.querySelector('span')!.textContent = header;
+      items.push(h);
+    }
+    for (const q of quests) {
+      const li = document.createElement('li');
+      li.className = `q ${q.kind ?? (q.optional ? 'side' : 'main')}`;
+      if (q.done) li.classList.add('done');
+      if (q.optional) li.classList.add('optional');
+      if (q.icon) {
+        const img = document.createElement('img');
+        img.src = q.icon;
+        img.alt = '';
+        li.appendChild(img);
+      }
+      const t = document.createElement('span');
+      t.className = 't';
+      t.textContent = q.text;
+      li.appendChild(t);
+      if (q.progress && q.progress[1] > 1 && q.progress[1] <= 8) {
+        const pips = document.createElement('span');
+        pips.className = 'pips';
+        pips.setAttribute('aria-label', `${q.progress[0]}/${q.progress[1]}`);
+        for (let i = 0; i < q.progress[1]; i++) {
+          const d = document.createElement('i');
+          if (i < q.progress[0]) d.className = 'on';
+          pips.appendChild(d);
+        }
+        li.appendChild(pips);
+      }
+      items.push(li);
+      // pop-ups for side quests that just appeared or were just finished
+      if (q.id && q.kind === 'side') {
+        const was = this.seen.get(q.id);
+        if (was === undefined && !q.done) this.pop(q, false);
+        if (was === false && q.done) this.pop(q, true);
+      }
+      if (q.id) this.seen.set(q.id, !!q.done);
+    }
+    this.objective.replaceChildren(...items);
     this.objective.hidden = quests.length === 0;
+  }
+
+  private pop(q: Quest, done: boolean) {
+    this.popQueue.push(async () => {
+      const el = this.popEl;
+      el.classList.toggle('done', done);
+      (el.querySelector('img') as HTMLImageElement).src = q.icon ?? '';
+      (el.querySelector('img') as HTMLImageElement).hidden = !q.icon;
+      el.querySelector('.k')!.textContent = done ? this.label('questDone') : this.label('questNew');
+      el.querySelector('.n')!.textContent = q.title ?? q.text;
+      el.hidden = false;
+      this.sound.chime(done ? [0, 4, 7, 12] : [7, 12]);
+      await new Promise((r) => requestAnimationFrame(r));
+      el.classList.add('show');
+      await new Promise((r) => setTimeout(r, done ? 2600 : 2200));
+      el.classList.remove('show');
+      await new Promise((r) => setTimeout(r, 400));
+      el.hidden = true;
+    });
+    if (!this.popping) this.runPops();
+  }
+  private async runPops() {
+    this.popping = true;
+    while (this.popQueue.length) await this.popQueue.shift()!();
+    this.popping = false;
+  }
+  /** Labels come from the page's translations (set by main). */
+  label: (k: string) => string = (k) => k;
+
+  // ---------------------------------------------------------------- the journal
+
+  openJournal(tab?: 'story' | 'side') {
+    if (this.isOpen || !this.journalSource) return;
+    if (tab) this.tab = tab;
+    this.journalOpen = true;
+    this.syncBody();
+    this.renderJournal();
+    this.journalEl.hidden = false;
+    this.sound.rustle(0.5);
+    requestAnimationFrame(() => this.journalEl.classList.add('show'));
+    ($('journalClose') as HTMLButtonElement).focus();
+  }
+  closeJournal() {
+    if (!this.journalOpen) return;
+    this.journalOpen = false;
+    this.syncBody();
+    this.journalEl.classList.remove('show');
+    this.journalEl.hidden = true;
+    this.sound.fold(0.5);
+  }
+  toggleJournal() {
+    if (this.journalOpen) this.closeJournal();
+    else this.openJournal();
+  }
+
+  private renderJournal() {
+    const J = this.journalSource!();
+    const L = J.labels;
+    const el = (tag: string, cls = '', text = '') => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text) e.textContent = text;
+      return e;
+    };
+    this.journalEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => {
+      b.setAttribute('aria-selected', String(b.dataset.tab === this.tab));
+      if (b.dataset.tab === 'side') {
+        const done = J.side.filter((s) => s.state === 'done').length;
+        b.querySelector('small')!.textContent = `${done}/${J.side.length}`;
+      }
+    });
+    $('journalStars').textContent = `★ ${L.stars} ${J.stars[0]}/${J.stars[1]}`;
+    const body = $('journalBody');
+    const out: HTMLElement[] = [];
+    if (this.tab === 'story') {
+      for (const ch of J.chapters) {
+        const card = el('section', `chap ${ch.state}`);
+        const h = el('h3', '', ch.title);
+        if (ch.state === 'done') h.appendChild(el('span', 'tick', '✓'));
+        card.appendChild(h);
+        if (ch.state === 'done') card.appendChild(el('p', 'sum', ch.summary));
+        else {
+          const ul = el('ul');
+          for (const q of ch.steps) {
+            const li = el('li', q.done ? 'done' : '');
+            if (q.icon) {
+              const img = el('img') as HTMLImageElement;
+              img.src = q.icon;
+              img.alt = '';
+              li.appendChild(img);
+            }
+            li.appendChild(el('span', '', q.text));
+            ul.appendChild(li);
+          }
+          card.appendChild(ul);
+        }
+        out.push(card);
+      }
+    } else {
+      let lastChapter = '';
+      for (const s of J.side) {
+        if (s.chapter !== lastChapter) {
+          out.push(el('h4', 'chapHead', s.chapter));
+          lastChapter = s.chapter;
+        }
+        const card = el('article', `side ${s.state}`);
+        if (s.state === 'locked') {
+          card.appendChild(el('div', 'who q', '?'));
+          const b = el('div', 'b');
+          b.appendChild(el('h5', '', L.locked));
+          b.appendChild(el('p', '', L.lockedHint));
+          card.appendChild(b);
+        } else {
+          const who = el('div', 'who');
+          if (s.icon) {
+            const img = el('img') as HTMLImageElement;
+            img.src = s.icon;
+            img.alt = '';
+            who.appendChild(img);
+          }
+          card.appendChild(who);
+          const b = el('div', 'b');
+          b.appendChild(el('h5', '', s.title));
+          b.appendChild(el('p', '', s.desc));
+          if (s.progress && s.state === 'active') {
+            const bar = el('div', 'bar');
+            const fill = el('i');
+            fill.style.width = `${Math.round((100 * s.progress[0]) / s.progress[1])}%`;
+            bar.appendChild(fill);
+            bar.appendChild(el('span', '', `${s.progress[0]}/${s.progress[1]}`));
+            b.appendChild(bar);
+          }
+          b.appendChild(el('p', 'reward', `🎁 ${s.reward}`));
+          card.appendChild(b);
+          if (s.state === 'done') card.appendChild(el('div', 'stamp', L.stampDone));
+          if (s.state === 'missed') card.appendChild(el('div', 'stamp missed', L.stampMissed));
+        }
+        out.push(card);
+      }
+    }
+    body.replaceChildren(...out);
+    body.scrollTop = 0;
   }
 
   toast(text: string) {
@@ -156,6 +393,8 @@ export class UI {
   }
 
   setInventory(icons: Record<string, string>, have: Set<string>, counts: Record<string, number> = {}) {
+    // the inventory card only shows what you're carrying, and hides when your mittens are empty
+    $('inv').hidden = ![...have].some((id) => document.querySelector(`#inv .slot[data-id="${id}"]`));
     document.querySelectorAll<HTMLElement>('#inv .slot').forEach((s) => {
       const id = s.dataset.id!;
       const img = s.querySelector('img')!;

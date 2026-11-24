@@ -10,11 +10,20 @@
 //   L  sleepy lighthouse (chapter three)  c  floating fish crate
 //   g  harbour gate    G  home harbour
 //   P  where you start
+// The glacier (chapter two) and the party (chapter five):
+//   _  slick ice: you slide until you bump into something     +  paper star on the ice
+//   W  Grandpa Walrus  F  Mama Fox       k  a fox kit hiding behind a snowdrift
+//   e  the walrus's spectacles (on the ice)                   X  the far side of the glacier
+//   t  Tuck, free      n  a piece of party bunting            r  a snowberry bush
+//   m  a snowman
 import type { Cell, Lane } from './rules';
 
 export type { Cell };
 
+export type ChapterId = 'shore' | 'glacier' | 'cove' | 'fog' | 'party';
+
 export interface LevelDef {
+  id: ChapterId;
   title: string;
   titleRu: string;
   night: boolean;
@@ -30,10 +39,13 @@ export interface LevelDef {
   /** Dry places a catch sends you back to; the farthest one you've passed is used. */
   checkpoints?: Cell[];
   finale?: { orcaRise: Cell; boatTo: Cell; spots: Cell[] };
+  /** The party: where Grimfin watches from, and where everyone gathers at the end. */
+  party?: { orcaWatch: Cell; orcaDock: Cell; garland: Cell; cake: Cell; gather: Cell[] };
 }
 
 export const LEVELS: LevelDef[] = [
   {
+    id: 'shore',
     title: 'Chapter One · The Snowy Shore',
     titleRu: 'Глава первая · Снежный берег',
     night: false,
@@ -58,8 +70,34 @@ export const LEVELS: LevelDef[] = [
     dockFriends: [[21, 6], [21, 8]],
   },
   {
-    title: "Chapter Two · Grimfin's Cove",
-    titleRu: 'Глава вторая · Бухта Гримфина',
+    id: 'glacier',
+    title: 'Chapter Two · The Glittering Glacier',
+    titleRu: 'Глава вторая · Сверкающий ледник',
+    night: false,
+    mode: 'walk',
+    water: '~oHDv%',
+    map: [
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+      '~Y..+______=___________~',
+      '~.F.__Y___#=______Y__..~',
+      '~....#________*___#=_.Y~',
+      '~^.._______=___.k____..~',
+      '~...______==_Y_=_#_#_.k~',
+      '~...______#=_______#...~',
+      '~P..__#____=_##_____..X~',
+      '~...__=______#______...~',
+      '~.W.____.__=Y___#_e__..~',
+      '~Y..______#=______Y__..~',
+      '~..._______=_#__#___.Y.~',
+      '~^kY~~~~_____##____+~~~~',
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+    ],
+    dockFriends: [[22, 6], [22, 8]],
+  },
+  {
+    id: 'cove',
+    title: "Chapter Three · Grimfin's Cove",
+    titleRu: 'Глава третья · Бухта Гримфина',
     night: true,
     mode: 'walk',
     water: '~oHDv%',
@@ -84,8 +122,9 @@ export const LEVELS: LevelDef[] = [
     finale: { orcaRise: [19, 6], boatTo: [19, 9], spots: [[20, 6], [20, 8], [22, 6], [22, 8], [20, 5]] },
   },
   {
-    title: 'Chapter Three · The Way Home',
-    titleRu: 'Глава третья · Дорога домой',
+    id: 'fog',
+    title: 'Chapter Four · The Way Home',
+    titleRu: 'Глава четвёртая · Дорога домой',
     night: true,
     mode: 'sail',
     water: '~vc*gGP',
@@ -107,5 +146,36 @@ export const LEVELS: LevelDef[] = [
     ],
     orca: { lanes: [{ from: [9, 1], to: [9, 12] }, { from: [15, 12], to: [15, 1] }], start: 3 },
     finale: { orcaRise: [19, 8], boatTo: [22, 7], spots: [[21, 6], [21, 8], [23, 7], [20, 8], [23, 8], [20, 6]] },
+  },
+  {
+    id: 'party',
+    title: 'Chapter Five · The Welcome-Home Party',
+    titleRu: 'Глава пятая · Праздник в честь возвращения',
+    night: false,
+    mode: 'walk',
+    water: '~oHDv%',
+    map: [
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+      '~n.Y..r..^^..m....Y.n.~~',
+      '~..........Y.....I....~~',
+      '~..F............U....*~~',
+      '~*...Y................~~',
+      '~.........B........W..~~',
+      '~.m.....A...t..#.....Y~~',
+      '~..K................r.~~',
+      '~.................~~~~~~',
+      '~~~~~~~Q.........D~~~~~~',
+      '~~~n~~~....P....m.~~~~~~',
+      '~~~~~~~.......r...~~~~~~',
+      '~~~~~~#...*..Y....~~~~~~',
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+    ],
+    party: {
+      orcaWatch: [20, 11],
+      orcaDock: [18, 9],
+      garland: [10, 3],
+      cake: [11, 7],
+      gather: [[16, 8], [15, 9], [15, 8], [14, 9], [16, 7], [14, 8], [13, 9], [15, 7], [13, 8], [12, 9]],
+    },
   },
 ];
