@@ -34,7 +34,21 @@ kinder Grimfin: he sees one cell less, and always shouts before he grabs.
 
 Controls: click or tap to walk, sail, talk or push; hovering shows where a click goes;
 arrow keys or WASD to step; Space to continue dialogue or wait a turn; L to cover the
-lantern; M to mute.
+lantern; F to toss a fish; M to mute. In the Grimfin chapters, round buttons in the
+bottom-right corner do the same: wait a turn, cover the lantern, toss a fish.
+
+**Phones and tablets.** Tap to walk, and tap anywhere to read on. The to-do list
+folds down to the next step (tap it to see everything). The top-right button
+goes fullscreen and, on a phone, holds the book sideways (iPhone Safari has no
+fullscreen for pages; use Share, Add to Home Screen instead). Touch devices get a
+lighter renderer, and on any device the picture steps down on its own (fewer
+pixels, then no glow) if the frame rate stays under 45. Add `?quality=high` to the
+address to turn that off.
+
+**Languages.** English and Russian, picked on the title card and remembered.
+The first visit follows the browser's language, and `?lang=ru` or `?lang=en`
+forces one. Story text sits beside its translation in the code as
+`tr('English', 'Русский')`; the page's labels are in `src/i18n.ts`.
 
 ## Run it
 
@@ -79,6 +93,7 @@ Everything is generated at runtime. There are no image or sound files yet.
 | `src/audio.ts` | Web Audio: paper rustles, fold snaps, page turns, footsteps, splashes, voices, and a music-box score for day and night |
 | `src/fx.ts` | Bloom on the lantern and moon, tilt-shift blur that follows the hero, and a warm grade, vignette and grain |
 | `src/ui.ts` | Dialogue, choices, objective label, inventory, toasts |
+| `src/i18n.ts` | English and Russian: language choice, the page's labels, and Russian plurals |
 
 ## Swapping in real assets (Blender and image generation)
 

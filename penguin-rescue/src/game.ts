@@ -11,6 +11,7 @@ import {
 } from './rules';
 import type { Sound } from './audio';
 import type { UI, Speaker, Line, Quest } from './ui';
+import { tr, touch, hops, fishes } from './i18n';
 
 export type { Cell };
 export const COLS = LEVELS[0].map[0].length;
@@ -28,6 +29,15 @@ const FOG_PX = 40;
 // Art used over and over (hearts, speech bubbles) is drawn once.
 const artCache = new Map<string, HTMLCanvasElement>();
 const cachedArt = (k: string, make: () => HTMLCanvasElement) => artCache.get(k) ?? artCache.set(k, make()).get(k)!;
+
+/** A speaker whose name follows the chosen language. */
+const sp = (en: string, ru: string, art: HTMLCanvasElement, voice: number): Speaker => ({
+  get name() {
+    return tr(en, ru);
+  },
+  portrait: art.toDataURL(),
+  voice,
+});
 
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
 
@@ -139,13 +149,13 @@ export class Game {
     };
     this.S = {
       nar: { name: '', voice: 520 },
-      pip: { name: 'Pip', portrait: this.art.pip.toDataURL(), voice: 700 },
-      pebble: { name: 'Pebble', portrait: this.art.pebble.toDataURL(), voice: 860 },
-      tuck: { name: 'Tuck', portrait: this.art.tuck.toDataURL(), voice: 620 },
-      puffin: { name: 'Auntie Puffin', portrait: this.art.puffin.toDataURL(), voice: 560 },
-      bobble: { name: 'Bobble', portrait: this.art.bobble.toDataURL(), voice: 960 },
-      grim: { name: 'Grimfin', portrait: this.art.orca.toDataURL(), voice: 80 },
-      light: { name: 'Lighthouse', portrait: this.art.lighthouse.toDataURL(), voice: 420 },
+      pip: sp('Pip', 'Пип', this.art.pip, 700),
+      pebble: sp('Pebble', 'Галька', this.art.pebble, 860),
+      tuck: sp('Tuck', 'Тук', this.art.tuck, 620),
+      puffin: sp('Auntie Puffin', 'Тётушка Тупик', this.art.puffin, 560),
+      bobble: sp('Bobble', 'Бобл', this.art.bobble, 960),
+      grim: sp('Grimfin', 'Гримфин', this.art.orca, 80),
+      light: sp('Lighthouse', 'Маяк', this.art.lighthouse, 420),
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
@@ -229,8 +239,8 @@ export class Game {
     this.lanternCovered = !this.lanternCovered;
     this.sound.rustle(0.4);
     this.ui.toast(this.lanternCovered
-      ? 'Lantern covered: Grimfin can only spot you up close, but glowing stars stay hidden.'
-      : 'Lantern uncovered: you see more, and so does Grimfin.');
+      ? tr('Lantern covered: Grimfin can only spot you up close, but glowing stars stay hidden.', 'Фонарик прикрыт: Гримфин заметит тебя только вблизи, но светящиеся звёздочки не видны.')
+      : tr('Lantern uncovered: you see more, and so does Grimfin.', 'Фонарик открыт: тебе видно дальше, и Гримфину тоже.'));
     this.onLantern(this.lanternCovered);
     this.updateGaze();
     if (this.sail) this.revealAround(this.pos);
@@ -639,7 +649,7 @@ export class Game {
           case 'b': {
             const boat = ch === 'S';
             const pv = this.stand(L, boat ? A.boat() : A.ball(), boat ? 0.5 : 0.34, p.clone().setY(LAND_Y), later);
-            L.items.set(key(c), boat ? { id: 'boat', name: 'the paper boat', obj: pv } : { id: 'ball', name: "Bobble's ball", obj: pv });
+            L.items.set(key(c), boat ? { id: 'boat', name: tr('the paper boat', 'бумажный кораблик'), obj: pv } : { id: 'ball', name: tr("Bobble's ball", 'мячик Бобла'), obj: pv });
             L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'bob' });
             break;
           }
@@ -793,7 +803,7 @@ export class Game {
     } else {
       this.follower = null;
     }
-    this.ui.banner(L.def.title);
+    this.ui.banner(tr(L.def.title, L.def.titleRu));
     this.ui.setQuests([]);
     await this.unfold(L);
     L.ready = true;
@@ -829,8 +839,8 @@ export class Game {
   private async introOne() {
     const { nar } = this.S;
     await this.ui.say([
-      [nar, 'Once upon a fold, on a snowy shore at the very edge of the page...'],
-      [nar, 'two penguins were waiting for someone brave. Click or tap the snow to walk over and say hello.'],
+      [nar, tr('Once upon a fold, on a snowy shore at the very edge of the page...', 'Давным-давно, на снежном берегу у самого краешка страницы...')],
+      [nar, tr('two penguins were waiting for someone brave. Click or tap the snow to walk over and say hello.', '...два пингвина ждали кого-нибудь смелого. Нажми на снег, чтобы подойти и поздороваться.')],
     ]);
   }
 
@@ -850,17 +860,26 @@ export class Game {
     const { nar, pip, pebble, bobble } = this.S;
     await this.riseGrimfin();
     const lines: Line[] = [
-      [nar, 'Night fell across the page. Out on the dark water, something with a very tall fin, and a very small spyglass, was circling.'],
-      [pebble, "There! Tuck is on that iceberg, all the way across. Rest on the little island halfway; Grimfin can't reach you on land."],
-      [pip, 'See the glowy squares? That is where Grimfin will look next. If he spots you, he shouts and charges next turn, so hop out of sight quick!'],
-      [pebble, 'Little icebergs block his spyglass. Hide behind them! And the red rings show where he can reach.'],
-      [pip, 'Press L, or the lantern button, to cover your lantern. He can only spot you up close then, but you will miss the glowing stars.'],
+      [nar, tr('Night fell across the page. Out on the dark water, something with a very tall fin, and a very small spyglass, was circling.', 'На страницу опустилась ночь. В тёмной воде кружил кто-то с очень высоким плавником и очень маленькой подзорной трубой.')],
+      [pebble, tr("There! Tuck is on that iceberg, all the way across. Rest on the little island halfway; Grimfin can't reach you on land.", 'Вон там! Тук на том айсберге, на другом краю. Передохни на островке посередине: на суше Гримфин тебя не достанет.')],
+      [pip, tr('See the glowy squares? That is where Grimfin will look next. If he spots you, he shouts and charges next turn, so hop out of sight quick!', 'Видишь светящиеся квадратики? Туда Гримфин посмотрит в следующий ход. Если он тебя заметит, то закричит и на следующем ходу бросится в атаку, так что скорее прячься!')],
+      [pebble, tr('Little icebergs block his spyglass. Hide behind them! And the red rings show where he can reach.', 'Маленькие айсберги закрывают ему обзор. Прячься за ними! А красные кольца показывают, куда он может дотянуться.')],
+      [pip, touch
+        ? tr('Tap the 🏮 button to cover your lantern. He can only spot you up close then, but you will miss the glowing stars.',
+          'Нажми кнопку 🏮, чтобы прикрыть фонарик. Тогда он заметит тебя только вблизи, зато светящиеся звёздочки будет не видно.')
+        : tr('Press L, or the 🏮 button, to cover your lantern. He can only spot you up close then, but you will miss the glowing stars.',
+          'Нажми L или кнопку 🏮, чтобы прикрыть фонарик. Тогда он заметит тебя только вблизи, зато светящиеся звёздочки будет не видно.')],
       this.fish
-        ? [pebble, `You have ${this.fish} fish. Toss one in a fishing hole, by the little flags, and Grimfin will munch for ${FISH_TURNS} hops.`]
-        : [pebble, "We haven't got any fish, so you'll have to time your hops. You can do it!"],
+        ? [pebble, tr(`You have ${this.fish} fish. Toss one in a fishing hole, by the little flags, and Grimfin will munch for ${FISH_TURNS} hops.`,
+          `У тебя ${fishes(this.fish)}. Брось одну в лунку у флажка, и Гримфин будет жевать целых ${hops(FISH_TURNS)}.`)]
+        : [pebble, tr("We haven't got any fish, so you'll have to time your hops. You can do it!", 'Рыбы у нас нет, так что придётся прыгать в нужный момент. У тебя получится!')],
     ];
-    if (this.bobbleHelped) lines.push([bobble, "And if Grimfin gets you, I'll splash him right in the eye! Once, anyway."]);
-    lines.push([nar, 'Every hop you take, Grimfin swims one stroke. Click where you stand, or press Space, to wait a turn.']);
+    if (this.bobbleHelped) lines.push([bobble, tr("And if Grimfin gets you, I'll splash him right in the eye! Once, anyway.", 'А если Гримфин тебя поймает, я плесну ему прямо в глаз! Ну, один разок.')]);
+    lines.push([nar, touch
+      ? tr('Every hop you take, Grimfin swims one stroke. Tap where you stand, or the ⏳ button, to wait a turn.',
+        'С каждым твоим прыжком Гримфин делает один гребок. Чтобы пропустить ход, нажми на себя или на кнопку ⏳.')
+      : tr('Every hop you take, Grimfin swims one stroke. Click where you stand, press Space or the ⏳ button to wait a turn.',
+        'С каждым твоим прыжком Гримфин делает один гребок. Чтобы пропустить ход, нажми на себя, на пробел или на кнопку ⏳.')]);
     await this.ui.say(lines);
   }
 
@@ -869,16 +888,18 @@ export class Game {
     this.revealAround(this.pos);
     await this.riseGrimfin();
     const lines: Line[] = [
-      [nar, 'The little paper boat slipped into a thick, sleepy fog. Somewhere ahead was home.'],
-      [tuck, 'I can hardly see my own flippers!'],
-      [pip, 'Look, lighthouses! But they have all dozed off. Sail up beside each one and wake it with the lantern.'],
-      [pebble, "When all three are awake, the harbour gate will open. And Grimfin won't come anywhere near a lighthouse that's shining."],
+      [nar, tr('The little paper boat slipped into a thick, sleepy fog. Somewhere ahead was home.', 'Бумажный кораблик скользнул в густой сонный туман. Где-то впереди был дом.')],
+      [tuck, tr('I can hardly see my own flippers!', 'Я даже своих ласт не вижу!')],
+      [pip, tr('Look, lighthouses! But they have all dozed off. Sail up beside each one and wake it with the lantern.', 'Смотрите, маяки! Только они все задремали. Подплыви к каждому и разбуди его фонариком.')],
+      [pebble, tr("When all three are awake, the harbour gate will open. And Grimfin won't come anywhere near a lighthouse that's shining.", 'Когда проснутся все три, ворота гавани откроются. А к светящемуся маяку Гримфин и близко не подплывёт.')],
     ];
     lines.push([pip, this.fish
-      ? `No fishing holes out here, but you can toss a fish overboard: click your fish bucket, or press F. Grimfin will munch for ${FISH_TURNS} hops.`
-      : 'Look out for floating crates of fish. Toss one overboard (click the fish bucket, or press F) and Grimfin will stop to munch.']);
-    if (this.bobbleHelped) lines.push([bobble, "I'll swim right behind you. Paddle paddle!"]);
-    lines.push([nar, 'Grimfin hunts the fog the same way as before: watch for his glowing spyglass squares.']);
+      ? tr(`No fishing holes out here, but you can toss a fish overboard with the 🐟 button${touch ? '' : ' or F'}. Grimfin will munch for ${FISH_TURNS} hops.`,
+        `Лунок тут нет, но рыбку можно бросить за борт кнопкой 🐟${touch ? '' : ' или клавишей F'}. Гримфин будет жевать целых ${hops(FISH_TURNS)}.`)
+      : tr(`Look out for floating crates of fish. Toss one overboard with the 🐟 button${touch ? '' : ' or F'} and Grimfin will stop to munch.`,
+        `Ищи плавучие ящики с рыбой. Брось рыбку за борт кнопкой 🐟${touch ? '' : ' или клавишей F'}, и Гримфин остановится пожевать.`)]);
+    if (this.bobbleHelped) lines.push([bobble, tr("I'll swim right behind you. Paddle paddle!", 'Я поплыву прямо за вами. Шлёп-шлёп!')]);
+    lines.push([nar, tr('Grimfin hunts the fog the same way as before: watch for his glowing spyglass squares.', 'Гримфин охотится в тумане так же, как раньше: следи за светящимися квадратиками его подзорной трубы.')]);
     await this.ui.say(lines);
   }
 
@@ -887,39 +908,47 @@ export class Game {
     if (!L) return;
     const q: Quest[] = [];
     if (L.index === 0) {
-      if (!this.talked) q.push({ text: 'Say hello to the two penguins' });
+      if (!this.talked) q.push({ text: tr('Say hello to the two penguins', 'Поздоровайся с двумя пингвинами') });
       else {
-        q.push({ text: 'Rescue the paper boat from the little island', done: this.inv.has('boat') });
+        q.push({ text: tr('Rescue the paper boat from the little island', 'Спаси бумажный кораблик с островка'), done: this.inv.has('boat') });
         if (this.puffinMet || this.yarnFound) {
-          const text = this.puffinHelped ? "Return Auntie Puffin's yarn" : this.yarnFound ? 'Bring the red yarn back to Auntie Puffin' : "Find Auntie Puffin's yarn in the dark igloo";
+          const text = this.puffinHelped
+            ? tr("Return Auntie Puffin's yarn", 'Верни пряжу тётушке Тупик')
+            : this.yarnFound
+              ? tr('Bring the red yarn back to Auntie Puffin', 'Отнеси красную пряжу тётушке Тупик')
+              : tr("Find Auntie Puffin's yarn in the dark igloo", 'Найди пряжу тётушки Тупик в тёмном иглу');
           q.push({ text, done: this.puffinHelped, optional: true });
         }
         if (this.bobbleMet || this.inv.has('ball')) {
-          const text = this.bobbleHelped ? "Fetch Bobble's ball" : this.inv.has('ball') ? 'Give Bobble back his ball' : "Fetch Bobble's ball from the pond island";
+          const text = this.bobbleHelped
+            ? tr("Fetch Bobble's ball", 'Достань мячик Бобла')
+            : this.inv.has('ball')
+              ? tr('Give Bobble back his ball', 'Верни Боблу его мячик')
+              : tr("Fetch Bobble's ball from the pond island", 'Достань мячик Бобла с островка в пруду');
           q.push({ text, done: this.bobbleHelped, optional: true });
         }
-        if (this.inv.has('boat')) q.push({ text: 'Meet Pip and Pebble at the dock →' });
+        if (this.inv.has('boat')) q.push({ text: tr('Meet Pip and Pebble at the dock →', 'Встреться с Пипом и Галькой у причала →') });
       }
     } else if (L.def.mode === 'walk') {
-      q.push({ text: 'Cross the ice floes and free Tuck', done: this.tuckFree });
+      q.push({ text: tr('Cross the ice floes and free Tuck', 'Перейди по льдинам и освободи Тука'), done: this.tuckFree });
       if (!this.tuckFree) q.push(this.orcaQuest());
-      if (this.bobbleHelped && !this.tuckFree) q.push({ text: 'Bobble will splash Grimfin once', done: this.bobbleSplashUsed, optional: true });
+      if (this.bobbleHelped && !this.tuckFree) q.push({ text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed, optional: true });
     } else {
       const lit = [...L.beacons.values()].filter((b) => b.lit).length;
-      q.push({ text: `Wake the sleepy lighthouses · ${lit}/${L.beacons.size}`, done: lit === L.beacons.size });
-      if (this.gateOpen) q.push({ text: 'Sail into the home harbour →' });
+      q.push({ text: tr(`Wake the sleepy lighthouses · ${lit}/${L.beacons.size}`, `Разбуди сонные маяки · ${lit}/${L.beacons.size}`), done: lit === L.beacons.size });
+      if (this.gateOpen) q.push({ text: tr('Sail into the home harbour →', 'Плыви в родную гавань →') });
       q.push(this.orcaQuest());
-      q.push({ text: `Fish crates found · ${this.crates}/3`, done: this.crates === 3, optional: true });
-      if (this.bobbleHelped) q.push({ text: 'Bobble will splash Grimfin once', done: this.bobbleSplashUsed, optional: true });
+      q.push({ text: tr(`Fish crates found · ${this.crates}/3`, `Ящики с рыбой · ${this.crates}/3`), done: this.crates === 3, optional: true });
+      if (this.bobbleHelped) q.push({ text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed, optional: true });
     }
-    q.push({ text: `Paper stars ${this.stars}/${STAR_TOTAL}`, done: this.stars === STAR_TOTAL, optional: true });
+    q.push({ text: tr(`Paper stars ${this.stars}/${STAR_TOTAL}`, `Бумажные звёздочки ${this.stars}/${STAR_TOTAL}`), done: this.stars === STAR_TOTAL, optional: true });
     this.ui.setQuests(q);
   }
 
   private orcaQuest(): Quest {
-    if (this.orca.distracted > 0) return { text: `Grimfin is munching: ${this.orca.distracted} hops left` };
-    if (this.orca.alert) return { text: 'Grimfin spotted you! Get out of sight NOW' };
-    return { text: this.lanternCovered ? 'Lantern covered: Grimfin only sees you up close' : 'Keep out of the glowy squares and red rings' };
+    if (this.orca.distracted > 0) return { text: tr(`Grimfin is munching: ${hops(this.orca.distracted)} left`, `Гримфин жуёт: осталось ${hops(this.orca.distracted)}`) };
+    if (this.orca.alert) return { text: tr('Grimfin spotted you! Get out of sight NOW', 'Гримфин тебя заметил! Скорее прячься!') };
+    return { text: this.lanternCovered ? tr('Lantern covered: Grimfin only sees you up close', 'Фонарик прикрыт: Гримфин видит тебя только вблизи') : tr('Keep out of the glowy squares and red rings', 'Не заходи в светящиеся квадратики и красные кольца') };
   }
 
   private refreshInventory() {
@@ -1068,7 +1097,7 @@ export class Game {
         const path = this.path(this.pos, goals);
         if (!path) {
           this.sound.bump();
-          if (act?.startsWith('block')) this.ui.toast("You can't reach that side of the ice block.");
+          if (act?.startsWith('block')) this.ui.toast(tr("You can't reach that side of the ice block.", 'К этой стороне ледяного блока не подойти.'));
           return;
         }
         let redirected = false;
@@ -1185,11 +1214,11 @@ export class Game {
       this.inv.add('fish');
       this.refreshInventory();
       this.sound.chime([0, 4, 7]);
-      this.ui.toast(`A floating crate of Auntie Puffin's fish! +1 fish (${this.fish})`);
+      this.ui.toast(tr(`A floating crate of Auntie Puffin's fish! +1 fish (${this.fish})`, `Плавучий ящик с рыбой тётушки Тупик! +1 рыбка (${this.fish})`));
       this.refreshQuests();
       return;
     }
-    this.give(it.id, `You found ${it.name}!`);
+    this.give(it.id, tr(`You found ${it.name}!`, `Находка: ${it.name}!`));
   }
 
   private collectStar(obj: THREE.Group) {
@@ -1201,7 +1230,9 @@ export class Game {
     this.flyAway(obj);
     this.sound.chime([7, 12, 16]);
     this.hearts(this.player.position, 3);
-    this.ui.toast(this.stars === STAR_TOTAL ? `All ${STAR_TOTAL} paper stars! What a sharp eye.` : `A paper star! ${this.stars}/${STAR_TOTAL}`);
+    this.ui.toast(this.stars === STAR_TOTAL
+      ? tr(`All ${STAR_TOTAL} paper stars! What a sharp eye.`, `Все ${STAR_TOTAL} бумажных звёздочек! Вот это зоркость!`)
+      : tr(`A paper star! ${this.stars}/${STAR_TOTAL}`, `Бумажная звёздочка! ${this.stars}/${STAR_TOTAL}`));
     this.refreshQuests();
   }
 
@@ -1220,9 +1251,9 @@ export class Game {
       case 'igloo':
         return this.searchIgloo();
       case 'tuck':
-        return this.tuckFree ? this.ui.say([[this.S.tuck, 'Thank you, thank you!']]) : this.freeTuck();
+        return this.tuckFree ? this.ui.say([[this.S.tuck, tr('Thank you, thank you!', 'Спасибо, спасибо!')]]) : this.freeTuck();
       case 'boat':
-        return this.ui.say([[this.S.pebble, "That's our boat. Once Tuck is free, we'll paddle over and fetch you both!"]]);
+        return this.ui.say([[this.S.pebble, tr("That's our boat. Once Tuck is free, we'll paddle over and fetch you both!", 'Это наша лодочка. Как только Тук будет на свободе, мы приплывём за вами обоими!')]]);
     }
   }
 
@@ -1251,115 +1282,117 @@ export class Game {
     const L = this.level!;
     if (L.index > 0) {
       const lines: Line[][] = [
-        [[pip, 'Watch the glowy squares: that is where his spyglass is pointing next.']],
-        [[pebble, this.fish ? `One fish keeps him busy for ${FISH_TURNS} hops. Toss it into a fishing hole by a flag!` : 'He dives under for two strokes at the end of each swim. That is your chance!']],
-        [[pip, 'Hide behind the little icebergs. His spyglass cannot see through ice!']],
-        [[pebble, 'Be brave! Tuck is counting on you.']],
+        [[pip, tr('Watch the glowy squares: that is where his spyglass is pointing next.', 'Следи за светящимися квадратиками: туда он посмотрит в подзорную трубу в следующий ход.')]],
+        [[pebble, this.fish
+          ? tr(`One fish keeps him busy for ${FISH_TURNS} hops. Toss it into a fishing hole by a flag!`, `Одна рыбка займёт его на ${hops(FISH_TURNS)}. Брось её в лунку у флажка!`)
+          : tr('He dives under for two strokes at the end of each swim. That is your chance!', 'В конце каждого заплыва он ныряет на два гребка. Тут-то и не зевай!')]],
+        [[pip, tr('Hide behind the little icebergs. His spyglass cannot see through ice!', 'Прячься за маленькими айсбергами. Сквозь лёд его подзорная труба не видит!')]],
+        [[pebble, tr('Be brave! Tuck is counting on you.', 'Смелее! Тук на тебя надеется.')]],
       ];
       return this.ui.say(lines[this.chat++ % lines.length]);
     }
     if (!this.talked) {
       this.talked = true;
       await this.ui.say([
-        [pip, 'Oh! A visitor! Please, you have to help us!'],
-        [pebble, 'Grimfin the orca snatched our friend Tuck and carried him off to his cove!'],
-        [pip, "It's dark out there. Here, take my lantern."],
+        [pip, tr('Oh! A visitor! Please, you have to help us!', 'Ой! Гость! Пожалуйста, помоги нам!')],
+        [pebble, tr('Grimfin the orca snatched our friend Tuck and carried him off to his cove!', 'Гримфин, злая косатка, схватил нашего друга Тука и утащил к себе в бухту!')],
+        [pip, tr("It's dark out there. Here, take my lantern.", 'Там темно. Вот, возьми мой фонарик.')],
       ]);
-      this.give('lantern', 'Pip gave you the paper lantern!');
+      this.give('lantern', tr('Pip gave you the paper lantern!', 'Пип дал тебе бумажный фонарик!'));
       this.hearts(L.actors.get('pip')!.position, 4);
       await this.ui.say([
-        [pebble, 'We need my paper boat too, but the wind blew it onto the little island in the bottom-left corner.'],
-        [pip, "Ice blocks float, you know. If you shoved one into the water, you'd have a stepping-stone."],
-        [pebble, "And if you find fish, Grimfin can never resist them. Auntie Puffin always has a few, but she looks upset about something."],
-        [pip, 'Little Bobble is moping by the pond, too. Meet us at the dock on the right when you have the boat!'],
+        [pebble, tr('We need my paper boat too, but the wind blew it onto the little island in the bottom-left corner.', 'Ещё нам нужен мой бумажный кораблик, но ветер унёс его на островок в левом нижнем углу.')],
+        [pip, tr("Ice blocks float, you know. If you shoved one into the water, you'd have a stepping-stone.", 'А ледяные блоки, между прочим, плавают. Столкни один в воду, и получится мостик.')],
+        [pebble, tr("And if you find fish, Grimfin can never resist them. Auntie Puffin always has a few, but she looks upset about something.", 'А перед рыбой Гримфин ни за что не устоит. У тётушки Тупик всегда есть парочка, только она чем-то расстроена.')],
+        [pip, tr('Little Bobble is moping by the pond, too. Meet us at the dock on the right when you have the boat!', 'И малыш Бобл грустит у пруда. Как достанешь кораблик, приходи к причалу справа!')],
       ]);
       this.refreshQuests();
       return;
     }
     if (!this.inv.has('boat')) {
       return this.ui.say([
-        [me, 'Push an ice block by walking into it. Get one into the water right next to the little island in the bottom-left.'],
-        [me, 'If it gets stuck, click it and you can shove it back where it started.'],
+        [me, tr('Push an ice block by walking into it. Get one into the water right next to the little island in the bottom-left.', 'Чтобы толкнуть ледяной блок, просто иди на него. Столкни его в воду прямо рядом с островком слева внизу.')],
+        [me, tr('If it gets stuck, click it and you can shove it back where it started.', 'Если он застрянет, нажми на него, и его можно будет вернуть на место.')],
       ]);
     }
-    if (!this.puffinHelped) return this.ui.say([[me, 'Have you talked to Auntie Puffin? Fish would make Grimfin much easier to sneak past.']]);
-    if (!this.bobbleHelped) return this.ui.say([[me, "Bobble's ball is stuck on the island in the pond. He's a brave little seal; he might help you one day."]]);
-    if (this.stars < 8) return this.ui.say([[me, 'There are paper stars tucked behind things all over the page. But only if you want to look! The dock is that way.']]);
-    return this.ui.say([[me, 'You found everything! To the dock!']]);
+    if (!this.puffinHelped) return this.ui.say([[me, tr('Have you talked to Auntie Puffin? Fish would make Grimfin much easier to sneak past.', 'Загляни к тётушке Тупик! С рыбой прокрасться мимо Гримфина куда проще.')]]);
+    if (!this.bobbleHelped) return this.ui.say([[me, tr("Bobble's ball is stuck on the island in the pond. He's a brave little seal; he might help you one day.", 'Мячик Бобла застрял на островке в пруду. Бобл — смелый маленький тюлень, когда-нибудь он тебе поможет.')]]);
+    if (this.stars < 8) return this.ui.say([[me, tr('There are paper stars tucked behind things all over the page. But only if you want to look! The dock is that way.', 'По всей странице спрятаны бумажные звёздочки. Но это если захочешь поискать! Причал вон там.')]]);
+    return this.ui.say([[me, tr('You found everything! To the dock!', 'Всё найдено! Вперёд, к причалу!')]]);
   }
 
   private async talkPuffin() {
     const { puffin, nar } = this.S;
-    if (this.level!.index > 0) return this.ui.say([[puffin, 'Welcome home, dears! Tuck, come here and let me wrap you up.']]);
-    if (this.puffinHelped) return this.ui.say([[puffin, "Tell Tuck his scarf will be ready by the time he's home."]]);
+    if (this.level!.index > 0) return this.ui.say([[puffin, tr('Welcome home, dears! Tuck, come here and let me wrap you up.', 'С возвращением, мои дорогие! Тук, иди сюда, я тебя укутаю.')]]);
+    if (this.puffinHelped) return this.ui.say([[puffin, tr("Tell Tuck his scarf will be ready by the time he's home.", 'Передай Туку, что к его возвращению шарф будет готов.')]]);
     if (this.yarnFound) {
       await this.ui.say([
-        [puffin, 'My yarn! Oh, bless your mittens.'],
-        [puffin, 'Here, take my fishing bucket. Three of my best fish.'],
-        [puffin, "Grimfin goes all silly for fish. Toss one into his fishing hole and he'll forget about you for a while."],
+        [puffin, tr('My yarn! Oh, bless your mittens.', 'Моя пряжа! Ох, спасибо тебе, золотце.')],
+        [puffin, tr('Here, take my fishing bucket. Three of my best fish.', 'Вот, возьми моё ведёрко. Тут три мои лучшие рыбки.')],
+        [puffin, tr("Grimfin goes all silly for fish. Toss one into his fishing hole and he'll forget about you for a while.", 'Гримфин от рыбы просто голову теряет. Брось рыбку в лунку, и он ненадолго про тебя забудет.')],
       ]);
       this.inv.delete('yarn');
       this.puffinHelped = true;
       this.fish = 3;
-      this.give('fish', 'Auntie Puffin gave you 3 fish!');
+      this.give('fish', tr('Auntie Puffin gave you 3 fish!', 'Тётушка Тупик дала тебе 3 рыбки!'));
       this.hearts(this.level!.actors.get('puffin')!.position);
       return;
     }
     if (!this.puffinMet) {
       this.puffinMet = true;
       await this.ui.say([
-        [puffin, "Oh, hello, dear. You haven't seen a ball of red yarn, have you?"],
-        [puffin, "I was knitting Tuck a welcome-home scarf and it rolled away into the igloo. It's ever so dark in there."],
-        [puffin, "Find it for me and I'll give you my fishing bucket."],
+        [puffin, tr("Oh, hello, dear. You haven't seen a ball of red yarn, have you?", 'Ох, здравствуй, золотце. Тебе не попадался клубок красной пряжи?')],
+        [puffin, tr("I was knitting Tuck a welcome-home scarf and it rolled away into the igloo. It's ever so dark in there.", 'Я вязала Туку шарф к его возвращению, а клубок укатился в иглу. А там так темно!')],
+        [puffin, tr("Find it for me and I'll give you my fishing bucket.", 'Найди его, и я отдам тебе своё ведёрко с рыбой.')],
       ]);
-      if (!this.inv.has('lantern')) await this.ui.say([[nar, 'You will need a light to search the igloo.']]);
+      if (!this.inv.has('lantern')) await this.ui.say([[nar, tr('You will need a light to search the igloo.', 'Чтобы обыскать иглу, понадобится свет.')]]);
       this.refreshQuests();
       return;
     }
-    return this.ui.say([[puffin, 'The yarn rolled into the igloo, dear. Take a light with you.']]);
+    return this.ui.say([[puffin, tr('The yarn rolled into the igloo, dear. Take a light with you.', 'Пряжа укатилась в иглу, золотце. Возьми с собой огонёк.')]]);
   }
 
   private async talkBobble() {
     const { bobble } = this.S;
-    if (this.level!.index === 1) return this.ui.say([[bobble, "I'm ready! One big splash, saved just for Grimfin."]]);
-    if (this.bobbleHelped) return this.ui.say([[bobble, 'Thank you! If that big bully ever bothers you, I will splash him right in the eye!']]);
+    if (this.level!.index === 1) return this.ui.say([[bobble, tr("I'm ready! One big splash, saved just for Grimfin.", 'Я готов! Один большой плюх, специально для Гримфина.')]]);
+    if (this.bobbleHelped) return this.ui.say([[bobble, tr('Thank you! If that big bully ever bothers you, I will splash him right in the eye!', 'Спасибо! Если этот задира к тебе пристанет, я плесну ему прямо в глаз!')]]);
     if (this.inv.has('ball')) {
       await this.ui.say([
-        [bobble, 'My ball! You got my ball!'],
-        [bobble, "I can't swim very far yet, but I can splash REALLY hard."],
-        [bobble, "If Grimfin ever catches you, I'll splash him right in the eye! Once, anyway."],
+        [bobble, tr('My ball! You got my ball!', 'Мой мячик! Мой мячик вернулся!')],
+        [bobble, tr("I can't swim very far yet, but I can splash REALLY hard.", 'Я пока не умею далеко плавать, но плескаться умею ОЧЕНЬ сильно.')],
+        [bobble, tr("If Grimfin ever catches you, I'll splash him right in the eye! Once, anyway.", 'Если Гримфин тебя поймает, я плесну ему прямо в глаз! Ну, один разок.')],
       ]);
       this.inv.delete('ball');
       this.bobbleHelped = true;
       this.refreshInventory();
       this.sound.chime([0, 7, 12, 19]);
       this.hearts(this.level!.actors.get('bobble')!.position);
-      this.ui.toast('Bobble will come along and save you once from Grimfin!');
+      this.ui.toast(tr('Bobble will come along and save you once from Grimfin!', 'Бобл пойдёт с тобой и один раз спасёт от Гримфина!'));
       this.refreshQuests();
       return;
     }
     if (!this.bobbleMet) {
       this.bobbleMet = true;
       await this.ui.say([
-        [bobble, 'Sniff. My ball bounced onto the little island in the pond.'],
-        [bobble, "I'm too little to swim out there. Could you get it for me?"],
+        [bobble, tr('Sniff. My ball bounced onto the little island in the pond.', 'Хнык. Мой мячик ускакал на островок в пруду.')],
+        [bobble, tr("I'm too little to swim out there. Could you get it for me?", 'Я слишком маленький, чтобы туда доплыть. Достанешь его мне?')],
       ]);
       this.refreshQuests();
       return;
     }
-    return this.ui.say([[bobble, "There's an ice block near the pond. Maybe it could be a stepping-stone?"]]);
+    return this.ui.say([[bobble, tr("There's an ice block near the pond. Maybe it could be a stepping-stone?", 'Возле пруда есть ледяной блок. Может, из него выйдет мостик?')]]);
   }
 
   private async searchIgloo() {
     const { nar } = this.S;
-    if (!this.inv.has('lantern')) return this.ui.say([[nar, "It's pitch dark inside the igloo. You'd need a light to see anything."]]);
-    if (this.yarnFound) return this.ui.say([[nar, 'Just snow, and a very surprised beetle.']]);
+    if (!this.inv.has('lantern')) return this.ui.say([[nar, tr("It's pitch dark inside the igloo. You'd need a light to see anything.", 'В иглу темно, хоть глаз выколи. Без света ничего не разглядеть.')]]);
+    if (this.yarnFound) return this.ui.say([[nar, tr('Just snow, and a very surprised beetle.', 'Только снег и очень удивлённый жучок.')]]);
     this.busy = true;
     tween(500, (k) => (this.lanternPower = 1 + Math.sin(Math.PI * k) * 3), linear);
-    await this.ui.say([[nar, 'You hold the lantern up to the doorway. Something red glints at the back of the igloo...']]);
+    await this.ui.say([[nar, tr('You hold the lantern up to the doorway. Something red glints at the back of the igloo...', 'Ты поднимаешь фонарик у входа. В глубине иглу блестит что-то красное...')]]);
     this.yarnFound = true;
-    this.give('yarn', 'You found a ball of red yarn!');
-    if (!this.puffinMet) await this.ui.say([[nar, 'Somebody must be missing this.']]);
+    this.give('yarn', tr('You found a ball of red yarn!', 'Находка: клубок красной пряжи!'));
+    if (!this.puffinMet) await this.ui.say([[nar, tr('Somebody must be missing this.', 'Наверное, кто-то его ищет.')]]);
     this.busy = false;
   }
 
@@ -1375,7 +1408,7 @@ export class Game {
     const intoWater = ch === '~';
     if (occupied || !(ch === '.' || ch === 'P' || intoWater)) {
       this.sound.bump();
-      const r = await this.ui.ask(this.S.nar, "The ice block won't budge that way. Shove it back to where it started?", ['Yes, reset it', 'No']);
+      const r = await this.ui.ask(this.S.nar, tr("The ice block won't budge that way. Shove it back to where it started?", 'Туда ледяной блок не сдвинуть. Вернуть его на место?'), [tr('Yes, reset it', 'Да, вернуть'), tr('No', 'Нет')]);
       if (r === 0) await this.resetBlock(b);
       return;
     }
@@ -1399,7 +1432,7 @@ export class Game {
       const fg = this.makeFloe(L, t);
       fg.scale.setScalar(0.001);
       await tween(380, (k) => fg.scale.setScalar(Math.max(0.001, k)), easeOutBack);
-      this.ui.toast('Splash! The ice block makes a stepping-stone.');
+      this.ui.toast(tr('Splash! The ice block makes a stepping-stone.', 'Плюх! Ледяной блок стал мостиком.'));
       const goal = [...L.items.entries()].find(([, v]) => v.id === b.goal);
       if (goal) {
         const [gx, gz] = goal[0].split(',').map(Number);
@@ -1410,7 +1443,7 @@ export class Game {
           nb.scale.setScalar(0.001);
           this.sound.fold();
           tween(380, (k) => nb.scale.setScalar(Math.max(0.001, k)), easeOutBack);
-          this.ui.toast('Crack! A fresh block of ice pops up where the first one was.');
+          this.ui.toast(tr('Crack! A fresh block of ice pops up where the first one was.', 'Хрусть! На месте первого блока появился новый.'));
         }
       }
     } else {
@@ -1425,7 +1458,7 @@ export class Game {
     const L = this.level!;
     if (same(b.cell, b.origin)) return;
     if (same(this.pos, b.origin)) {
-      this.ui.toast('Step off that spot first.');
+      this.ui.toast(tr('Step off that spot first.', 'Сначала сойди с этого места.'));
       return;
     }
     L.grid[b.cell[1]][b.cell[0]] = '.';
@@ -1442,22 +1475,22 @@ export class Game {
     const { nar, pip, pebble } = this.S;
     const L = this.level!;
     if (!this.talked) {
-      await this.ui.say([[nar, 'The little dock creaks over the cold water. Perhaps those penguins know where you are headed.']]);
+      await this.ui.say([[nar, tr('The little dock creaks over the cold water. Perhaps those penguins know where you are headed.', 'Маленький причал поскрипывает над холодной водой. Может, те пингвины знают, куда тебе дальше.')]]);
       return;
     }
     if (!this.inv.has('boat')) {
-      await this.ui.say([[pip, "We can't sail without Pebble's boat! It's on the little island in the bottom-left corner."]]);
+      await this.ui.say([[pip, tr("We can't sail without Pebble's boat! It's on the little island in the bottom-left corner.", 'Без кораблика Гальки нам не уплыть! Он на островке в левом нижнем углу.')]]);
       return;
     }
     this.busy = true;
     const [a, b] = L.def.dockFriends ?? [[this.pos[0] - 1, this.pos[1] - 1], [this.pos[0] - 1, this.pos[1] + 1]];
     await Promise.all([this.hopActor('pip', a), this.hopActor('pebble', b)]);
     const prompt = this.fish
-      ? `Lantern, boat and ${this.fish} fish, all packed! Shall we set sail for Grimfin's Cove?`
-      : 'We have the boat, but no fish for Grimfin. Auntie Puffin might help. Set sail anyway?';
-    const choice = await this.ui.ask(pebble, prompt, ['Set sail!', 'Not yet']);
+      ? tr(`Lantern, boat and ${this.fish} fish, all packed! Shall we set sail for Grimfin's Cove?`, `Фонарик, кораблик и ${fishes(this.fish)} — всё собрано! Отплываем в бухту Гримфина?`)
+      : tr('We have the boat, but no fish for Grimfin. Auntie Puffin might help. Set sail anyway?', 'Кораблик есть, а рыбы для Гримфина нет. Может, тётушка Тупик поможет. Всё равно отплываем?');
+    const choice = await this.ui.ask(pebble, prompt, [tr('Set sail!', 'Отплываем!'), tr('Not yet', 'Ещё нет')]);
     if (choice === 0) {
-      await this.ui.say([[pip, 'Hold on to your hood!']]);
+      await this.ui.say([[pip, tr('Hold on to your hood!', 'Держи капюшон!')]]);
       this.finish?.();
     } else {
       this.busy = false;
@@ -1557,12 +1590,12 @@ export class Game {
       case 'done-munching':
         this.orcaInner.rotation.z = 0;
         await this.orcaDive();
-        this.ui.toast('Grimfin finished his fish… and he is still hungry.');
+        this.ui.toast(tr('Grimfin finished his fish… and he is still hungry.', 'Гримфин доел рыбку… и всё ещё голоден.'));
         break;
       case 'lost':
         this.popBubble(cachedArt('question', A.question), this.orcaTop());
         this.sound.blip(150);
-        this.ui.toast('Grimfin lost sight of you. Phew!');
+        this.ui.toast(tr('Grimfin lost sight of you. Phew!', 'Гримфин тебя потерял. Фух!'));
         break;
       case 'caught':
       case 'moved':
@@ -1578,7 +1611,7 @@ export class Game {
           this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
           this.sound.growl();
           this.shake = 0.12;
-          this.ui.toast('Grimfin spotted you! Hop out of his sight, or he charges next turn!');
+          this.ui.toast(tr('Grimfin spotted you! Hop out of his sight, or he charges next turn!', 'Гримфин тебя заметил! Скорее прячься, или на следующем ходу он бросится!'));
         }
         if (r === 'caught') {
           if (this.bobbleHelped && !this.bobbleSplashUsed) {
@@ -1654,8 +1687,8 @@ export class Game {
     this.shake = 0.2;
     await tween(400, (k) => (inner.rotation.z = Math.sin(k * Math.PI * 4) * 0.2), linear);
     await this.ui.say([
-      [bobble, 'Hey, big bully! SPLAAASH!'],
-      [grim, 'Blub! My EYE! Who threw a whole puddle at me?!'],
+      [bobble, tr('Hey, big bully! SPLAAASH!', 'Эй, задира! ПЛЮ-У-УХ!')],
+      [grim, tr('Blub! My EYE! Who threw a whole puddle at me?!', 'Буль! Мой ГЛАЗ! Кто швырнул в меня целую лужу?!')],
     ]);
     inner.rotation.z = 0;
     await this.orcaDive();
@@ -1663,7 +1696,7 @@ export class Game {
     this.orca.pos = null;
     this.orca.alert = false;
     this.orca.i = farLaneBefore(this.opath, this.pos);
-    this.ui.toast("Bobble's splash sent Grimfin under. Keep going!");
+    this.ui.toast(tr("Bobble's splash sent Grimfin under. Keep going!", 'От плюха Бобла Гримфин ушёл под воду. Вперёд!'));
     this.updateRings();
     this.updateGaze();
     this.refreshQuests();
@@ -1705,10 +1738,10 @@ export class Game {
     inner.rotation.z = 0;
     await tween(360, (k) => this.player.scale.setScalar(Math.max(0.001, k)), easeOutBack);
     await this.ui.say([[grim, pick([
-      'HAR! Off my floes, little paper thing!',
-      'Splash! Back you go!',
-      'Nobody sneaks past Grimfin! HAR HAR HAR!',
-      'I spy, with my little spyglass... YOU!',
+      tr('HAR! Off my floes, little paper thing!', 'ХА! Прочь с моих льдин, бумажная мелюзга!'),
+      tr('Splash! Back you go!', 'Плюх! А ну назад!'),
+      tr('Nobody sneaks past Grimfin! HAR HAR HAR!', 'Мимо Гримфина никто не проскользнёт! ХА-ХА-ХА!'),
+      tr('I spy, with my little spyglass... YOU!', 'Вижу-вижу в подзорную трубу... ТЕБЯ!'),
     ])]]);
     await this.orcaDive();
     this.orca.pos = null;
@@ -1725,23 +1758,23 @@ export class Game {
     const L = this.level;
     if (!L || this.busy || this.walking || this.ui.open) return;
     if (this.fish <= 0) {
-      this.ui.toast('Your fish bucket is empty.');
+      this.ui.toast(tr('Your fish bucket is empty.', 'Ведёрко с рыбой пусто.'));
       return;
     }
     if (!L.def.orca) {
-      this.ui.toast('Save your fish for Grimfin!');
+      this.ui.toast(tr('Save your fish for Grimfin!', 'Прибереги рыбу для Гримфина!'));
       return;
     }
     if (!this.sail) {
       for (const [id, c] of L.actorCell) if (id.startsWith('hole') && manhattan(c, this.pos) === 1) return this.go(c, id);
-      this.ui.toast('Stand next to a fishing hole (the little flags) to toss a fish.');
+      this.ui.toast(tr('Stand next to a fishing hole (the little flags) to toss a fish.', 'Чтобы бросить рыбку, встань рядом с лункой (у флажка).'));
       return;
     }
     // Overboard: the open water beside the boat, as far from the lighthouses' light as possible.
     const spots = DIRS.map((d): Cell => [this.pos[0] + d[0], this.pos[1] + d[1]])
       .filter((c) => this.inBounds(c) && '~*c'.includes(L.grid[c[1]][c[0]]) && !this.inSafeZone(c));
     if (!spots.length) {
-      this.ui.toast("Grimfin won't come this close to a shining lighthouse anyway.");
+      this.ui.toast(tr("Grimfin won't come this close to a shining lighthouse anyway.", 'Гримфин и так не подплывёт к светящемуся маяку.'));
       return;
     }
     this.walking = true;
@@ -1751,7 +1784,7 @@ export class Game {
   private async tossFish(hole: Cell) {
     const L = this.level!;
     if (this.fish <= 0) {
-      return this.ui.say([[this.S.nar, this.puffinHelped ? 'Your bucket is empty. Time your hops with the glowy squares instead.' : "You haven't got any fish. Time your hops with the glowy squares instead."]]);
+      return this.ui.say([[this.S.nar, this.puffinHelped ? tr('Your bucket is empty. Time your hops with the glowy squares instead.', 'Ведёрко пусто. Придётся прыгать, следя за светящимися квадратиками.') : tr("You haven't got any fish. Time your hops with the glowy squares instead.", 'Рыбы у тебя нет. Придётся прыгать, следя за светящимися квадратиками.')]]);
     }
     this.busy = true;
     this.fish--;
@@ -1781,7 +1814,7 @@ export class Game {
       this.orcaInner.scale.x = 1;
     }
     this.hearts(b, 3);
-    this.ui.toast(fresh ? 'Munch munch munch… Grimfin is busy!' : 'Another fish! Grimfin will be busy even longer.');
+    this.ui.toast(fresh ? tr('Munch munch munch… Grimfin is busy!', 'Ням-ням-ням… Гримфин занят!') : tr('Another fish! Grimfin will be busy even longer.', 'Ещё рыбка! Гримфин будет занят ещё дольше.'));
     this.updateRings();
     this.updateGaze();
     this.refreshQuests();
@@ -1801,7 +1834,7 @@ export class Game {
     const { nar, pip, pebble, tuck, grim, bobble } = this.S;
     const tuckPv = L.actors.get('tuck')!;
     const cage = L.actors.get('cage')!;
-    await this.ui.say([[tuck, 'You came! You really came!'], [tuck, 'Quick, pull the knot on the cage door!']]);
+    await this.ui.say([[tuck, tr('You came! You really came!', 'Ты здесь! Ты правда здесь!')], [tuck, tr('Quick, pull the knot on the cage door!', 'Скорее, дёрни узелок на дверце клетки!')]]);
     this.sound.rustle(1.2);
     this.sound.fold();
     await tween(520, (k) => (cage.rotation.x = (-Math.PI / 2) * k), easeIn);
@@ -1812,7 +1845,7 @@ export class Game {
     this.sound.chime([0, 4, 7, 12, 16]);
     this.hearts(tuckPv.position, 9);
     await tween(320, (k) => (happy.position.y = Math.sin(Math.PI * k) * 0.3), linear);
-    await this.ui.say([[tuck, 'Free! Free as a snowflake!']]);
+    await this.ui.say([[tuck, tr('Free! Free as a snowflake!', 'Свобода! Я свободен, как снежинка!')]]);
 
     // Grimfin isn't done yet
     const o = this.orca;
@@ -1825,9 +1858,9 @@ export class Game {
     o.pos = F.orcaRise;
     this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
     await this.ui.say([
-      [grim, 'HAR! You think you can just sail away?'],
-      [grim, 'My fog bank lies between you and home. Nobody finds their way through it. NOBODY!'],
-      [grim, 'This isn’t over, little paper thing!'],
+      [grim, tr('HAR! You think you can just sail away?', 'ХА! Думаете, можно просто взять и уплыть?')],
+      [grim, tr('My fog bank lies between you and home. Nobody finds their way through it. NOBODY!', 'Между вами и домом лежит мой туман. Сквозь него никто не найдёт дорогу. НИКТО!')],
+      [grim, tr('This isn’t over, little paper thing!', 'Это ещё не конец, бумажная мелюзга!')],
     ]);
     await this.orcaDive();
     this.orcaPv.visible = false;
@@ -1849,15 +1882,15 @@ export class Game {
       riderPvs.forEach((r, i) => r.position.copy(boat.position).add(offsets[i]));
     }, easeInOut);
     const cheer: Line[] = [
-      [pip, 'TUCK!'],
-      [pebble, 'We knew you could do it!'],
-      [tuck, 'Thank you, friend. Now... how do we get home through all that fog?'],
+      [pip, tr('TUCK!', 'ТУК!')],
+      [pebble, tr('We knew you could do it!', 'Мы знали, что у тебя получится!')],
+      [tuck, tr('Thank you, friend. Now... how do we get home through all that fog?', 'Спасибо, друг. А теперь... как же мы доберёмся домой сквозь этот туман?')],
     ];
-    if (this.bobbleHelped) cheer.push([bobble, 'With a lantern, silly!']);
-    else cheer.push([pip, 'With a lantern, of course!']);
+    if (this.bobbleHelped) cheer.push([bobble, tr('With a lantern, silly!', 'С фонариком, глупенький!')]);
+    else cheer.push([pip, tr('With a lantern, of course!', 'С фонариком, конечно!')]);
     await this.ui.say(cheer);
     this.hearts(tuckPv.position, 6);
-    await this.ui.say([[nar, 'So everyone squeezed into the little paper boat, and pushed off into the fog.']]);
+    await this.ui.say([[nar, tr('So everyone squeezed into the little paper boat, and pushed off into the fog.', 'И все уместились в бумажном кораблике и отчалили в туман.')]]);
     this.finish?.();
   }
 
@@ -1866,8 +1899,12 @@ export class Game {
   private async wakeLighthouse(id: string) {
     const L = this.level!;
     const b = L.beacons.get(id)!;
-    if (b.lit) return this.ui.say([[this.S.light, 'All lit and wide awake! Off you go, little boat.']]);
-    if (this.lanternCovered) return this.ui.say([[this.S.nar, 'You need to uncover your lantern to wake a lighthouse. Press L.']]);
+    if (b.lit) return this.ui.say([[this.S.light, tr('All lit and wide awake! Off you go, little boat.', 'Горю и совсем не сплю! Плыви, кораблик.')]]);
+    if (this.lanternCovered) {
+      return this.ui.say([[this.S.nar, touch
+        ? tr('You need to uncover your lantern to wake a lighthouse. Tap the 🏮 button.', 'Чтобы разбудить маяк, открой фонарик. Нажми кнопку 🏮.')
+        : tr('You need to uncover your lantern to wake a lighthouse. Press L.', 'Чтобы разбудить маяк, открой фонарик. Нажми L.')]]);
+    }
     this.busy = true;
     b.lit = true;
     this.checkpoint = [...this.pos];
@@ -1883,7 +1920,11 @@ export class Game {
     this.reveal(b.cell, 4.8);
     this.hearts(b.pv.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 6);
     const n = [...L.beacons.values()].filter((x) => x.lit).length;
-    const yawns = ['Mmh? Oh! A light! I was having the loveliest nap.', 'Hm-hmm? Is it night already? Shining now, shining!', '*yaaawn* Good morning! Er, good night! I mean: I am ON!'];
+    const yawns = [
+      tr('Mmh? Oh! A light! I was having the loveliest nap.', 'М-м? Ой! Огонёк! Мне снился такой чудесный сон.'),
+      tr('Hm-hmm? Is it night already? Shining now, shining!', 'Хм-м? Уже ночь? Свечу-свечу!'),
+      tr('*yaaawn* Good morning! Er, good night! I mean: I am ON!', '*зева-а-аю* Доброе утро! То есть спокойной ночи! В общем, я ГОРЮ!'),
+    ];
     await this.ui.say([[this.S.light, yawns[(n - 1) % yawns.length]]]);
     if (n === L.beacons.size) {
       this.gateOpen = true;
@@ -1891,9 +1932,9 @@ export class Game {
       if (gate) await tween(600, (k) => (gate.rotation.x = (-Math.PI / 2) * k), easeIn);
       this.sound.chime([0, 4, 7, 12, 16, 19]);
       this.reveal([21, 7], 3);
-      await this.ui.say([[this.S.pip, 'All three are shining! Listen, the harbour gate is opening! Home is that way →']]);
+      await this.ui.say([[this.S.pip, tr('All three are shining! Listen, the harbour gate is opening! Home is that way →', 'Все три светят! Слышите? Ворота гавани открываются! Дом вон там →')]]);
     } else {
-      this.ui.toast(`Lighthouse awake! ${n}/${L.beacons.size}. Grimfin keeps clear of its light.`);
+      this.ui.toast(tr(`Lighthouse awake! ${n}/${L.beacons.size}. Grimfin keeps clear of its light.`, `Маяк проснулся! ${n}/${L.beacons.size}. Гримфин держится подальше от его света.`));
     }
     this.updateRings();
     this.updateGaze();
@@ -1921,10 +1962,10 @@ export class Game {
     o.pos = F.orcaRise;
     this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
     await this.ui.say([
-      [grim, 'HAR! Found your way through my fog, did you?'],
-      [grim, "Well, you're not getting into that harbour. Not while Grimfin is around!"],
+      [grim, tr('HAR! Found your way through my fog, did you?', 'ХА! Нашли дорогу сквозь мой туман, да?')],
+      [grim, tr("Well, you're not getting into that harbour. Not while Grimfin is around!", 'Но в гавань вам не попасть. Пока здесь Гримфин — ни за что!')],
     ]);
-    await this.ui.ask(nar, 'Grimfin rears up between you and home. The lantern flickers in your mittens…', ['Raise the lantern high!']);
+    await this.ui.ask(nar, tr('Grimfin rears up between you and home. The lantern flickers in your mittens…', 'Гримфин встаёт на дыбы между тобой и домом. Фонарик мерцает в твоих варежках…'), [tr('Raise the lantern high!', 'Поднять фонарик повыше!')]);
 
     this.lanternCovered = false;
     this.onLantern(false);
@@ -1946,10 +1987,10 @@ export class Game {
     if (L.fog) this.reveal([COLS / 2, ROWS / 2], 30);
     L.shadows.forEach((s, i) => tween(1000, (k) => s.scale.setScalar(Math.max(0.001, k)), easeOutBack, 500 + i * 160));
     await wait(1900 + L.shadows.length * 120);
-    const scared: Line[] = [[grim, 'W-w-what?! A GIANT penguin army?!']];
-    if (this.puffinHelped) scared.push([grim, 'And a GIANT PUFFIN?! With KNITTING NEEDLES?!']);
-    if (this.bobbleHelped) scared.push([grim, 'And a GIANT... wait, is that the little seal? He looks ENORMOUS!']);
-    scared.push([grim, 'I just remembered I have to be fierce somewhere else. Very far away. Goodbye!']);
+    const scared: Line[] = [[grim, tr('W-w-what?! A GIANT penguin army?!', 'Ч-ч-что?! ГИГАНТСКАЯ армия пингвинов?!')]];
+    if (this.puffinHelped) scared.push([grim, tr('And a GIANT PUFFIN?! With KNITTING NEEDLES?!', 'И ГИГАНТСКИЙ ТУПИК?! Со СПИЦАМИ?!')]);
+    if (this.bobbleHelped) scared.push([grim, tr('And a GIANT... wait, is that the little seal? He looks ENORMOUS!', 'И ГИГАНТСКИЙ... погодите, это что, тот малыш-тюлень? Да он ОГРОМНЫЙ!')]);
+    scared.push([grim, tr('I just remembered I have to be fierce somewhere else. Very far away. Goodbye!', 'Я тут вспомнил, что мне надо быть грозным где-нибудь в другом месте. Очень далеко. До свидания!')]);
     await this.ui.say(scared);
     const pv = this.orcaPv, inner = this.orcaInner;
     const z0 = pv.position.z;
@@ -1995,15 +2036,15 @@ export class Game {
       ashore.push(f);
     }
     const lines: Line[] = [
-      [pip, 'HOME!'],
-      [tuck, 'Thank you, friend. You were braver than a whole army of penguins.'],
-      [pebble, '...even a GIANT one.'],
+      [pip, tr('HOME!', 'ДОМА!')],
+      [tuck, tr('Thank you, friend. You were braver than a whole army of penguins.', 'Спасибо, друг. Ты храбрее целой армии пингвинов.')],
+      [pebble, tr('...even a GIANT one.', '...даже ГИГАНТСКОЙ.')],
     ];
     if (this.puffinHelped) {
-      lines.push([puffin, 'Tuck! Come here, dear. I finished your welcome-home scarf!']);
-      lines.push([tuck, 'It is the cosiest scarf in the whole book!']);
+      lines.push([puffin, tr('Tuck! Come here, dear. I finished your welcome-home scarf!', 'Тук! Иди сюда, дорогой. Я довязала тебе шарф!')]);
+      lines.push([tuck, tr('It is the cosiest scarf in the whole book!', 'Это самый уютный шарф во всей книжке!')]);
     }
-    if (this.bobbleHelped) lines.push([bobble, 'Did you see my splash? Did you SEE it?']);
+    if (this.bobbleHelped) lines.push([bobble, tr('Did you see my splash? Did you SEE it?', 'Видели мой плюх? Вы ВИДЕЛИ?')]);
     await this.ui.say(lines);
     const puffinPv = L.actors.get('puffin');
     if (puffinPv) ashore.push(puffinPv);
@@ -2016,7 +2057,7 @@ export class Game {
         return tween(300, (k) => (pvj.position.y = y0 + Math.sin(Math.PI * k) * 0.25), linear, i * 60);
       }));
     }
-    await this.ui.say([[nar, 'And so, with a lantern held high and your friends at your side, you came home across the folded sea, just as the sun came up.']]);
+    await this.ui.say([[nar, tr('And so, with a lantern held high and your friends at your side, you came home across the folded sea, just as the sun came up.', 'Так, с высоко поднятым фонариком, все друзья вместе вернулись домой по сложенному бумажному морю — как раз когда взошло солнце.')]]);
     this.finish?.();
   }
 

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { makeCanvas, ctx2d, paperCanvas, canvasTex, paperMat, mulberry } from './paper';
 import { tween, easeInOut } from './tween';
 import * as A from './art';
+import { tr } from './i18n';
 
 export const PAGE_W = 12.35;
 export const PAGE_D = 14.6;
@@ -97,14 +98,14 @@ function coverCanvas() {
   g.fillStyle = gold;
   g.textAlign = 'center';
   g.font = 'italic 64px Georgia, serif';
-  g.fillText('A pop-up adventure', W / 2, 230);
+  g.fillText(tr('A pop-up adventure', 'Книжка-раскладушка'), W / 2, 230);
   g.font = 'bold 128px Georgia, serif';
-  g.fillText('The Penguin', W / 2, 390);
-  g.fillText('Rescue', W / 2, 520);
+  g.fillText(tr('The Penguin', 'Спасение'), W / 2, 390);
+  g.fillText(tr('Rescue', 'пингвина'), W / 2, 520);
   const p = A.penguin({ scarf: '#c8413b', tuft: true });
   g.drawImage(p, W / 2 - 165, 590, 330, 426);
   g.font = 'italic 44px Georgia, serif';
-  g.fillText('in which a lantern is raised', W / 2, 1150);
+  g.fillText(tr('in which a lantern is raised', 'в которой поднимают фонарик'), W / 2, 1150);
   return c;
 }
 
@@ -114,6 +115,13 @@ export class Book {
   private turner = new THREE.Group();
   private turnGeo: THREE.PlaneGeometry;
   private turnBase: Float32Array;
+  private coverTex: THREE.Texture;
+
+  /** Redraw the cover lettering after the language changes. */
+  refreshCover() {
+    this.coverTex.image = coverCanvas();
+    this.coverTex.needsUpdate = true;
+  }
 
   constructor(scene: THREE.Scene) {
     scene.add(this.root);
@@ -135,6 +143,7 @@ export class Book {
     const pageL = new THREE.MeshStandardMaterial({ map: canvasTex(pageCanvas(-1, 12)), roughness: 0.95 });
     const pageR = new THREE.MeshStandardMaterial({ map: canvasTex(pageCanvas(1, 13)), roughness: 0.95 });
     const coverTex = canvasTex(coverCanvas());
+    this.coverTex = coverTex;
     coverTex.center.set(0.5, 0.5);
     coverTex.rotation = Math.PI;
     const coverArt = new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.8 });

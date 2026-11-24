@@ -1,6 +1,7 @@
 // All character, prop and scenery art, drawn as layered cut paper in canvas.
 // These are stand-ins for painted or generated textures: each returns a canvas.
 import { makeCanvas, ctx2d, mulberry } from './paper';
+import { tr } from './i18n';
 
 type G = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
@@ -927,7 +928,7 @@ export function crate() {
   g.fillStyle = '#fbf5e6';
   g.font = 'bold 26px Georgia, serif';
   g.textAlign = 'center';
-  g.fillText('FISH', 85, 102);
+  g.fillText(tr('FISH', 'РЫБА'), 85, 102);
   return c;
 }
 

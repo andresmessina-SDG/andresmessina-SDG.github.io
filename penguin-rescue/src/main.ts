@@ -7,9 +7,18 @@ import { Game } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
+import { lang, tr, touch, applyDom, setLang, onLang, type Lang } from './i18n';
+
+const params = new URLSearchParams(location.search);
+// Phones and small tablets get a lighter renderer; it steps down further on its own if frames drop.
+const mobile = touch || Math.min(screen.width, screen.height) < 600;
+const adaptive = params.get('quality') !== 'high';
+let maxDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
+applyDom();
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+// The image goes through post-processing render targets, so canvas antialiasing would only cost memory.
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -25,6 +34,8 @@ const camTarget = new THREE.Vector3(0, 0.2, -0.6);
 let wideDist = 40;
 let followDist = 22;
 let camDist = 40;
+// How far the follow view may slide before it would show the table past the book's edges.
+let clampX = 6.5, clampZ0 = -3.2, clampZ1 = 3.6;
 const look = new THREE.Vector3().copy(camTarget);
 
 // Lighting: a warm lamp over the table, a soft bounce, and (at night) cool moonlight.
@@ -34,7 +45,7 @@ const lamp = new THREE.SpotLight(0xffc98a, 5.2, 0, 0.5, 0.8, 0);
 lamp.position.set(-11, 28, 15);
 lamp.target.position.set(0.5, 0, -0.5);
 lamp.castShadow = true;
-lamp.shadow.mapSize.set(4096, 4096);
+lamp.shadow.mapSize.setScalar(mobile ? 2048 : 4096);
 lamp.shadow.camera.near = 15;
 lamp.shadow.camera.far = 60;
 lamp.shadow.bias = -0.0004;
@@ -62,20 +73,29 @@ const post = new Post(renderer, scene, camera);
 const sound = new Sound();
 const ui = new UI(sound);
 const game = new Game(scene, camera, sound, ui);
-const snow = new Snow(scene);
+const snow = new Snow(scene, mobile ? 360 : 700);
+if (mobile) renderer.shadowMap.autoUpdate = false;
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio, 2);
+  const dpr = maxDpr;
   renderer.setPixelRatio(dpr);
   renderer.setSize(w, h, false);
   post.setSize(w, h, dpr);
   camera.aspect = w / h;
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const tanH = tanV * camera.aspect;
-  // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 15 by 9 cells.
+  // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 15 by 9 cells,
+  // or about 10 cells across on a phone held upright, so the characters stay a good size.
   wideDist = Math.max(8.2 / tanV, 13.4 / tanH);
-  followDist = Math.max(4.6 / tanV, 7.6 / tanH);
+  // A phone held sideways is short, so it gets a closer view (about 12 by 7 cells) too.
+  const short = h < 500;
+  followDist = Math.max((short ? 3.6 : 4.6) / tanV, (camera.aspect < 1 ? 4.9 : short ? 6 : 7.6) / tanH);
+  const visW = followDist * tanH, visD = followDist * tanV;
+  clampX = Math.max(0, 14.1 - visW);
+  clampZ0 = -7.8 + visD;
+  clampZ1 = 8.2 - visD;
+  if (clampZ0 > clampZ1) clampZ0 = clampZ1 = 0.2;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
@@ -94,7 +114,16 @@ canvas.addEventListener('pointerleave', () => game.hover(null));
 canvas.addEventListener('pointerup', (e) => {
   if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 12) return;
   downAt = null;
+  if (ui.open) {
+    ui.tapAdvance();
+    return;
+  }
   ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  if (e.pointerType !== 'mouse') {
+    // no hover on a touch screen: flash the target square instead
+    game.hover(ndc);
+    window.setTimeout(() => game.hover(null), 450);
+  }
   game.click(ndc);
 });
 const KEYS: Record<string, [number, number]> = {
@@ -127,23 +156,111 @@ function toggleMute() {
 muteBtn.addEventListener('click', toggleMute);
 document.querySelector<HTMLElement>('#inv .slot[data-id="fish"]')!.addEventListener('click', () => game.useFish());
 const lanternBtn = document.getElementById('lanternBtn')!;
+const waitBtn = document.getElementById('waitBtn')!;
+const fishBtn = document.getElementById('fishBtn')!;
 lanternBtn.addEventListener('click', () => game.toggleLantern());
+waitBtn.addEventListener('click', () => game.waitTurn());
+fishBtn.addEventListener('click', () => game.useFish());
 game.onLantern = (covered) => {
   lanternBtn.hidden = false;
   lanternBtn.classList.toggle('off', covered);
   lanternBtn.setAttribute('aria-pressed', String(covered));
-  lanternBtn.title = covered ? 'Uncover the lantern (L)' : 'Cover the lantern (L)';
 };
+// Buttons only appear when they can do something: waiting and fish matter only near Grimfin.
+let shownTurnBtns = '';
+function syncActions() {
+  const L = game.level;
+  const turns = !!(L?.def.orca && L.ready);
+  const state = `${turns}${game.fish}`;
+  if (state === shownTurnBtns) return;
+  shownTurnBtns = state;
+  waitBtn.hidden = !turns;
+  fishBtn.hidden = !turns || game.fish <= 0;
+  fishBtn.querySelector('b')!.textContent = String(game.fish);
+}
+
+// The to-do list folds down to what's next: tap it to see everything. Phones start folded.
+const objective = document.getElementById('objective')!;
+if (window.innerWidth < 600 || window.innerHeight < 500) objective.classList.add('mini');
+objective.addEventListener('click', () => objective.classList.toggle('mini'));
+
+// Fullscreen, where the browser allows it (not on iPhone, which instead offers Add to Home Screen).
+type FsDoc = Document & { webkitFullscreenEnabled?: boolean; webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> };
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+const fsDoc = document as FsDoc;
+const fsBtn = document.getElementById('fs')!;
+const fsActive = () => !!(fsDoc.fullscreenElement ?? fsDoc.webkitFullscreenElement);
+fsBtn.hidden = !(fsDoc.fullscreenEnabled || fsDoc.webkitFullscreenEnabled);
+fsBtn.addEventListener('click', async () => {
+  try {
+    if (fsActive()) {
+      await (fsDoc.exitFullscreen ? fsDoc.exitFullscreen() : fsDoc.webkitExitFullscreen?.());
+      return;
+    }
+    const el = document.documentElement as FsEl;
+    await (el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen?.());
+    // The open book is wide: on a phone, hold it sideways while in fullscreen.
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    if (touch) await orientation.lock?.('landscape').catch(() => {});
+  } catch {
+    /* refused, e.g. not from a tap: nothing to do */
+  }
+});
+const syncFs = () => {
+  fsBtn.classList.toggle('on', fsActive());
+  fsBtn.setAttribute('aria-pressed', String(fsActive()));
+};
+document.addEventListener('fullscreenchange', syncFs);
+document.addEventListener('webkitfullscreenchange', syncFs);
+
+// Pause the music box when the page is hidden (a phone locked, or another tab).
+document.addEventListener('visibilitychange', () => {
+  perfT = perfN = 0;
+  if (!sound.ctx) return;
+  if (document.hidden) sound.ctx.suspend();
+  else sound.ctx.resume();
+});
+
+// Language: picked on the title card, remembered for next time.
+document.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((b) =>
+  b.addEventListener('click', () => {
+    if (b.dataset.lang !== lang) setLang(b.dataset.lang as Lang);
+  }),
+);
+onLang(() => book.refreshCover());
 
 // ------------------------------------------------------------------ loop
 const focusV = new THREE.Vector3();
 const want = new THREE.Vector3();
 let last = 0;
+let frameNo = 0;
+// Adaptive quality: if the frame rate stays low, render fewer pixels, then drop the glow.
+let perfT = 0, perfN = 0, perfSince = 4;
+function checkPerf(raw: number, t: number) {
+  if (!adaptive || raw > 1 || t < perfSince) return;
+  perfT += raw;
+  perfN++;
+  if (perfT < 2) return;
+  const fps = perfN / perfT;
+  perfT = perfN = 0;
+  if (fps >= 45) return;
+  if (maxDpr > 1) maxDpr = Math.max(1, maxDpr - 0.25);
+  else if (post.bloom.enabled) post.bloom.enabled = false;
+  else if (maxDpr > 0.75) maxDpr = 0.75;
+  else return;
+  resize();
+  perfSince = t + 1.5;
+}
 function frame(now: number) {
   updateTweens(now);
   const t = now / 1000;
-  const dt = Math.min(0.05, last ? t - last : 0.016);
+  const raw = last ? t - last : 0.016;
+  const dt = Math.min(0.05, raw);
   last = t;
+  checkPerf(raw, t);
+  syncActions();
+  // On phones the shadows are redrawn every other frame: the paper hardly moves between them.
+  if (!renderer.shadowMap.autoUpdate && frameNo++ % 2 === 0) renderer.shadowMap.needsUpdate = true;
   game.update(t);
   if (game.dawn > 0) setNight(1 - game.dawn);
 
@@ -151,7 +268,7 @@ function frame(now: number) {
   const follow = game.player.visible && !game.camWide;
   if (follow) {
     // keep the view on the book: don't drift past its edges
-    want.set(THREE.MathUtils.clamp(p.x, -6.5, 6.5), 0.2, THREE.MathUtils.clamp(p.z, -3.2, 3.6));
+    want.set(THREE.MathUtils.clamp(p.x, -clampX, clampX), 0.2, THREE.MathUtils.clamp(p.z, clampZ0, clampZ1));
   } else {
     want.copy(camTarget);
   }
@@ -206,9 +323,15 @@ async function run() {
   await book.close();
   sound.fold();
   const st = game.stats;
+  const helped = Number(st.puffin) + Number(st.bobble);
+  const waiting = [!st.puffin && tr('Auntie Puffin', 'тётушка Тупик'), !st.bobble && tr('Bobble', 'Бобл')].filter(Boolean);
   document.getElementById('stats')!.textContent =
-    `Paper stars found: ${st.stars} of ${st.starTotal} · Side quests: ${Number(st.puffin) + Number(st.bobble)} of 2` +
-    (st.puffin && st.bobble ? '' : ` (${[!st.puffin && 'Auntie Puffin', !st.bobble && 'Bobble'].filter(Boolean).join(' and ')} still need help)`);
+    tr(`Paper stars found: ${st.stars} of ${st.starTotal} · Side quests: ${helped} of 2`,
+      `Найдено бумажных звёздочек: ${st.stars} из ${st.starTotal} · Побочные задания: ${helped} из 2`) +
+    (waiting.length
+      ? tr(` (${waiting.join(' and ')} still ${waiting.length > 1 ? 'need' : 'needs'} help)`,
+        ` (${waiting.join(' и ')} всё ещё ${waiting.length > 1 ? 'ждут' : 'ждёт'} помощи)`)
+      : '');
   document.getElementById('end')!.hidden = false;
 }
 document.getElementById('again')!.addEventListener('click', () => location.reload());
@@ -216,6 +339,6 @@ setNight(0);
 run();
 
 // Debug hook for automated screenshots: ?debug exposes the game on window.
-if (new URLSearchParams(location.search).has('debug')) {
+if (params.has('debug')) {
   (window as unknown as Record<string, unknown>).__game = { game, book, ui, sound };
 }

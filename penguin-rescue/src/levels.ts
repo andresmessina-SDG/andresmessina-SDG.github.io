@@ -16,6 +16,7 @@ export type { Cell };
 
 export interface LevelDef {
   title: string;
+  titleRu: string;
   night: boolean;
   /** 'walk' on land and floes, or 'sail' the paper boat across open water. */
   mode: 'walk' | 'sail';
@@ -34,6 +35,7 @@ export interface LevelDef {
 export const LEVELS: LevelDef[] = [
   {
     title: 'Chapter One · The Snowy Shore',
+    titleRu: 'Глава первая · Снежный берег',
     night: false,
     mode: 'walk',
     water: '~oHDv%',
@@ -57,6 +59,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     title: "Chapter Two · Grimfin's Cove",
+    titleRu: 'Глава вторая · Бухта Гримфина',
     night: true,
     mode: 'walk',
     water: '~oHDv%',
@@ -82,6 +85,7 @@ export const LEVELS: LevelDef[] = [
   },
   {
     title: 'Chapter Three · The Way Home',
+    titleRu: 'Глава третья · Дорога домой',
     night: true,
     mode: 'sail',
     water: '~vc*gGP',

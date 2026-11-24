@@ -27,7 +27,21 @@ export class UI {
   private bannerEl = $('banner');
   private advance: (() => void) | null = null;
   private toastTimer = 0;
-  open = false;
+  private isOpen = false;
+
+  /** True while a line or question is showing. The page hides the action buttons meanwhile. */
+  get open() {
+    return this.isOpen;
+  }
+  set open(v: boolean) {
+    this.isOpen = v;
+    document.body.classList.toggle('talking', v);
+  }
+
+  /** A tap anywhere on the page moves the story on (but never picks a choice). */
+  tapAdvance() {
+    if (this.open && this.choices.childElementCount === 0) this.advance?.();
+  }
 
   constructor(private sound: Sound) {
     this.talk.addEventListener('pointerdown', (e) => {
@@ -145,7 +159,7 @@ export class UI {
     document.querySelectorAll<HTMLElement>('#inv .slot').forEach((s) => {
       const id = s.dataset.id!;
       const img = s.querySelector('img')!;
-      if (!img.src && icons[id]) img.src = icons[id];
+      if (icons[id] && img.getAttribute('src') !== icons[id]) img.src = icons[id];
       s.classList.toggle('got', have.has(id));
       const b = s.querySelector('b');
       if (b) b.textContent = counts[id] ? `×${counts[id]}` : '';
