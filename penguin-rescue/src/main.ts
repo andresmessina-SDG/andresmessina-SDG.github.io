@@ -112,6 +112,8 @@ window.addEventListener('keydown', (e) => {
     game.waitTurn();
   } else if (e.key === 'm' || e.key === 'M') {
     toggleMute();
+  } else if (e.key === 'l' || e.key === 'L') {
+    game.toggleLantern();
   }
 });
 const muteBtn = document.getElementById('mute')!;
@@ -121,6 +123,14 @@ function toggleMute() {
   muteBtn.setAttribute('aria-pressed', String(sound.muted));
 }
 muteBtn.addEventListener('click', toggleMute);
+const lanternBtn = document.getElementById('lanternBtn')!;
+lanternBtn.addEventListener('click', () => game.toggleLantern());
+game.onLantern = (covered) => {
+  lanternBtn.hidden = false;
+  lanternBtn.classList.toggle('off', covered);
+  lanternBtn.setAttribute('aria-pressed', String(covered));
+  lanternBtn.title = covered ? 'Uncover the lantern (L)' : 'Cover the lantern (L)';
+};
 
 // ------------------------------------------------------------------ loop
 const focusV = new THREE.Vector3();
@@ -132,6 +142,7 @@ function frame(now: number) {
   const dt = Math.min(0.05, last ? t - last : 0.016);
   last = t;
   game.update(t);
+  if (game.dawn > 0) setNight(1 - game.dawn);
 
   const p = game.focusPoint;
   const follow = game.player.visible && !game.camWide;
@@ -169,6 +180,7 @@ async function run() {
   const title = document.getElementById('title')!;
   await new Promise<void>((r) => document.getElementById('start')!.addEventListener('click', () => r(), { once: true }));
   sound.start();
+  game.gentle = (document.getElementById('gentle') as HTMLInputElement).checked;
   title.classList.add('gone');
   sound.rustle(1.2);
   await book.open();

@@ -7,7 +7,6 @@ export const LAND_Y = 0.065;
 const PX = 80; // texture pixels per cell
 const LO = 8; // field pixels per cell
 
-const isLand = (ch: string) => !'~oHD'.includes(ch);
 const isBank = (ch: string) => ch === '=';
 
 interface Field {
@@ -113,7 +112,8 @@ export interface Terrain {
   halves: THREE.Group[];
 }
 
-export function buildTerrain(grid: string[][], night: boolean, seed: number): Terrain {
+export function buildTerrain(grid: string[][], night: boolean, seed: number, water = '~oHDv%'): Terrain {
+  const isLand = (ch: string) => !water.includes(ch);
   const rows = grid.length, cols = grid[0].length;
   const halfCols = cols / 2;
   const W = halfCols * PX, H = rows * PX;

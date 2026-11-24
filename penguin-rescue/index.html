@@ -57,6 +57,11 @@
     box-shadow: var(--shadow);
   }
   .chip.off { text-decoration: line-through; opacity: .6; }
+  .chip.lantern { top: 64px; }
+  .chip.lantern.off { text-decoration: none; filter: grayscale(1) brightness(.7); }
+  .gentle { display: block; margin: 0 0 16px; font-size: 16px; cursor: pointer; }
+  .gentle input { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; accent-color: var(--accent); }
+  .gentle span { color: var(--ink-soft); font-style: italic; font-size: 14px; }
 
   #banner {
     position: fixed; left: 50%; top: 22%; transform: translate(-50%, -10px) rotate(-1.5deg);
@@ -135,6 +140,7 @@
     <div class="slot" data-id="fish"><img alt="Fish bucket"><span>fish</span><b></b></div>
   </div>
   <button id="mute" class="chip" aria-label="Mute sound" aria-pressed="false" title="Sound (M)">♪</button>
+  <button id="lanternBtn" class="chip lantern" aria-label="Cover or uncover the lantern" aria-pressed="false" title="Cover the lantern (L)" hidden>🏮</button>
 </div>
 
 <div id="banner"></div>
@@ -155,8 +161,9 @@
     <p class="kicker">A pop-up book adventure</p>
     <h1>The Penguin Rescue</h1>
     <p>Two penguins need your help. Their friend Tuck has been carried off by Grimfin, the meanest orca on the page.</p>
+    <label class="gentle"><input type="checkbox" id="gentle"> Gentle mode <span>(a kinder Grimfin, for little readers)</span></label>
     <button id="start" class="btn">Open the book</button>
-    <p class="help">Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · M for sound</p>
+    <p class="help">Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · M for sound</p>
   </div>
 </div>
 

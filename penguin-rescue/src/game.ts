@@ -1,10 +1,14 @@
-// The adventure itself: building each chapter's pop-up board, walking, quests, the orca, and the story.
+// The adventure itself: building each chapter's pop-up board, walking and sailing, quests, Grimfin, and the story.
 import * as THREE from 'three';
 import { tween, wait, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
-import { makeCutout, standee, paperMat, tileGeometry, rand, pick, canvasTex } from './paper';
+import { makeCutout, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
 import { LEVELS, type LevelDef, type Cell } from './levels';
 import { buildTerrain, LAND_Y } from './terrain';
+import {
+  buildPath, orcaStep, sightCells, farLaneBefore, manhattan, same, SAFE_RADIUS,
+  type OrcaPath, type OrcaState, type TurnWorld,
+} from './rules';
 import type { Sound } from './audio';
 import type { UI, Speaker, Line, Quest } from './ui';
 
@@ -13,15 +17,15 @@ export const COLS = LEVELS[0].map[0].length;
 export const ROWS = LEVELS[0].map.length;
 export const toWorld = (x: number, z: number, y = 0) => new THREE.Vector3(x - (COLS - 1) / 2, y, z - (ROWS - 1) / 2);
 const key = (c: Cell) => `${c[0]},${c[1]}`;
-const same = (a: Cell, b: Cell) => a[0] === b[0] && a[1] === b[1];
-const manhattan = (a: Cell, b: Cell) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b']);
+const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b', '%']);
+const SAIL = new Set(['~', 'c', '*', 'G', 'P']);
 const DIRS: Cell[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const SURFACE = -0.3;
 const DEEP = -1.35;
 const FISH_TURNS = 6;
 const BACK_Z = -ROWS / 2 - 0.2;
-export const STAR_TOTAL = LEVELS.reduce((n, l) => n + l.map.join('').split('*').length - 1, 0);
+const FOG_PX = 40;
+export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
 
 interface Pop {
   delay: number;
@@ -52,10 +56,13 @@ interface Level {
   actors: Map<string, THREE.Group>;
   actorCell: Map<string, Cell>;
   blocks: Map<string, Block>;
-  idlers: { obj: THREE.Object3D; phase: number; kind: 'waddle' | 'bob' | 'wave' | 'float' | 'spin' | 'sway' }[];
+  beacons: Map<string, { cell: Cell; pv: THREE.Group; lit: boolean; light: THREE.PointLight }>;
+  idlers: { obj: THREE.Object3D; phase: number; kind: 'waddle' | 'bob' | 'wave' | 'float' | 'spin' | 'sway' | 'drift' }[];
   rings: Map<string, THREE.Mesh>;
   ringMat: THREE.MeshBasicMaterial;
   shadows: THREE.Object3D[];
+  fog: { ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture } | null;
+  bigLight: THREE.PointLight | null;
 }
 
 export class Game {
@@ -63,13 +70,22 @@ export class Game {
   player = new THREE.Group();
   private hopper = new THREE.Group();
   private facing = new THREE.Group();
+  private boatRig = new THREE.Group();
   private lanternLight = new THREE.PointLight(0xffa955, 0, 0, 1.7);
   private marker: THREE.Mesh;
   private markerMat: THREE.MeshBasicMaterial;
+  private gaze: THREE.Mesh[] = [];
+  private gazeMat: THREE.MeshBasicMaterial;
+  private prints: { mesh: THREE.Mesh; born: number }[] = [];
+  private printMat: THREE.MeshBasicMaterial;
+  private follower: THREE.Group | null = null;
   pos: Cell = [0, 0];
   inv = new Set<string>();
   fish = 0;
   stars = 0;
+  crates = 0;
+  gentle = false;
+  lanternCovered = false;
   private talked = false;
   private puffinMet = false;
   puffinHelped = false;
@@ -78,15 +94,20 @@ export class Game {
   bobbleHelped = false;
   private bobbleSplashUsed = false;
   private tuckFree = false;
+  private gateOpen = false;
+  private checkpoint: Cell | null = null;
   busy = true;
   walking = false;
   private pending: { cell: Cell; act?: string } | null = null;
-  private orca = { path: [] as (Cell | null)[], i: 0, pos: null as Cell | null, distracted: 0, laneStarts: [] as number[] };
+  private opath: OrcaPath = { cells: [], heads: [], starts: [] };
+  private orca: OrcaState = { i: 0, pos: null, head: [1, 0], alert: false, distracted: 0 };
   shake = 0;
   /** 0..1: how far the camera tilts up toward the scenery flats (used in the finale). */
   camLift = 0;
   /** When true the camera pulls back to show the whole spread. */
   camWide = true;
+  /** 0..1: morning arriving at the very end. */
+  dawn = 0;
   private lanternPower = 1;
   private finish: (() => void) | null = null;
   private ray = new THREE.Raycaster();
@@ -94,6 +115,9 @@ export class Game {
   private art: Record<string, HTMLCanvasElement>;
   private S: Record<string, Speaker>;
   private chat = 0;
+  private now = 0;
+  /** Called when the lantern is covered or uncovered, so the HUD button can follow. */
+  onLantern: (covered: boolean) => void = () => {};
 
   constructor(private scene: THREE.Scene, private camera: THREE.Camera, private sound: Sound, private ui: UI) {
     this.art = {
@@ -104,7 +128,8 @@ export class Game {
       puffin: A.puffin(),
       bobble: A.seal(),
       hero: A.hero(),
-      orca: A.orca(),
+      orca: A.orcaSpyglass(),
+      lighthouse: A.lighthouse(true),
     };
     this.S = {
       nar: { name: '', voice: 520 },
@@ -114,6 +139,7 @@ export class Game {
       puffin: { name: 'Auntie Puffin', portrait: this.art.puffin.toDataURL(), voice: 560 },
       bobble: { name: 'Bobble', portrait: this.art.bobble.toDataURL(), voice: 960 },
       grim: { name: 'Grimfin', portrait: this.art.orca.toDataURL(), voice: 80 },
+      light: { name: 'Lighthouse', portrait: this.art.lighthouse.toDataURL(), voice: 420 },
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
@@ -129,6 +155,18 @@ export class Game {
     this.player.add(this.hopper);
     this.lanternLight.position.set(0.26, 0.5, 0.2);
     this.facing.add(this.lanternLight);
+    // The boat you sail in chapter three, with friends aboard.
+    const hull = makeCutout(A.boat(), 0.6, 5);
+    hull.position.set(0, -0.02, 0.12);
+    const pipRide = makeCutout(this.art.pip, 0.42, 5);
+    pipRide.position.set(-0.32, 0.12, 0.04);
+    const pebRide = makeCutout(this.art.pebble, 0.4, 5);
+    pebRide.position.set(0.34, 0.12, 0.04);
+    const tuckRide = makeCutout(this.art.tuck, 0.36, 5);
+    tuckRide.position.set(0.14, 0.18, -0.06);
+    this.boatRig.add(hull, pipRide, pebRide, tuckRide);
+    this.boatRig.visible = false;
+    this.player.add(this.boatRig);
     this.player.visible = false;
     scene.add(this.player);
 
@@ -136,8 +174,31 @@ export class Game {
     this.markerMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: 0.75, depthWrite: false });
     this.marker = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.62, 4, 1, Math.PI / 4).rotateX(-Math.PI / 2), this.markerMat);
     this.marker.visible = false;
-    this.marker.renderOrder = 2;
+    this.marker.renderOrder = 6;
     scene.add(this.marker);
+
+    // Grimfin's spyglass view: soft squares of moonlight on the water.
+    const gc = makeCanvas(64, 64);
+    const gg = ctx2d(gc);
+    const grd = gg.createRadialGradient(32, 32, 6, 32, 32, 34);
+    grd.addColorStop(0, 'rgba(255,255,255,0.95)');
+    grd.addColorStop(1, 'rgba(255,255,255,0.15)');
+    gg.fillStyle = grd;
+    gg.beginPath();
+    gg.roundRect(4, 4, 56, 56, 14);
+    gg.fill();
+    this.gazeMat = new THREE.MeshBasicMaterial({ map: canvasTex(gc), color: 0xffe58a, transparent: true, opacity: 0.4, depthWrite: false });
+    const gGeo = new THREE.PlaneGeometry(0.86, 0.86).rotateX(-Math.PI / 2);
+    for (let i = 0; i < 16; i++) {
+      const m = new THREE.Mesh(gGeo, this.gazeMat);
+      m.visible = false;
+      m.renderOrder = 5;
+      scene.add(m);
+      this.gaze.push(m);
+    }
+
+    // Little footprints left in the snow.
+    this.printMat = new THREE.MeshBasicMaterial({ map: canvasTex(A.footprint()), transparent: true, depthWrite: false });
   }
 
   /** World-space point the camera and tilt-shift should follow. */
@@ -147,6 +208,71 @@ export class Game {
 
   get stats() {
     return { stars: this.stars, starTotal: STAR_TOTAL, puffin: this.puffinHelped, bobble: this.bobbleHelped };
+  }
+
+  private get sail() {
+    return this.level?.def.mode === 'sail';
+  }
+
+  private get sightRange() {
+    return Math.max(1, (this.lanternCovered ? 2 : 4) - (this.gentle ? 1 : 0));
+  }
+
+  toggleLantern() {
+    if (!this.inv.has('lantern') || !this.level) return;
+    this.lanternCovered = !this.lanternCovered;
+    this.sound.rustle(0.4);
+    this.ui.toast(this.lanternCovered
+      ? 'Lantern covered: Grimfin can only spot you up close, but glowing stars stay hidden.'
+      : 'Lantern uncovered: you see more, and so does Grimfin.');
+    this.onLantern(this.lanternCovered);
+    this.updateGaze();
+    if (this.sail) this.revealAround(this.pos);
+    this.refreshQuests();
+  }
+
+  // ---------------------------------------------------------------- cute effects
+
+  /** A little burst of paper hearts. */
+  hearts(at: THREE.Vector3, n = 7) {
+    const colors = ['#f06a8a', '#f58aa6', '#ff9e7a', '#e2557a'];
+    for (let i = 0; i < n; i++) {
+      const h = makeCutout(A.heart(colors[i % colors.length]), 0.18 + rand() * 0.1, 3);
+      h.position.copy(at).add(new THREE.Vector3((rand() - 0.5) * 0.5, 0.5 + rand() * 0.3, 0.1));
+      h.scale.setScalar(0.001);
+      this.scene.add(h);
+      const x0 = h.position.x, y0 = h.position.y, ph = rand() * 6;
+      tween(1500 + rand() * 500, (k) => {
+        h.position.y = y0 + k * 1.3;
+        h.position.x = x0 + Math.sin(k * 7 + ph) * 0.12;
+        h.scale.setScalar(Math.max(0.001, k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85));
+      }, linear, i * 70).then(() => this.scene.remove(h));
+    }
+  }
+
+  private popBubble(art: HTMLCanvasElement, at: THREE.Vector3) {
+    const b = makeCutout(art, 0.5, 3);
+    b.position.copy(at);
+    b.scale.setScalar(0.001);
+    this.scene.add(b);
+    tween(300, (k) => b.scale.setScalar(Math.max(0.001, k)), easeOutBack)
+      .then(() => wait(900))
+      .then(() => tween(200, (k) => b.scale.setScalar(Math.max(0.001, 1 - k)), easeIn))
+      .then(() => this.scene.remove(b));
+  }
+
+  private footprint(c: Cell) {
+    const L = this.level!;
+    if (L.def.night || L.def.mode !== 'walk' || L.grid[c[1]][c[0]] === 'o') return;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28).rotateX(-Math.PI / 2), this.printMat.clone());
+    m.position.copy(toWorld(c[0], c[1], LAND_Y + 0.004));
+    m.rotation.y = (rand() - 0.5) * 0.5;
+    L.root.add(m);
+    this.prints.push({ mesh: m, born: this.now });
+    if (this.prints.length > 40) {
+      const old = this.prints.shift()!;
+      old.mesh.parent?.remove(old.mesh);
+    }
   }
 
   // ---------------------------------------------------------------- building
@@ -192,8 +318,8 @@ export class Game {
   }
 
   /** A blocking stand-up (rock, tree, iceberg): clicking it walks you next to it. */
-  private obstacle(L: Level, art: HTMLCanvasElement, h: number, c: Cell, delay: number, idle?: 'sway') {
-    const p = toWorld(c[0], c[1], LAND_Y).add(new THREE.Vector3((rand() - 0.5) * 0.12, 0, (rand() - 0.5) * 0.12));
+  private obstacle(L: Level, art: HTMLCanvasElement, h: number, c: Cell, delay: number, y = LAND_Y, idle?: 'sway' | 'float') {
+    const p = toWorld(c[0], c[1], y).add(new THREE.Vector3((rand() - 0.5) * 0.12, 0, (rand() - 0.5) * 0.12));
     const pv = this.stand(L, art, h, p, delay);
     pv.userData.cell = c;
     L.pick.push((pv.userData.inner as THREE.Group).userData.front);
@@ -288,21 +414,89 @@ export class Game {
     return g;
   }
 
+  private makeFog(L: Level) {
+    const W = COLS * FOG_PX, H = ROWS * FOG_PX;
+    const c = makeCanvas(W, H);
+    const g = ctx2d(c);
+    g.fillStyle = 'rgba(178,190,224,0.96)';
+    g.fillRect(0, 0, W, H);
+    g.strokeStyle = 'rgba(235,240,255,0.35)';
+    g.lineCap = 'round';
+    for (let i = 0; i < 90; i++) {
+      const x = rand() * W, y = rand() * H, r = 20 + rand() * 50;
+      g.lineWidth = 3 + rand() * 4;
+      g.beginPath();
+      g.arc(x, y, r, rand() * 6, rand() * 6 + 2.5);
+      g.stroke();
+    }
+    g.globalCompositeOperation = 'multiply';
+    g.fillStyle = g.createPattern(paperCanvas(256, 77, 248), 'repeat')!;
+    g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'source-over';
+    const tex = canvasTex(c);
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(COLS, ROWS).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
+    );
+    mesh.position.y = 0.55;
+    mesh.renderOrder = 4;
+    L.root.add(mesh);
+    const mat = mesh.material as THREE.MeshBasicMaterial;
+    this.addPop(L, 1600, 900, easeInOut, (k) => {
+      mat.opacity = k;
+      mesh.visible = k > 0.01;
+    });
+    L.fog = { ctx: g, tex };
+    // drowsy fog clouds drifting above it all
+    for (let i = 0; i < 5; i++) {
+      const cloud = makeCutout(A.fogCloud(), 0.7 + rand() * 0.3, 4);
+      cloud.position.set(-10 + i * 5 + rand() * 2, 0.9 + rand() * 0.5, -5 + rand() * 9);
+      L.root.add(cloud);
+      L.idlers.push({ obj: cloud, phase: rand() * 6, kind: 'drift' });
+      this.addScale(L, cloud, 1800 + i * 120);
+    }
+  }
+
+  /** Clear the vellum fog in a soft circle. */
+  private reveal(c: Cell, radius: number) {
+    const fog = this.level?.fog;
+    if (!fog) return;
+    const x = (c[0] + 0.5) * FOG_PX, y = (c[1] + 0.5) * FOG_PX, R = radius * FOG_PX;
+    const g = fog.ctx;
+    g.globalCompositeOperation = 'destination-out';
+    const grd = g.createRadialGradient(x, y, R * 0.45, x, y, R);
+    grd.addColorStop(0, 'rgba(0,0,0,1)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd;
+    g.fillRect(x - R, y - R, R * 2, R * 2);
+    g.globalCompositeOperation = 'source-over';
+    fog.tex.needsUpdate = true;
+  }
+
+  private revealAround(c: Cell) {
+    this.reveal(c, this.lanternCovered ? 1.6 : 2.7);
+  }
+
   private build(index: number): Level {
     const def = LEVELS[index];
     const night = def.night;
+    const last = index === LEVELS.length - 1;
     const root = new THREE.Group();
     this.scene.add(root);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.8, depthWrite: false });
     const L: Level = {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
-      stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), idlers: [], rings: new Map(), ringMat, shadows: [],
+      stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
+      rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null,
     };
-    // Friends you never met in chapter one don't turn up in chapter two.
-    if (!this.bobbleHelped) L.grid.forEach((r) => r.forEach((ch, x) => ch === 'Q' && (r[x] = '.')));
+    // Friends you never helped don't turn up later.
+    L.grid.forEach((r) => r.forEach((ch, x) => {
+      if (ch === 'Q' && !this.bobbleHelped) r[x] = '.';
+      if (ch === 'U' && index > 0 && !this.puffinHelped) r[x] = '.';
+    }));
 
     // The board: two page halves of cut paper that fold out from the spine.
-    const terrain = buildTerrain(L.grid, night, index * 101 + 5);
+    const terrain = buildTerrain(L.grid, night, index * 101 + 5, def.water);
     terrain.halves.forEach((hinge, h) => {
       const side = h === 0 ? -1 : 1;
       root.add(hinge);
@@ -334,6 +528,16 @@ export class Game {
           case 'o':
             this.addScale(L, this.makeFloe(L, c), later);
             break;
+          case '%': {
+            this.addScale(L, this.makeFloe(L, c), later);
+            const pv = this.stand(L, A.star(), 0.46, p.clone().setY(0.14), later + 60, 4);
+            L.stars.set(key(c), pv);
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
+            break;
+          }
+          case 'v':
+            this.obstacle(L, A.seaIceberg(x * 13 + z * 7), 0.95, c, later, 0.02, 'float');
+            break;
           case 'H': {
             const id = `hole:${key(c)}`;
             const ice = new THREE.Mesh(new THREE.RingGeometry(0.24, 0.44, 20).rotateX(-Math.PI / 2), paperMat('#e8f1fa'));
@@ -353,7 +557,7 @@ export class Game {
             this.obstacle(L, night ? A.iceberg(x * 31 + z) : A.rock(x * 17 + z), night ? 1.25 : 0.85, c, later);
             break;
           case 'Y':
-            this.obstacle(L, A.pine(x * 7 + z * 3), 1.5 + rand() * 0.3, c, later, 'sway');
+            this.obstacle(L, A.pine(x * 7 + z * 3), 1.5 + rand() * 0.3, c, later, LAND_Y, 'sway');
             break;
           case '^':
             this.tent(L, c, night ? '#d3deef' : '#ffffff', later);
@@ -393,6 +597,34 @@ export class Game {
             L.actors.set('cage', cage);
             break;
           }
+          case 'L': {
+            const id = `beacon:${key(c)}`;
+            const pv = this.actor(L, id, A.lighthouse(false), 1.35, c, later, null);
+            const awake = makeCutout(A.lighthouse(true), 1.35);
+            awake.visible = false;
+            pv.add(awake);
+            pv.userData.faces = [pv.userData.inner, awake];
+            L.pick.push(awake.userData.front);
+            const light = new THREE.PointLight(0xffd27a, 0, 0, 1.6);
+            light.position.set(0, 1.15, 0.3);
+            pv.add(light);
+            L.beacons.set(id, { cell: c, pv, lit: false, light });
+            break;
+          }
+          case 'g': {
+            const gate = this.obstacle(L, A.cage(), 0.9, c, later, 0.02);
+            L.actors.set('gate', gate);
+            break;
+          }
+          case 'G': {
+            const deck = new THREE.Mesh(tileGeometry(0.98, 0.06, 0.9), new THREE.MeshStandardMaterial({ map: canvasTex(A.planks()), roughness: 0.85 }));
+            deck.position.copy(p).setY(0.03);
+            deck.castShadow = deck.receiveShadow = true;
+            root.add(deck);
+            this.addScale(L, deck, later);
+            this.stand(L, A.flag(), 0.7, p.clone().add(new THREE.Vector3(0.36, 0.06, -0.34)), later + 60, 4);
+            break;
+          }
           case 'E':
             this.actor(L, 'boat', A.boat(), 0.62, c, later, null);
             break;
@@ -404,8 +636,14 @@ export class Game {
             L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'bob' });
             break;
           }
+          case 'c': {
+            const pv = this.stand(L, A.crate(), 0.42, p.clone().setY(0.02), later, 4);
+            L.items.set(key(c), { id: 'crate', name: 'a crate of fish', obj: pv });
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'float' });
+            break;
+          }
           case '*': {
-            const pv = this.stand(L, A.star(), 0.46, p.clone().setY(LAND_Y + 0.03), later, 4);
+            const pv = this.stand(L, A.star(), 0.46, p.clone().setY(def.mode === 'sail' ? 0.06 : LAND_Y + 0.03), later, 4);
             L.stars.set(key(c), pv);
             L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
             break;
@@ -454,30 +692,45 @@ export class Game {
       this.onStick(L, A.moon(), 1.3, -8.6, BACK_Z + 0.3, 3.5, 1450);
       const stars: [number, number, number][] = [[-10.5, 2.4, 0.3], [-6.2, 3.8, 0.34], [-3.8, 2.9, 0.26], [-1.2, 3.6, 0.32], [1.2, 2.6, 0.24]];
       stars.forEach(([sx, sy, sh], i) => this.onStick(L, A.star(), sh, sx, BACK_Z + 0.2, sy, 1500 + i * 70));
-      // The shadow army: everyone you helped stands behind you in the finale.
-      const army = [this.art.pip, this.art.hero, this.art.tuck, this.art.pebble];
-      if (this.puffinHelped) army.push(this.art.puffin);
-      if (this.bobbleHelped) army.push(this.art.bobble);
-      const span = 7.4;
-      army.forEach((art, i) => {
-        const sil = A.silhouette(art);
-        const h = art === this.art.bobble ? 1.9 : 2.7, w = (h * sil.width) / sil.height;
-        const geo = new THREE.PlaneGeometry(w, h);
-        geo.translate(0, h / 2, 0);
-        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: canvasTex(sil), transparent: true, opacity: 0.62, depthWrite: false }));
-        const g = new THREE.Group();
-        g.add(m);
-        g.position.set(-span / 2 + (span * i) / (army.length - 1), 0.35, 0.05);
-        g.scale.setScalar(0.001);
-        cliff.add(g);
-        L.shadows.push(g);
-      });
+      if (last) {
+        // the great harbour lighthouse on the cliff, dark until the very end
+        const big = this.stand(L, A.lighthouse(false), 3.2, new THREE.Vector3(10.2, 0, BACK_Z + 0.2), 1400, 6);
+        const bigAwake = makeCutout(A.lighthouse(true), 3.2, 6);
+        bigAwake.visible = false;
+        big.add(bigAwake);
+        big.userData.faces = [big.userData.inner, bigAwake];
+        L.actors.set('bigLighthouse', big);
+        L.bigLight = new THREE.PointLight(0xffd27a, 0, 0, 1.4);
+        L.bigLight.position.set(0, 2.7, 0.6);
+        big.add(L.bigLight);
+        // The shadow army: everyone you helped stands behind you in the finale.
+        const army = [this.art.pip, this.art.hero, this.art.tuck, this.art.pebble];
+        if (this.puffinHelped) army.push(this.art.puffin);
+        if (this.bobbleHelped) army.push(this.art.bobble);
+        const span = 6.6;
+        army.forEach((art, i) => {
+          const sil = A.silhouette(art);
+          const h = art === this.art.bobble ? 1.9 : 2.7, w = (h * sil.width) / sil.height;
+          const geo = new THREE.PlaneGeometry(w, h);
+          geo.translate(0, h / 2, 0);
+          const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: canvasTex(sil), transparent: true, opacity: 0.62, depthWrite: false }));
+          const g = new THREE.Group();
+          g.add(m);
+          g.position.set(-span / 2 - 0.6 + (span * i) / (army.length - 1), 0.35, 0.05);
+          g.scale.setScalar(0.001);
+          cliff.add(g);
+          L.shadows.push(g);
+        });
+      }
+    }
+    if (def.orca) {
       const orca = standee(makeCutout(this.art.orca, 1.0));
       (orca.userData.inner as THREE.Group).position.y = DEEP;
       orca.visible = false;
       root.add(orca);
       L.actors.set('orca', orca);
     }
+    if (def.mode === 'sail') this.makeFog(L);
     return L;
   }
 
@@ -516,21 +769,37 @@ export class Game {
     const L = this.build(i);
     this.level = L;
     this.pos = [...L.start];
-    this.player.position.copy(toWorld(L.start[0], L.start[1], LAND_Y));
+    this.checkpoint = null;
+    this.prints = [];
+    const sail = L.def.mode === 'sail';
+    this.boatRig.visible = sail;
+    this.facing.position.y = sail ? 0.12 : 0;
+    this.player.position.copy(toWorld(L.start[0], L.start[1], this.cellY(L.start)));
     this.player.visible = true;
     this.addUp(L, this.player, 1100);
+    if (sail && this.bobbleHelped) {
+      const f = standee(makeCutout(this.art.bobble, 0.42, 5));
+      f.position.copy(toWorld(L.start[0] - 1, L.start[1], 0.02));
+      L.root.add(f);
+      this.addUp(L, f, 1150);
+      this.follower = f;
+    } else {
+      this.follower = null;
+    }
     this.ui.banner(L.def.title);
     this.ui.setQuests([]);
     await this.unfold(L);
     this.camWide = false;
     await wait(700);
     if (i === 0) await this.introOne();
-    else await this.introTwo();
+    else if (i === 1) await this.introTwo();
+    else await this.introThree();
     this.refreshQuests();
     this.busy = false;
     await new Promise<void>((r) => (this.finish = r));
     this.busy = true;
     this.marker.visible = false;
+    this.hideGaze();
     this.ui.setQuests([]);
   }
 
@@ -541,6 +810,7 @@ export class Game {
     const orca = L.actors.get('orca');
     if (orca) orca.visible = false;
     this.hideRings();
+    this.hideGaze();
     await wait(500);
     await this.fold(L);
     this.player.visible = false;
@@ -555,23 +825,48 @@ export class Game {
     ]);
   }
 
-  private async introTwo() {
-    const { nar, pip, pebble, bobble } = this.S;
+  private async riseGrimfin() {
     this.initOrca();
     this.sound.growl();
     this.shake = 0.25;
-    await this.orcaRise(this.orca.pos ?? [10, 4]);
-    this.updateRings();
+    const L = this.level!;
+    const at = this.orca.pos ?? L.def.orca!.lanes[0].from;
+    await this.orcaRise(at);
+    this.orca.pos = at;
+    this.faceOrca();
+    this.updateGaze();
+  }
+
+  private async introTwo() {
+    const { nar, pip, pebble, bobble } = this.S;
+    await this.riseGrimfin();
     const lines: Line[] = [
-      [nar, 'Night fell across the page. Out on the dark water, something with a very tall fin was circling.'],
+      [nar, 'Night fell across the page. Out on the dark water, something with a very tall fin, and a very small spyglass, was circling.'],
       [pebble, "There! Tuck is on that iceberg, all the way across. Rest on the little island halfway; Grimfin can't reach you on land."],
-      [pip, "Hop from floe to floe, but never onto a floe with a red ring. That's where Grimfin will be next!"],
+      [pip, 'See the glowy squares? That is where Grimfin will look next. If he spots you, he shouts and charges next turn, so hop out of sight quick!'],
+      [pebble, 'Little icebergs block his spyglass. Hide behind them! And the red rings show where he can reach.'],
+      [pip, 'Press L, or the lantern button, to cover your lantern. He can only spot you up close then, but you will miss the glowing stars.'],
       this.fish
         ? [pebble, `You have ${this.fish} fish. Toss one in a fishing hole, by the little flags, and Grimfin will munch for ${FISH_TURNS} hops.`]
         : [pebble, "We haven't got any fish, so you'll have to time your hops. You can do it!"],
     ];
     if (this.bobbleHelped) lines.push([bobble, "And if Grimfin gets you, I'll splash him right in the eye! Once, anyway."]);
     lines.push([nar, 'Every hop you take, Grimfin swims one stroke. Click where you stand, or press Space, to wait a turn.']);
+    await this.ui.say(lines);
+  }
+
+  private async introThree() {
+    const { nar, pip, pebble, tuck, bobble } = this.S;
+    this.revealAround(this.pos);
+    await this.riseGrimfin();
+    const lines: Line[] = [
+      [nar, 'The little paper boat slipped into a thick, sleepy fog. Somewhere ahead was home.'],
+      [tuck, 'I can hardly see my own flippers!'],
+      [pip, 'Look, lighthouses! But they have all dozed off. Sail up beside each one and wake it with the lantern.'],
+      [pebble, "When all three are awake, the harbour gate will open. And Grimfin won't come anywhere near a lighthouse that's shining."],
+    ];
+    if (this.bobbleHelped) lines.push([bobble, "I'll swim right behind you. Paddle paddle!"]);
+    lines.push([nar, 'Grimfin hunts the fog the same way as before: watch for his glowing spyglass squares.']);
     await this.ui.say(lines);
   }
 
@@ -584,33 +879,35 @@ export class Game {
       else {
         q.push({ text: 'Rescue the paper boat from the little island', done: this.inv.has('boat') });
         if (this.puffinMet || this.yarnFound) {
-          const text = this.puffinHelped
-            ? "Return Auntie Puffin's yarn"
-            : this.yarnFound
-              ? 'Bring the red yarn back to Auntie Puffin'
-              : "Find Auntie Puffin's yarn in the dark igloo";
+          const text = this.puffinHelped ? "Return Auntie Puffin's yarn" : this.yarnFound ? 'Bring the red yarn back to Auntie Puffin' : "Find Auntie Puffin's yarn in the dark igloo";
           q.push({ text, done: this.puffinHelped, optional: true });
         }
         if (this.bobbleMet || this.inv.has('ball')) {
-          const text = this.bobbleHelped
-            ? "Fetch Bobble's ball"
-            : this.inv.has('ball')
-              ? 'Give Bobble back his ball'
-              : "Fetch Bobble's ball from the pond island";
+          const text = this.bobbleHelped ? "Fetch Bobble's ball" : this.inv.has('ball') ? 'Give Bobble back his ball' : "Fetch Bobble's ball from the pond island";
           q.push({ text, done: this.bobbleHelped, optional: true });
         }
         if (this.inv.has('boat')) q.push({ text: 'Meet Pip and Pebble at the dock →' });
       }
-    } else {
+    } else if (L.def.mode === 'walk') {
       q.push({ text: 'Cross the ice floes and free Tuck', done: this.tuckFree });
-      if (!this.tuckFree) {
-        if (this.orca.distracted > 0) q.push({ text: `Grimfin is munching: ${this.orca.distracted} hops left` });
-        else q.push({ text: 'Stay off the floes with red rings' });
-        if (this.bobbleHelped) q.push({ text: 'Bobble will splash Grimfin once', done: this.bobbleSplashUsed, optional: true });
-      }
+      if (!this.tuckFree) q.push(this.orcaQuest());
+      if (this.bobbleHelped && !this.tuckFree) q.push({ text: 'Bobble will splash Grimfin once', done: this.bobbleSplashUsed, optional: true });
+    } else {
+      const lit = [...L.beacons.values()].filter((b) => b.lit).length;
+      q.push({ text: `Wake the sleepy lighthouses · ${lit}/${L.beacons.size}`, done: lit === L.beacons.size });
+      if (this.gateOpen) q.push({ text: 'Sail into the home harbour →' });
+      q.push(this.orcaQuest());
+      q.push({ text: `Fish crates found · ${this.crates}/3`, done: this.crates === 3, optional: true });
+      if (this.bobbleHelped) q.push({ text: 'Bobble will splash Grimfin once', done: this.bobbleSplashUsed, optional: true });
     }
     q.push({ text: `Paper stars ${this.stars}/${STAR_TOTAL}`, done: this.stars === STAR_TOTAL, optional: true });
     this.ui.setQuests(q);
+  }
+
+  private orcaQuest(): Quest {
+    if (this.orca.distracted > 0) return { text: `Grimfin is munching: ${this.orca.distracted} hops left` };
+    if (this.orca.alert) return { text: 'Grimfin spotted you! Get out of sight NOW' };
+    return { text: this.lanternCovered ? 'Lantern covered: Grimfin only sees you up close' : 'Keep out of the glowy squares and red rings' };
   }
 
   private refreshInventory() {
@@ -626,6 +923,7 @@ export class Game {
       const cut = makeCutout(A.lantern(), 0.32, 5);
       cut.position.set(0.3, 0.22, 0.05);
       this.facing.add(cut);
+      this.onLantern(this.lanternCovered);
     }
     this.refreshQuests();
   }
@@ -676,10 +974,10 @@ export class Game {
     }
     let ok: boolean;
     if (t.act) ok = true;
-    else if (same(t.cell, this.pos)) ok = this.level.index === 1;
+    else if (same(t.cell, this.pos)) ok = !!this.level.def.orca;
     else ok = this.walkable(t.cell) && !!this.path(this.pos, [t.cell]);
     this.markerMat.color.set(t.act ? 0xffc94a : ok ? 0xfff3d0 : 0x6d6d78);
-    this.marker.position.copy(toWorld(t.cell[0], t.cell[1], this.cellY(t.cell) + 0.012));
+    this.marker.position.copy(toWorld(t.cell[0], t.cell[1], (this.sail ? 0.57 : this.cellY(t.cell)) + 0.012));
     this.marker.visible = true;
   }
 
@@ -711,7 +1009,10 @@ export class Game {
   }
 
   private walkable(c: Cell) {
-    return this.inBounds(c) && WALK.has(this.level!.grid[c[1]][c[0]]);
+    if (!this.inBounds(c)) return false;
+    const ch = this.level!.grid[c[1]][c[0]];
+    if (this.sail) return SAIL.has(ch) || (ch === 'g' && this.gateOpen);
+    return WALK.has(ch);
   }
 
   private path(from: Cell, goals: Cell[]): Cell[] | null {
@@ -787,8 +1088,8 @@ export class Game {
 
   private cellY(c: Cell) {
     const ch = this.level!.grid[c[1]][c[0]];
-    if (ch === 'o') return 0.11;
-    if (ch === '~' || ch === 'H') return 0.02;
+    if (ch === 'o' || ch === '%') return 0.11;
+    if (this.level!.def.water.includes(ch)) return 0.02;
     if (ch === '=') return 0.5;
     return LAND_Y;
   }
@@ -800,15 +1101,26 @@ export class Game {
   private async step(c: Cell) {
     const from = this.player.position.clone();
     const to = toWorld(c[0], c[1], this.cellY(c));
+    const old = this.pos;
     this.face(c);
-    this.sound.step(this.level!.grid[c[1]][c[0]] !== 'o');
+    if (this.sail) this.sound.rustle(0.25);
+    else this.sound.step(this.level!.grid[c[1]][c[0]] !== 'o');
+    this.footprint(old);
     this.pos = c;
     const lean = -this.facing.scale.x;
-    await tween(210, (k) => {
+    if (this.follower) {
+      const f = this.follower, f0 = f.position.clone(), f1 = toWorld(old[0], old[1], 0.02);
+      tween(260, (k) => {
+        f.position.lerpVectors(f0, f1, k);
+        f.position.y = 0.02 + Math.sin(Math.PI * k) * 0.12;
+      }, linear);
+    }
+    await tween(this.sail ? 240 : 210, (k) => {
       this.player.position.lerpVectors(from, to, k);
-      this.hopper.position.y = Math.sin(Math.PI * k) * 0.2;
+      this.hopper.position.y = Math.sin(Math.PI * k) * (this.sail ? 0.06 : 0.2);
       this.hopper.rotation.z = Math.sin(Math.PI * k) * 0.09 * lean;
     }, linear);
+    if (this.sail) this.revealAround(c);
   }
 
   /** Returns true when the step ended in an event that should stop walking. */
@@ -818,18 +1130,24 @@ export class Game {
     const it = L.items.get(k);
     if (it) this.pickup(it);
     const star = L.stars.get(k);
-    if (star) this.collectStar(star);
-    if (L.index === 0 && L.grid[this.pos[1]][this.pos[0]] === 'D') {
+    if (star && star.visible) this.collectStar(star);
+    const ch = L.grid[this.pos[1]][this.pos[0]];
+    if (L.index === 0 && ch === 'D') {
       await this.atDock();
       return true;
     }
-    if (L.index === 1) return this.orcaTurn();
+    if (ch === 'G') {
+      await this.finale();
+      return true;
+    }
+    if (L.def.orca) return this.orcaTurn();
     return false;
   }
 
   private async passTurn() {
-    if (this.level?.index !== 1) return;
-    this.sound.step(false);
+    if (!this.level?.def.orca) return;
+    if (this.sail) this.sound.rustle(0.2);
+    else this.sound.step(false);
     await tween(160, (k) => (this.hopper.position.y = Math.sin(Math.PI * k) * 0.06), linear);
     await this.orcaTurn();
   }
@@ -847,18 +1165,30 @@ export class Game {
   private pickup(it: { id: string; name: string; obj: THREE.Group }) {
     const L = this.level!;
     L.items.delete(key(this.pos));
-    L.grid[this.pos[1]][this.pos[0]] = '.';
+    L.grid[this.pos[1]][this.pos[0]] = this.sail ? '~' : '.';
     this.flyAway(it.obj);
+    if (it.id === 'crate') {
+      this.crates++;
+      this.fish++;
+      this.inv.add('fish');
+      this.refreshInventory();
+      this.sound.chime([0, 4, 7]);
+      this.ui.toast(`A floating crate of Auntie Puffin's fish! +1 fish (${this.fish})`);
+      this.refreshQuests();
+      return;
+    }
     this.give(it.id, `You found ${it.name}!`);
   }
 
   private collectStar(obj: THREE.Group) {
     const L = this.level!;
     L.stars.delete(key(this.pos));
-    L.grid[this.pos[1]][this.pos[0]] = '.';
+    const ch = L.grid[this.pos[1]][this.pos[0]];
+    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : this.sail ? '~' : '.';
     this.stars++;
     this.flyAway(obj);
     this.sound.chime([7, 12, 16]);
+    this.hearts(this.player.position, 3);
     this.ui.toast(this.stars === STAR_TOTAL ? `All ${STAR_TOTAL} paper stars! What a sharp eye.` : `A paper star! ${this.stars}/${STAR_TOTAL}`);
     this.refreshQuests();
   }
@@ -866,6 +1196,7 @@ export class Game {
   private interact(act: string) {
     if (act.startsWith('block')) return this.pushBlock(act);
     if (act.startsWith('hole')) return this.tossFish(this.level!.actorCell.get(act)!);
+    if (act.startsWith('beacon')) return this.wakeLighthouse(act);
     switch (act) {
       case 'pip':
       case 'pebble':
@@ -877,7 +1208,7 @@ export class Game {
       case 'igloo':
         return this.searchIgloo();
       case 'tuck':
-        return this.tuckFree ? this.ui.say([[this.S.tuck, 'Thank you, thank you!']]) : this.finale();
+        return this.tuckFree ? this.ui.say([[this.S.tuck, 'Thank you, thank you!']]) : this.freeTuck();
       case 'boat':
         return this.ui.say([[this.S.pebble, "That's our boat. Once Tuck is free, we'll paddle over and fetch you both!"]]);
     }
@@ -906,11 +1237,12 @@ export class Game {
     const { pip, pebble } = this.S;
     const me = who === 'pip' ? pip : pebble;
     const L = this.level!;
-    if (L.index === 1) {
+    if (L.index > 0) {
       const lines: Line[][] = [
-        [[pip, 'Watch the red rings. Grimfin always swims to the next one.']],
-        [[pebble, this.fish ? `There's a fishing hole near the start and another by the little island. One fish keeps him busy for ${FISH_TURNS} hops.` : 'Grimfin dives under for two strokes at the end of each swim. That is your chance!']],
-        [[pip, 'Be brave! Tuck is counting on you.']],
+        [[pip, 'Watch the glowy squares: that is where his spyglass is pointing next.']],
+        [[pebble, this.fish ? `One fish keeps him busy for ${FISH_TURNS} hops. Toss it into a fishing hole by a flag!` : 'He dives under for two strokes at the end of each swim. That is your chance!']],
+        [[pip, 'Hide behind the little icebergs. His spyglass cannot see through ice!']],
+        [[pebble, 'Be brave! Tuck is counting on you.']],
       ];
       return this.ui.say(lines[this.chat++ % lines.length]);
     }
@@ -922,6 +1254,7 @@ export class Game {
         [pip, "It's dark out there. Here, take my lantern."],
       ]);
       this.give('lantern', 'Pip gave you the paper lantern!');
+      this.hearts(L.actors.get('pip')!.position, 4);
       await this.ui.say([
         [pebble, 'We need my paper boat too, but the wind blew it onto the little island in the bottom-left corner.'],
         [pip, "Ice blocks float, you know. If you shoved one into the water, you'd have a stepping-stone."],
@@ -934,17 +1267,18 @@ export class Game {
     if (!this.inv.has('boat')) {
       return this.ui.say([
         [me, 'Push an ice block by walking into it. Get one into the water right next to the little island in the bottom-left.'],
-        [me, "If it gets stuck, click it and you can shove it back where it started."],
+        [me, 'If it gets stuck, click it and you can shove it back where it started.'],
       ]);
     }
     if (!this.puffinHelped) return this.ui.say([[me, 'Have you talked to Auntie Puffin? Fish would make Grimfin much easier to sneak past.']]);
     if (!this.bobbleHelped) return this.ui.say([[me, "Bobble's ball is stuck on the island in the pond. He's a brave little seal; he might help you one day."]]);
-    if (this.stars < STAR_TOTAL) return this.ui.say([[me, 'There are paper stars tucked behind things all over the page. But only if you want to look! The dock is that way.']]);
+    if (this.stars < 8) return this.ui.say([[me, 'There are paper stars tucked behind things all over the page. But only if you want to look! The dock is that way.']]);
     return this.ui.say([[me, 'You found everything! To the dock!']]);
   }
 
   private async talkPuffin() {
     const { puffin, nar } = this.S;
+    if (this.level!.index > 0) return this.ui.say([[puffin, 'Welcome home, dears! Tuck, come here and let me wrap you up.']]);
     if (this.puffinHelped) return this.ui.say([[puffin, "Tell Tuck his scarf will be ready by the time he's home."]]);
     if (this.yarnFound) {
       await this.ui.say([
@@ -956,6 +1290,7 @@ export class Game {
       this.puffinHelped = true;
       this.fish = 3;
       this.give('fish', 'Auntie Puffin gave you 3 fish!');
+      this.hearts(this.level!.actors.get('puffin')!.position);
       return;
     }
     if (!this.puffinMet) {
@@ -986,6 +1321,7 @@ export class Game {
       this.bobbleHelped = true;
       this.refreshInventory();
       this.sound.chime([0, 7, 12, 19]);
+      this.hearts(this.level!.actors.get('bobble')!.position);
       this.ui.toast('Bobble will come along and save you once from Grimfin!');
       this.refreshQuests();
       return;
@@ -1004,9 +1340,7 @@ export class Game {
 
   private async searchIgloo() {
     const { nar } = this.S;
-    if (!this.inv.has('lantern')) {
-      return this.ui.say([[nar, "It's pitch dark inside the igloo. You'd need a light to see anything."]]);
-    }
+    if (!this.inv.has('lantern')) return this.ui.say([[nar, "It's pitch dark inside the igloo. You'd need a light to see anything."]]);
     if (this.yarnFound) return this.ui.say([[nar, 'Just snow, and a very surprised beetle.']]);
     this.busy = true;
     tween(500, (k) => (this.lanternPower = 1 + Math.sin(Math.PI * k) * 3), linear);
@@ -1108,7 +1442,7 @@ export class Game {
     await Promise.all([this.hopActor('pip', a), this.hopActor('pebble', b)]);
     const prompt = this.fish
       ? `Lantern, boat and ${this.fish} fish, all packed! Shall we set sail for Grimfin's Cove?`
-      : "We have the boat, but no fish for Grimfin. Auntie Puffin might help. Set sail anyway?";
+      : 'We have the boat, but no fish for Grimfin. Auntie Puffin might help. Set sail anyway?';
     const choice = await this.ui.ask(pebble, prompt, ['Set sail!', 'Not yet']);
     if (choice === 0) {
       await this.ui.say([[pip, 'Hold on to your hood!']]);
@@ -1118,7 +1452,7 @@ export class Game {
     }
   }
 
-  // ---------------------------------------------------------------- the orca
+  // ---------------------------------------------------------------- Grimfin
 
   private get orcaPv() {
     return this.level!.actors.get('orca')!;
@@ -1127,18 +1461,45 @@ export class Game {
     return this.orcaPv.userData.inner as THREE.Group;
   }
 
+  private exposed(c: Cell) {
+    const L = this.level!;
+    if (this.sail) return !this.inSafeZone(c);
+    return 'o%'.includes(L.grid[c[1]][c[0]]);
+  }
+
+  private inSafeZone(c: Cell) {
+    for (const b of this.level!.beacons.values()) if (b.lit && manhattan(b.cell, c) <= SAFE_RADIUS) return true;
+    return false;
+  }
+
+  private blocksSight(c: Cell) {
+    if (!this.inBounds(c)) return true;
+    const L = this.level!;
+    const ch = L.def.map[c[1]][c[0]];
+    return !L.def.water.includes(ch) || ch === 'v';
+  }
+
+  private world(): TurnWorld {
+    return {
+      path: this.opath,
+      player: this.pos,
+      exposed: this.exposed(this.pos),
+      range: this.sightRange,
+      gentle: this.gentle,
+      blocks: (c) => this.blocksSight(c),
+      avoid: (c) => this.inSafeZone(c),
+    };
+  }
+
   private initOrca() {
     const def = this.level!.def.orca!;
-    const path: (Cell | null)[] = [];
-    const laneStarts: number[] = [];
-    for (const [row, a, b] of def.lanes) {
-      laneStarts.push(path.length);
-      const s = a < b ? 1 : -1;
-      for (let x = a; x !== b + s; x += s) path.push([x, row]);
-      path.push(null, null);
-    }
-    const i = def.start % path.length;
-    this.orca = { path, i, pos: path[i], distracted: 0, laneStarts };
+    this.opath = buildPath(def.lanes);
+    const i = def.start % this.opath.cells.length;
+    this.orca = { i, pos: this.opath.cells[i], head: this.opath.heads[i], alert: false, distracted: 0 };
+  }
+
+  private faceOrca() {
+    if (this.orca.head[0] !== 0) this.orcaInner.scale.x = this.orca.head[0];
   }
 
   private async orcaDive() {
@@ -1160,7 +1521,6 @@ export class Game {
 
   private async orcaSwim(from: Cell, to: Cell) {
     const pv = this.orcaPv;
-    if (to[0] !== from[0]) this.orcaInner.scale.x = to[0] > from[0] ? 1 : -1;
     const a = toWorld(from[0], from[1]), b = toWorld(to[0], to[1]);
     await tween(200, (k) => {
       pv.position.x = a.x + (b.x - a.x) * k;
@@ -1168,65 +1528,60 @@ export class Game {
     }, easeInOut);
   }
 
-  /** The farthest lane from the player, so Grimfin resurfaces somewhere fair. */
-  private farLaneStart() {
-    const o = this.orca;
-    let best = o.laneStarts[0], bestD = -1;
-    for (const s of o.laneStarts) {
-      const c = o.path[s]!;
-      const d = manhattan(c, this.pos);
-      if (d > bestD) {
-        bestD = d;
-        best = s;
-      }
-    }
-    return best;
+  private orcaTop() {
+    return this.orcaPv.position.clone().add(new THREE.Vector3(0, 1.1, 0.1));
   }
 
   private async orcaTurn(): Promise<boolean> {
     const o = this.orca;
-    if (o.distracted > 0) {
-      o.distracted--;
-      if (o.distracted === 0) {
-        await this.orcaDive();
-        o.pos = null;
-        o.i = (this.farLaneStart() - 1 + o.path.length) % o.path.length;
-        this.ui.toast('Grimfin finished his fish… and he is still hungry.');
-      } else {
+    const prev = o.pos;
+    const wasAlert = o.alert;
+    const r = orcaStep(o, this.world());
+    switch (r) {
+      case 'munch':
         this.orcaInner.rotation.z = o.distracted % 2 ? 0.07 : -0.07;
         this.sound.blip(120);
-      }
-      this.updateRings();
-      this.refreshQuests();
-      return false;
+        break;
+      case 'done-munching':
+        this.orcaInner.rotation.z = 0;
+        await this.orcaDive();
+        this.ui.toast('Grimfin finished his fish… and he is still hungry.');
+        break;
+      case 'lost':
+        this.popBubble(A.question(), this.orcaTop());
+        this.sound.blip(150);
+        this.ui.toast('Grimfin lost sight of you. Phew!');
+        break;
+      case 'caught':
+      case 'moved':
+      case 'spotted':
+        if (!wasAlert) {
+          if (!o.pos) {
+            if (prev) await this.orcaDive();
+          } else if (!prev) await this.orcaRise(o.pos);
+          else await this.orcaSwim(prev, o.pos);
+        }
+        this.faceOrca();
+        if (r === 'spotted') {
+          this.popBubble(A.bang(), this.orcaTop());
+          this.sound.growl();
+          this.shake = 0.12;
+          this.ui.toast('Grimfin spotted you! Hop out of his sight, or he charges next turn!');
+        }
+        if (r === 'caught') {
+          if (this.bobbleHelped && !this.bobbleSplashUsed) {
+            await this.bobbleSave();
+            return false;
+          }
+          await this.caughtSeq();
+          return true;
+        }
+        break;
     }
-    const prev = o.pos;
-    o.i = (o.i + 1) % o.path.length;
-    const next = o.path[o.i];
-    if (!next) {
-      if (prev) await this.orcaDive();
-    } else if (!prev) {
-      await this.orcaRise(next);
-    } else {
-      await this.orcaSwim(prev, next);
-    }
-    o.pos = next;
     this.updateRings();
-    if (this.caught()) {
-      if (this.bobbleHelped && !this.bobbleSplashUsed) {
-        await this.bobbleSave();
-        return false;
-      }
-      await this.caughtSeq();
-      return true;
-    }
+    this.updateGaze();
+    this.refreshQuests();
     return false;
-  }
-
-  private caught() {
-    const o = this.orca;
-    const L = this.level!;
-    return L.grid[this.pos[1]][this.pos[0]] === 'o' && o.distracted === 0 && !!o.pos && manhattan(o.pos, this.pos) <= 1;
   }
 
   private hideRings() {
@@ -1237,13 +1592,45 @@ export class Game {
     const L = this.level!;
     this.hideRings();
     const o = this.orca;
-    if (L.index !== 1 || o.distracted > 0 || this.tuckFree) return;
-    const next = o.path[(o.i + 1) % o.path.length];
-    if (!next) return;
+    if (!L.def.orca || o.distracted > 0 || this.tuckFree || o.alert) return;
+    const ni = (o.i + 1) % this.opath.cells.length;
+    const next = this.opath.cells[ni];
+    if (!next || this.inSafeZone(next)) return;
     for (const [k, ring] of L.rings) {
       const [x, z] = k.split(',').map(Number);
       if (manhattan([x, z], next) <= 1) ring.visible = true;
     }
+  }
+
+  private hideGaze() {
+    this.gaze.forEach((m) => (m.visible = false));
+  }
+
+  /** Show where Grimfin's spyglass will point next turn (or, in red, where he is staring now). */
+  private updateGaze() {
+    this.hideGaze();
+    const L = this.level;
+    const o = this.orca;
+    if (!L?.def.orca || o.distracted > 0 || (L.def.mode === 'walk' && this.tuckFree)) return;
+    let from: Cell | null, head: Cell;
+    if (o.alert && o.pos) {
+      from = o.pos;
+      head = o.head;
+      this.gazeMat.color.set(0xff8a6a);
+    } else {
+      const ni = (o.i + 1) % this.opath.cells.length;
+      from = this.opath.cells[ni];
+      head = this.opath.heads[ni];
+      if (from && this.inSafeZone(from)) from = null;
+      this.gazeMat.color.set(0xffe58a);
+    }
+    if (!from) return;
+    const cells = sightCells(from, head, this.sightRange, (c) => this.blocksSight(c));
+    cells.slice(0, this.gaze.length).forEach((c, i) => {
+      const m = this.gaze[i];
+      m.position.copy(toWorld(c[0], c[1], this.sail ? 0.58 : this.cellY(c) + 0.016));
+      m.visible = true;
+    });
   }
 
   private async bobbleSave() {
@@ -1260,12 +1647,25 @@ export class Game {
     ]);
     inner.rotation.z = 0;
     await this.orcaDive();
+    this.hearts(this.player.position, 5);
     this.orca.pos = null;
-    this.orca.i = (this.farLaneStart() - 1 + this.orca.path.length) % this.orca.path.length;
+    this.orca.alert = false;
+    this.orca.i = farLaneBefore(this.opath, this.pos);
     this.ui.toast("Bobble's splash sent Grimfin under. Keep going!");
     this.updateRings();
+    this.updateGaze();
     this.refreshQuests();
     this.busy = false;
+  }
+
+  /** Where a catch sends you: the last dry place or lit lighthouse you passed. */
+  private returnPoint(): Cell {
+    const L = this.level!;
+    if (this.sail) return this.checkpoint ?? L.start;
+    const cps = L.def.checkpoints ?? [L.start];
+    let best = cps[0];
+    for (const c of cps) if (c[0] <= this.pos[0] && c[0] >= best[0]) best = c;
+    return best;
   }
 
   private async caughtSeq() {
@@ -1277,31 +1677,33 @@ export class Game {
     this.sound.growl();
     if (target.x !== from.x) inner.scale.x = target.x > from.x ? 1 : -1;
     await tween(420, (k) => {
-      pv.position.x = from.x + (target.x - from.x) * k * 0.6;
-      pv.position.z = from.z + (target.z - from.z) * k * 0.6;
+      pv.position.x = from.x + (target.x - from.x) * k * 0.7;
+      pv.position.z = from.z + (target.z - from.z) * k * 0.7;
       inner.position.y = SURFACE + Math.sin(Math.PI * k) * 0.75;
       inner.rotation.z = Math.sin(Math.PI * k) * 0.35 * inner.scale.x;
     }, easeInOut);
     this.sound.splash();
     this.shake = 0.3;
     await tween(260, (k) => this.player.scale.setScalar(Math.max(0.001, 1 - k)), easeIn);
-    // Back to the last bit of dry land you stood on: the start, or the island halfway.
-    const L = this.level!;
-    const back = this.pos[0] > 11 ? ([11, 6] as Cell) : L.start;
+    const back = this.returnPoint();
     this.pos = [...back];
-    this.player.position.copy(toWorld(back[0], back[1], LAND_Y));
+    this.player.position.copy(toWorld(back[0], back[1], this.cellY(back)));
+    if (this.follower) this.follower.position.copy(toWorld(back[0] - 1, back[1], 0.02));
     pv.position.copy(from);
     inner.rotation.z = 0;
     await tween(360, (k) => this.player.scale.setScalar(Math.max(0.001, k)), easeOutBack);
     await this.ui.say([[grim, pick([
       'HAR! Off my floes, little paper thing!',
-      'Splash! Back to dry land with you!',
+      'Splash! Back you go!',
       'Nobody sneaks past Grimfin! HAR HAR HAR!',
+      'I spy, with my little spyglass... YOU!',
     ])]]);
     await this.orcaDive();
     this.orca.pos = null;
-    this.orca.i = (this.farLaneStart() - 1 + this.orca.path.length) % this.orca.path.length;
+    this.orca.alert = false;
+    this.orca.i = farLaneBefore(this.opath, this.pos);
     this.updateRings();
+    this.updateGaze();
     this.refreshQuests();
     this.busy = false;
   }
@@ -1309,7 +1711,7 @@ export class Game {
   private async tossFish(hole: Cell) {
     const L = this.level!;
     if (this.fish <= 0) {
-      return this.ui.say([[this.S.nar, this.puffinHelped ? 'Your bucket is empty. Time your hops with the red rings instead.' : "You haven't got any fish. Time your hops with the red rings instead."]]);
+      return this.ui.say([[this.S.nar, this.puffinHelped ? 'Your bucket is empty. Time your hops with the glowy squares instead.' : "You haven't got any fish. Time your hops with the glowy squares instead."]]);
     }
     this.busy = true;
     this.fish--;
@@ -1332,23 +1734,27 @@ export class Game {
     const fresh = o.distracted === 0 || !o.pos || !same(o.pos, hole);
     if (o.pos && fresh) await this.orcaDive();
     o.distracted = Math.min(FISH_TURNS * 2, o.distracted + FISH_TURNS);
+    o.alert = false;
     o.pos = hole;
     if (fresh) {
       await this.orcaRise(hole);
       this.orcaInner.scale.x = 1;
     }
+    this.hearts(b, 3);
     this.ui.toast(fresh ? 'Munch munch munch… Grimfin is busy!' : 'Another fish! Grimfin will be busy even longer.');
     this.updateRings();
+    this.updateGaze();
     this.refreshQuests();
     this.busy = false;
   }
 
-  // ---------------------------------------------------------------- finale
+  // ---------------------------------------------------------------- chapter two: Tuck
 
-  private async finale() {
+  private async freeTuck() {
     this.busy = true;
     this.tuckFree = true;
     this.hideRings();
+    this.hideGaze();
     this.refreshQuests();
     const L = this.level!;
     const F = L.def.finale!;
@@ -1364,10 +1770,11 @@ export class Game {
     happy.visible = true;
     L.idlers.push({ obj: happy, phase: 0, kind: 'waddle' });
     this.sound.chime([0, 4, 7, 12, 16]);
+    this.hearts(tuckPv.position, 9);
     await tween(320, (k) => (happy.position.y = Math.sin(Math.PI * k) * 0.3), linear);
     await this.ui.say([[tuck, 'Free! Free as a snowflake!']]);
 
-    // Grimfin bursts up beside the iceberg
+    // Grimfin isn't done yet
     const o = this.orca;
     if (o.pos) await this.orcaDive();
     o.distracted = 0;
@@ -1376,46 +1783,17 @@ export class Game {
     await this.orcaRise(F.orcaRise);
     this.orcaInner.scale.x = 1;
     o.pos = F.orcaRise;
+    this.popBubble(A.bang(), this.orcaTop());
     await this.ui.say([
-      [grim, 'HAR! Leaving so soon?'],
-      [grim, "Nobody leaves Grimfin's cove. Not you, and not your squeaky little friend!"],
+      [grim, 'HAR! You think you can just sail away?'],
+      [grim, 'My fog bank lies between you and home. Nobody finds their way through it. NOBODY!'],
+      [grim, 'This isn’t over, little paper thing!'],
     ]);
-    await this.ui.ask(nar, 'Grimfin rears up out of the black water. The lantern flickers in your mittens…', ['Raise the lantern high!']);
-
-    this.sound.flare();
-    this.shake = 0.3;
-    this.camWide = true;
-    tween(700, (k) => {
-      this.hopper.position.y = k * 0.35;
-      this.lanternPower = 1 + k * 6;
-    }, easeOut);
-    tween(1200, (k) => (this.camLift = k), easeInOut);
-    L.shadows.forEach((s, i) => tween(1000, (k) => s.scale.setScalar(Math.max(0.001, k)), easeOutBack, 500 + i * 160));
-    await wait(1900 + L.shadows.length * 120);
-    const scared: Line[] = [[grim, 'W-w-what?! A GIANT penguin army?!']];
-    if (this.puffinHelped) scared.push([grim, 'And a GIANT PUFFIN?! With KNITTING NEEDLES?!']);
-    if (this.bobbleHelped) scared.push([grim, 'And a GIANT... wait, is that the little seal? He looks ENORMOUS!']);
-    scared.push([grim, 'I just remembered I have to be fierce somewhere else. Very far away. Goodbye!']);
-    await this.ui.say(scared);
-    const pv = this.orcaPv, inner = this.orcaInner;
-    const z0 = pv.position.z;
-    this.sound.splash();
-    inner.scale.x = -1;
-    await tween(1000, (k) => {
-      pv.position.z = z0 - k * 1.5;
-      inner.position.y = SURFACE + (DEEP - SURFACE) * k;
-    }, easeIn);
-    pv.visible = false;
+    await this.orcaDive();
+    this.orcaPv.visible = false;
     o.pos = null;
-    await tween(1000, (k) => {
-      this.hopper.position.y = 0.35 * (1 - k);
-      this.lanternPower = 7 - 6 * k;
-      L.shadows.forEach((s) => s.scale.setScalar(Math.max(0.001, 1 - k)));
-      this.camLift = 1 - k;
-    }, easeInOut);
-    this.camWide = false;
 
-    // Pip and Pebble (and Bobble) paddle over
+    // Pip and Pebble (and Bobble) paddle over to fetch everyone
     const boat = L.actors.get('boat')!;
     const bc = L.actorCell.get('boat')!;
     const riders = ['pip', 'pebble', ...(this.bobbleHelped ? ['bobble'] : [])];
@@ -1430,33 +1808,182 @@ export class Game {
       boat.position.y += Math.abs(Math.sin(k * Math.PI * 7)) * 0.05;
       riderPvs.forEach((r, i) => r.position.copy(boat.position).add(offsets[i]));
     }, easeInOut);
-    const spots = F.spots.filter((c) => !same(c, this.pos));
-    await Promise.all(riders.map((r, i) => this.hopActor(r, spots[i])));
-
     const cheer: Line[] = [
       [pip, 'TUCK!'],
       [pebble, 'We knew you could do it!'],
-      [tuck, 'Thank you, friend. You were braver than a whole army of penguins.'],
-      [pip, '...even a GIANT one.'],
+      [tuck, 'Thank you, friend. Now... how do we get home through all that fog?'],
     ];
-    if (this.puffinHelped) cheer.push([pebble, 'And Auntie Puffin is knitting you a welcome-home scarf, Tuck!']);
-    if (this.bobbleHelped) cheer.push([bobble, 'Did you see my splash? Did you SEE it?']);
+    if (this.bobbleHelped) cheer.push([bobble, 'With a lantern, silly!']);
+    else cheer.push([pip, 'With a lantern, of course!']);
     await this.ui.say(cheer);
+    this.hearts(tuckPv.position, 6);
+    await this.ui.say([[nar, 'So everyone squeezed into the little paper boat, and pushed off into the fog.']]);
+    this.finish?.();
+  }
+
+  // ---------------------------------------------------------------- chapter three: lighthouses
+
+  private async wakeLighthouse(id: string) {
+    const L = this.level!;
+    const b = L.beacons.get(id)!;
+    if (b.lit) return this.ui.say([[this.S.light, 'All lit and wide awake! Off you go, little boat.']]);
+    if (this.lanternCovered) return this.ui.say([[this.S.nar, 'You need to uncover your lantern to wake a lighthouse. Press L.']]);
+    this.busy = true;
+    b.lit = true;
+    this.checkpoint = [...this.pos];
+    const [sleepy, awake] = b.pv.userData.faces as THREE.Group[];
+    this.sound.flare();
+    tween(500, (k) => (this.lanternPower = 1 + Math.sin(Math.PI * k) * 4), linear);
+    await tween(300, (k) => sleepy.scale.setScalar(Math.max(0.001, 1 - k)), easeIn);
+    sleepy.visible = false;
+    awake.visible = true;
+    awake.scale.setScalar(0.001);
+    await tween(420, (k) => awake.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    tween(800, (k) => (b.light.intensity = 3.5 * k), easeOut);
+    this.reveal(b.cell, 4.8);
+    this.hearts(b.pv.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 6);
+    const n = [...L.beacons.values()].filter((x) => x.lit).length;
+    const yawns = ['Mmh? Oh! A light! I was having the loveliest nap.', 'Hm-hmm? Is it night already? Shining now, shining!', '*yaaawn* Good morning! Er, good night! I mean: I am ON!'];
+    await this.ui.say([[this.S.light, yawns[(n - 1) % yawns.length]]]);
+    if (n === L.beacons.size) {
+      this.gateOpen = true;
+      const gate = L.actors.get('gate');
+      if (gate) await tween(600, (k) => (gate.rotation.x = (-Math.PI / 2) * k), easeIn);
+      this.sound.chime([0, 4, 7, 12, 16, 19]);
+      this.reveal([21, 7], 3);
+      await this.ui.say([[this.S.pip, 'All three are shining! Listen, the harbour gate is opening! Home is that way →']]);
+    } else {
+      this.ui.toast(`Lighthouse awake! ${n}/${L.beacons.size}. Grimfin keeps clear of its light.`);
+    }
+    this.updateRings();
+    this.updateGaze();
+    this.refreshQuests();
+    this.busy = false;
+  }
+
+  // ---------------------------------------------------------------- finale
+
+  private async finale() {
+    this.busy = true;
+    this.hideRings();
+    this.hideGaze();
+    const L = this.level!;
+    const F = L.def.finale!;
+    const { nar, pip, pebble, tuck, grim, bobble, puffin } = this.S;
+
+    const o = this.orca;
+    if (o.pos) await this.orcaDive();
+    o.distracted = 0;
+    this.sound.growl();
+    this.shake = 0.4;
+    await this.orcaRise(F.orcaRise);
+    this.orcaInner.scale.x = 1;
+    o.pos = F.orcaRise;
+    this.popBubble(A.bang(), this.orcaTop());
+    await this.ui.say([
+      [grim, 'HAR! Found your way through my fog, did you?'],
+      [grim, "Well, you're not getting into that harbour. Not while Grimfin is around!"],
+    ]);
+    await this.ui.ask(nar, 'Grimfin rears up between you and home. The lantern flickers in your mittens…', ['Raise the lantern high!']);
+
+    this.lanternCovered = false;
+    this.onLantern(false);
+    this.sound.flare();
+    this.shake = 0.3;
+    this.camWide = true;
+    const big = L.actors.get('bigLighthouse');
+    if (big) {
+      const [s, a] = big.userData.faces as THREE.Group[];
+      s.visible = false;
+      a.visible = true;
+    }
+    tween(700, (k) => {
+      this.hopper.position.y = k * 0.35;
+      this.lanternPower = 1 + k * 6;
+      if (L.bigLight) L.bigLight.intensity = 6 * k;
+    }, easeOut);
+    tween(1200, (k) => (this.camLift = k), easeInOut);
+    if (L.fog) this.reveal([COLS / 2, ROWS / 2], 30);
+    L.shadows.forEach((s, i) => tween(1000, (k) => s.scale.setScalar(Math.max(0.001, k)), easeOutBack, 500 + i * 160));
+    await wait(1900 + L.shadows.length * 120);
+    const scared: Line[] = [[grim, 'W-w-what?! A GIANT penguin army?!']];
+    if (this.puffinHelped) scared.push([grim, 'And a GIANT PUFFIN?! With KNITTING NEEDLES?!']);
+    if (this.bobbleHelped) scared.push([grim, 'And a GIANT... wait, is that the little seal? He looks ENORMOUS!']);
+    scared.push([grim, 'I just remembered I have to be fierce somewhere else. Very far away. Goodbye!']);
+    await this.ui.say(scared);
+    const pv = this.orcaPv, inner = this.orcaInner;
+    const z0 = pv.position.z;
+    this.sound.splash();
+    inner.scale.x = -1;
+    await tween(1000, (k) => {
+      pv.position.z = z0 + k * 2.5;
+      inner.position.y = SURFACE + (DEEP - SURFACE) * k;
+    }, easeIn);
+    pv.visible = false;
+    o.pos = null;
+    await tween(1000, (k) => {
+      this.hopper.position.y = 0.35 * (1 - k);
+      this.lanternPower = 7 - 6 * k;
+      L.shadows.forEach((s) => s.scale.setScalar(Math.max(0.001, 1 - k)));
+      this.camLift = 1 - k;
+    }, easeInOut);
+
+    // Morning comes.
+    this.sound.chime([0, 4, 7, 11, 12, 16]);
+    await tween(3500, (k) => (this.dawn = k), easeInOut);
+    this.camWide = false;
+
+    // Everyone hops ashore.
+    this.boatRig.children.slice(1).forEach((c) => (c.visible = false));
+    const friends: [string, HTMLCanvasElement, number][] = [['pip', this.art.pip, 0.82], ['pebble', this.art.pebble, 0.78], ['tuck', this.art.tuck, 0.78]];
+    const spots = F.spots.filter((c) => !same(c, this.pos));
+    const ashore: THREE.Group[] = [];
+    for (const [i, [id, art, h]] of friends.entries()) {
+      const pvF = this.actor(L, id, art, h, this.pos, 0, 'waddle');
+      pvF.visible = true;
+      pvF.rotation.x = 0;
+      pvF.position.copy(this.player.position);
+      ashore.push(pvF);
+      await this.hopActor(id, spots[i]);
+    }
+    if (this.follower) {
+      const f = this.follower, f0 = f.position.clone(), f1 = toWorld(spots[3][0], spots[3][1], LAND_Y);
+      await tween(500, (k) => {
+        f.position.lerpVectors(f0, f1, k);
+        f.position.y += Math.sin(Math.PI * k) * 0.4;
+      }, linear);
+      ashore.push(f);
+    }
+    const lines: Line[] = [
+      [pip, 'HOME!'],
+      [tuck, 'Thank you, friend. You were braver than a whole army of penguins.'],
+      [pebble, '...even a GIANT one.'],
+    ];
+    if (this.puffinHelped) {
+      lines.push([puffin, 'Tuck! Come here, dear. I finished your welcome-home scarf!']);
+      lines.push([tuck, 'It is the cosiest scarf in the whole book!']);
+    }
+    if (this.bobbleHelped) lines.push([bobble, 'Did you see my splash? Did you SEE it?']);
+    await this.ui.say(lines);
+    const puffinPv = L.actors.get('puffin');
+    if (puffinPv) ashore.push(puffinPv);
     this.sound.chime([0, 4, 7, 12, 7, 12, 16, 19]);
-    const jumpers = [...riderPvs, tuckPv, this.player];
+    const jumpers = [...ashore, this.player];
     for (let j = 0; j < 3; j++) {
+      this.hearts(this.player.position, 4);
       await Promise.all(jumpers.map((pvj, i) => {
         const y0 = pvj.position.y;
         return tween(300, (k) => (pvj.position.y = y0 + Math.sin(Math.PI * k) * 0.25), linear, i * 60);
       }));
     }
-    await this.ui.say([[nar, 'And so, with a lantern held high and your friends at your side, you sailed home across the folded sea.']]);
+    await this.ui.say([[nar, 'And so, with a lantern held high and your friends at your side, you came home across the folded sea, just as the sun came up.']]);
     this.finish?.();
   }
 
   // ---------------------------------------------------------------- per frame
 
   update(t: number) {
+    this.now = t;
     const L = this.level;
     if (!L) return;
     for (const i of L.idlers) {
@@ -1482,14 +2009,38 @@ export class Game {
         case 'sway':
           i.obj.rotation.z = Math.sin(s * 0.8) * 0.025;
           break;
+        case 'drift':
+          i.obj.position.x += 0.003;
+          if (i.obj.position.x > 13) i.obj.position.x = -13;
+          i.obj.position.y += Math.sin(s * 0.7) * 0.0008;
+          break;
       }
+    }
+    // friends bounce happily when you stand next to them
+    for (const id of ['pip', 'pebble', 'puffin', 'bobble']) {
+      const pv = L.actors.get(id), c = L.actorCell.get(id);
+      if (!pv || !c) continue;
+      const inner = pv.userData.inner as THREE.Group;
+      inner.position.y = !this.busy && manhattan(c, this.pos) === 1 ? Math.abs(Math.sin(t * 7)) * 0.07 : 0;
+    }
+    // glowing stars at night only show in uncovered lantern light
+    if (L.def.night) {
+      for (const [k, star] of L.stars) {
+        const [x, z] = k.split(',').map(Number);
+        star.visible = !this.lanternCovered && manhattan([x, z], this.pos) <= 3;
+      }
+    }
+    // footprints fade
+    for (const p of this.prints) {
+      (p.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - (t - p.born) / 8);
     }
     const flicker = 1 + Math.sin(t * 13) * 0.04 + Math.sin(t * 7.3) * 0.05;
     const base = this.inv.has('lantern') ? (L.def.night ? 2.6 : 0.6) : 0;
-    this.lanternLight.intensity = base * this.lanternPower * flicker;
+    this.lanternLight.intensity = base * this.lanternPower * flicker * (this.lanternCovered ? 0.3 : 1);
     const orca = L.actors.get('orca');
     if (orca) orca.position.y = Math.sin(t * 1.6) * 0.03;
     L.ringMat.opacity = 0.55 + 0.3 * Math.sin(t * 6);
+    this.gazeMat.opacity = (this.orca.alert ? 0.5 : 0.32) + 0.12 * Math.sin(t * 5);
     this.markerMat.opacity = 0.55 + 0.2 * Math.sin(t * 4);
     this.shake *= 0.9;
   }
