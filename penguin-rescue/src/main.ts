@@ -391,7 +391,9 @@ async function run() {
   await game.closeChapter();
   document.getElementById('hud')!.hidden = true;
   sound.rustle(1.2);
-  tween(1400, (k) => setNight(1 - k), easeInOut);
+  // the book closes in daylight, from whatever light the last chapter had
+  const fromNight = night;
+  tween(1400, (k) => setNight(fromNight * (1 - k)), easeInOut);
   await book.close();
   sound.fold();
   const st = game.stats;

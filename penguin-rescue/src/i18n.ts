@@ -60,8 +60,8 @@ const T: Record<string, [string, string]> = {
   endKicker: ['and they all waddled happily ever after', 'и жили-ковыляли они долго и счастливо'],
   end: ['The End', 'Конец'],
   endText: [
-    'Tuck is home, Grimfin is somewhere far away being fierce, and the lantern is still glowing.',
-    'Тук дома, Гримфин где-то далеко-далеко изображает грозу морей, а фонарик всё ещё светится.',
+    'Tuck is home, Grimfin has a brand-new scarf, and the lantern is still glowing.',
+    'Тук дома, у Гримфина новый шарф, а фонарик всё ещё светится.',
   ],
   again: ['Read it again', 'Прочитать ещё раз'],
   more: ['continue ▾', 'дальше ▾'],
