@@ -25,6 +25,10 @@ const DEEP = -1.35;
 const FISH_TURNS = 6;
 const BACK_Z = -ROWS / 2 - 0.2;
 const FOG_PX = 40;
+// Art used over and over (hearts, speech bubbles) is drawn once.
+const artCache = new Map<string, HTMLCanvasElement>();
+const cachedArt = (k: string, make: () => HTMLCanvasElement) => artCache.get(k) ?? artCache.set(k, make()).get(k)!;
+
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
 
 interface Pop {
@@ -63,6 +67,8 @@ interface Level {
   shadows: THREE.Object3D[];
   fog: { ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture } | null;
   bigLight: THREE.PointLight | null;
+  /** True once the page has finished unfolding. */
+  ready: boolean;
 }
 
 export class Game {
@@ -237,7 +243,8 @@ export class Game {
   hearts(at: THREE.Vector3, n = 7) {
     const colors = ['#f06a8a', '#f58aa6', '#ff9e7a', '#e2557a'];
     for (let i = 0; i < n; i++) {
-      const h = makeCutout(A.heart(colors[i % colors.length]), 0.18 + rand() * 0.1, 3);
+      const color = colors[i % colors.length];
+      const h = makeCutout(cachedArt('heart' + color, () => A.heart(color)), 0.18 + rand() * 0.1, 3);
       h.position.copy(at).add(new THREE.Vector3((rand() - 0.5) * 0.5, 0.5 + rand() * 0.3, 0.1));
       h.scale.setScalar(0.001);
       this.scene.add(h);
@@ -487,7 +494,7 @@ export class Game {
     const L: Level = {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
       stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
-      rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null,
+      rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false,
     };
     // Friends you never helped don't turn up later.
     L.grid.forEach((r) => r.forEach((ch, x) => {
@@ -789,6 +796,7 @@ export class Game {
     this.ui.banner(L.def.title);
     this.ui.setQuests([]);
     await this.unfold(L);
+    L.ready = true;
     this.camWide = false;
     await wait(700);
     if (i === 0) await this.introOne();
@@ -811,6 +819,7 @@ export class Game {
     if (orca) orca.visible = false;
     this.hideRings();
     this.hideGaze();
+    L.ready = false;
     await wait(500);
     await this.fold(L);
     this.player.visible = false;
@@ -865,6 +874,9 @@ export class Game {
       [pip, 'Look, lighthouses! But they have all dozed off. Sail up beside each one and wake it with the lantern.'],
       [pebble, "When all three are awake, the harbour gate will open. And Grimfin won't come anywhere near a lighthouse that's shining."],
     ];
+    lines.push([pip, this.fish
+      ? `No fishing holes out here, but you can toss a fish overboard: click your fish bucket, or press F. Grimfin will munch for ${FISH_TURNS} hops.`
+      : 'Look out for floating crates of fish. Toss one overboard (click the fish bucket, or press F) and Grimfin will stop to munch.']);
     if (this.bobbleHelped) lines.push([bobble, "I'll swim right behind you. Paddle paddle!"]);
     lines.push([nar, 'Grimfin hunts the fog the same way as before: watch for his glowing spyglass squares.']);
     await this.ui.say(lines);
@@ -1548,7 +1560,7 @@ export class Game {
         this.ui.toast('Grimfin finished his fish… and he is still hungry.');
         break;
       case 'lost':
-        this.popBubble(A.question(), this.orcaTop());
+        this.popBubble(cachedArt('question', A.question), this.orcaTop());
         this.sound.blip(150);
         this.ui.toast('Grimfin lost sight of you. Phew!');
         break;
@@ -1563,7 +1575,7 @@ export class Game {
         }
         this.faceOrca();
         if (r === 'spotted') {
-          this.popBubble(A.bang(), this.orcaTop());
+          this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
           this.sound.growl();
           this.shake = 0.12;
           this.ui.toast('Grimfin spotted you! Hop out of his sight, or he charges next turn!');
@@ -1708,6 +1720,34 @@ export class Game {
     this.busy = false;
   }
 
+  /** The fish button (or F): toss into a nearby fishing hole, or overboard when sailing. */
+  useFish() {
+    const L = this.level;
+    if (!L || this.busy || this.walking || this.ui.open) return;
+    if (this.fish <= 0) {
+      this.ui.toast('Your fish bucket is empty.');
+      return;
+    }
+    if (!L.def.orca) {
+      this.ui.toast('Save your fish for Grimfin!');
+      return;
+    }
+    if (!this.sail) {
+      for (const [id, c] of L.actorCell) if (id.startsWith('hole') && manhattan(c, this.pos) === 1) return this.go(c, id);
+      this.ui.toast('Stand next to a fishing hole (the little flags) to toss a fish.');
+      return;
+    }
+    // Overboard: the open water beside the boat, as far from the lighthouses' light as possible.
+    const spots = DIRS.map((d): Cell => [this.pos[0] + d[0], this.pos[1] + d[1]])
+      .filter((c) => this.inBounds(c) && '~*c'.includes(L.grid[c[1]][c[0]]) && !this.inSafeZone(c));
+    if (!spots.length) {
+      this.ui.toast("Grimfin won't come this close to a shining lighthouse anyway.");
+      return;
+    }
+    this.walking = true;
+    this.tossFish(spots[0]).finally(() => (this.walking = false));
+  }
+
   private async tossFish(hole: Cell) {
     const L = this.level!;
     if (this.fish <= 0) {
@@ -1783,7 +1823,7 @@ export class Game {
     await this.orcaRise(F.orcaRise);
     this.orcaInner.scale.x = 1;
     o.pos = F.orcaRise;
-    this.popBubble(A.bang(), this.orcaTop());
+    this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
     await this.ui.say([
       [grim, 'HAR! You think you can just sail away?'],
       [grim, 'My fog bank lies between you and home. Nobody finds their way through it. NOBODY!'],
@@ -1879,7 +1919,7 @@ export class Game {
     await this.orcaRise(F.orcaRise);
     this.orcaInner.scale.x = 1;
     o.pos = F.orcaRise;
-    this.popBubble(A.bang(), this.orcaTop());
+    this.popBubble(cachedArt('bang', A.bang), this.orcaTop());
     await this.ui.say([
       [grim, 'HAR! Found your way through my fog, did you?'],
       [grim, "Well, you're not getting into that harbour. Not while Grimfin is around!"],
@@ -2024,7 +2064,7 @@ export class Game {
       inner.position.y = !this.busy && manhattan(c, this.pos) === 1 ? Math.abs(Math.sin(t * 7)) * 0.07 : 0;
     }
     // glowing stars at night only show in uncovered lantern light
-    if (L.def.night) {
+    if (L.def.night && L.ready) {
       for (const [k, star] of L.stars) {
         const [x, z] = k.split(',').map(Number);
         star.visible = !this.lanternCovered && manhattan([x, z], this.pos) <= 3;

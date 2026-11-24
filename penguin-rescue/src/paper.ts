@@ -175,19 +175,30 @@ export function dieCut(art: HTMLCanvasElement, border = 7) {
  * A stand-up paper cutout: front art + plain paper back, pivot at the base centre.
  * Returns a group whose userData.front is the front mesh.
  */
+// The same art reused (hearts, bubbles, lanterns) shares one die-cut and one pair of textures.
+const cutCache = new WeakMap<HTMLCanvasElement, Map<number, { front: HTMLCanvasElement; tf: THREE.Texture; tb: THREE.Texture }>>();
+
 export function makeCutout(art: HTMLCanvasElement, height: number, border = 7) {
-  const { front, back } = dieCut(art, border);
+  let byBorder = cutCache.get(art);
+  if (!byBorder) cutCache.set(art, (byBorder = new Map()));
+  let cut = byBorder.get(border);
+  if (!cut) {
+    const { front, back } = dieCut(art, border);
+    cut = { front, tf: canvasTex(front), tb: canvasTex(back) };
+    byBorder.set(border, cut);
+  }
+  const { front } = cut;
   const h = height, w = (h * front.width) / front.height;
   const geo = new THREE.PlaneGeometry(w, h);
   geo.translate(0, h / 2, 0);
   const mf = new THREE.MeshStandardMaterial({
-    map: canvasTex(front),
+    map: cut.tf,
     alphaTest: 0.5,
     roughness: 0.9,
     bumpMap: paperTex(),
     bumpScale: 0.5,
   });
-  const mb = new THREE.MeshStandardMaterial({ map: canvasTex(back), alphaTest: 0.5, roughness: 0.95 });
+  const mb = new THREE.MeshStandardMaterial({ map: cut.tb, alphaTest: 0.5, roughness: 0.95 });
   const fm = new THREE.Mesh(geo, mf);
   const bm = new THREE.Mesh(geo, mb);
   bm.rotation.y = Math.PI;

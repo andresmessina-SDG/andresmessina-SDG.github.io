@@ -36,6 +36,8 @@ export class UI {
     });
     window.addEventListener('keydown', (e) => {
       if (!this.open) return;
+      // With choice buttons showing, let the focused button take Space/Enter itself.
+      if (this.choices.childElementCount > 0) return;
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         this.advance?.();

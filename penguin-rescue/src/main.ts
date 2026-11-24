@@ -114,6 +114,8 @@ window.addEventListener('keydown', (e) => {
     toggleMute();
   } else if (e.key === 'l' || e.key === 'L') {
     game.toggleLantern();
+  } else if (e.key === 'f' || e.key === 'F') {
+    game.useFish();
   }
 });
 const muteBtn = document.getElementById('mute')!;
@@ -123,6 +125,7 @@ function toggleMute() {
   muteBtn.setAttribute('aria-pressed', String(sound.muted));
 }
 muteBtn.addEventListener('click', toggleMute);
+document.querySelector<HTMLElement>('#inv .slot[data-id="fish"]')!.addEventListener('click', () => game.useFish());
 const lanternBtn = document.getElementById('lanternBtn')!;
 lanternBtn.addEventListener('click', () => game.toggleLantern());
 game.onLantern = (covered) => {
