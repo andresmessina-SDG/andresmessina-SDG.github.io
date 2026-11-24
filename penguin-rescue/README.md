@@ -3,14 +3,19 @@
 A small pop-up book adventure in Three.js. Two paper penguins, Pip and Pebble,
 ask you to rescue their friend Tuck from Grimfin, an orca in a pirate hat.
 
-- **Chapter One, The Snowy Shore.** Talk to the penguins, then find the
-  lantern, the paper boat and the bucket of fish, and meet them at the dock.
+- **Chapter One, The Snowy Shore.** An open little world with quests in any
+  order. Pip gives you a lantern. Push an ice block into the water to make a
+  stepping-stone to the island where the paper boat blew away. Optionally,
+  use the lantern to search the dark igloo for Auntie Puffin's yarn; she pays
+  you in fish. Five paper stars are hidden around the page.
 - **Chapter Two, Grimfin's Cove.** Night. Hop across the ice floes to Tuck's
   cage. Grimfin swims one stroke for every hop you take; a red ring marks the
-  floes beside where he will be next. Toss a fish in the fishing hole to keep
-  him busy for twelve hops, or time your crossing without it.
+  floes beside where he will be next. Each fish you toss in the fishing hole
+  keeps him busy for six hops, or you can time your crossing without any.
+- **Finale.** Raise the lantern and the shadows of everyone you helped tower
+  over Grimfin. Help Auntie Puffin and she joins the shadow army.
 
-Controls: click or tap to walk or to talk; arrow keys or WASD to step;
+Controls: click or tap to walk, talk or push; hovering shows where a click goes; arrow keys or WASD to step;
 Space to continue dialogue or to wait a turn; M to mute.
 
 ## Run it

@@ -77,6 +77,12 @@ resize();
 const ndc = new THREE.Vector2();
 let downAt: { x: number; y: number } | null = null;
 canvas.addEventListener('pointerdown', (e) => (downAt = { x: e.clientX, y: e.clientY }));
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  game.hover(ndc);
+});
+canvas.addEventListener('pointerleave', () => game.hover(null));
 canvas.addEventListener('pointerup', (e) => {
   if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 12) return;
   downAt = null;
@@ -162,6 +168,9 @@ async function run() {
   tween(1400, (k) => setNight(1 - k), easeInOut);
   await book.close();
   sound.fold();
+  const st = game.stats;
+  document.getElementById('stats')!.textContent =
+    `Paper stars found: ${st.stars} of ${st.starTotal}` + (st.puffin ? ' · Auntie Puffin helped' : ' · Auntie Puffin is still looking for her yarn');
   document.getElementById('end')!.hidden = false;
 }
 document.getElementById('again')!.addEventListener('click', () => location.reload());
