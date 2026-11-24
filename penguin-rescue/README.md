@@ -14,15 +14,27 @@ follows you around the open book.
   the seal pup's ball (he promises to splash Grimfin once). Eight paper stars
   are hidden around the page.
 - **Chapter Two, Grimfin's Cove.** Night. Cross the bay in two legs, resting
-  on the island halfway. Grimfin swims one stroke for every hop you take; a
-  red ring marks the floes beside where he will be next. Each fish tossed in
-  a fishing hole keeps him busy for six hops, or you can time your crossing
-  without any.
+  on the island halfway, and free Tuck. Grimfin swims one stroke for every hop
+  you take and looks ahead through his spyglass (the glowing squares show
+  where he will look next). If he spots you, a "!" pops up and he charges
+  next turn unless you get out of sight: behind a little sea iceberg, onto
+  land, or out of his view. Red rings mark where he can reach. Tossing a fish
+  in a fishing hole keeps him busy for six hops.
+- **Chapter Three, The Way Home.** Sail the paper boat through Grimfin's fog.
+  The lantern clears the fog around you. Wake three sleepy lighthouses: each
+  one clears the fog for good and keeps Grimfin away from its light. With all
+  three awake, the harbour gate opens. Collect floating fish crates on the way.
 - **Finale.** Raise the lantern and the shadows of everyone you helped tower
-  over Grimfin.
+  over Grimfin, then morning comes.
 
-Controls: click or tap to walk, talk or push; hovering shows where a click goes; arrow keys or WASD to step;
-Space to continue dialogue or to wait a turn; M to mute.
+**The lantern:** press L (or the lantern button) to cover it. Grimfin can then
+only spot you up close, but glowing stars at night only appear in uncovered
+lantern light. **Gentle mode** on the title screen gives younger players a
+kinder Grimfin: he sees one cell less, and always shouts before he grabs.
+
+Controls: click or tap to walk, sail, talk or push; hovering shows where a click goes;
+arrow keys or WASD to step; Space to continue dialogue or wait a turn; L to cover the
+lantern; M to mute.
 
 ## Run it
 
@@ -62,7 +74,8 @@ Everything is generated at runtime. There are no image or sound files yet.
 | `src/terrain.ts` | The board as cut paper: per-page sheets for water (with shallows), a shadowed rim, snow, and terraced snowbanks, with wobbly hand-cut coastlines that fold out from the spine |
 | `src/weather.ts` | Falling paper snowflakes around the camera |
 | `src/game.ts` | Board building, pop-up animations, walking, ice blocks, quests, Grimfin's patrol and the story |
-| `src/levels.ts` | The two chapter maps as text grids, plus Grimfin's swim lanes and finale positions |
+| `src/levels.ts` | The three chapter maps as text grids, plus Grimfin's swim lanes, checkpoints and finale positions |
+| `src/rules.ts` | Grimfin's rules (swim lanes, spyglass view, spotting, charging, lighthouse safe zones), shared by the game and the map solver |
 | `src/audio.ts` | Web Audio: paper rustles, fold snaps, page turns, footsteps, splashes, voices, and a music-box score for day and night |
 | `src/fx.ts` | Bloom on the lantern and moon, tilt-shift blur that follows the hero, and a warm grade, vignette and grain |
 | `src/ui.ts` | Dialogue, choices, objective label, inventory, toasts |

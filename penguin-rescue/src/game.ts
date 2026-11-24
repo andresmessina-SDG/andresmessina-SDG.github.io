@@ -420,7 +420,7 @@ export class Game {
     const g = ctx2d(c);
     g.fillStyle = 'rgba(178,190,224,0.96)';
     g.fillRect(0, 0, W, H);
-    g.strokeStyle = 'rgba(235,240,255,0.35)';
+    g.strokeStyle = 'rgba(235,240,255,0.16)';
     g.lineCap = 'round';
     for (let i = 0; i < 90; i++) {
       const x = rand() * W, y = rand() * H, r = 20 + rand() * 50;
@@ -491,7 +491,7 @@ export class Game {
     };
     // Friends you never helped don't turn up later.
     L.grid.forEach((r) => r.forEach((ch, x) => {
-      if (ch === 'Q' && !this.bobbleHelped) r[x] = '.';
+      if (ch === 'Q' && index > 0 && !this.bobbleHelped) r[x] = '.';
       if (ch === 'U' && index > 0 && !this.puffinHelped) r[x] = '.';
     }));
 
