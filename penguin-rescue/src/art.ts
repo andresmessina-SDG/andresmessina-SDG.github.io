@@ -623,3 +623,67 @@ export function planks() {
   }
   return c;
 }
+
+/** Auntie Puffin, a knitter. */
+export function puffin() {
+  const c = makeCanvas(230, 300);
+  const g = ctx2d(c);
+  layer(g, () => {
+    ell(g, 90, 288, 24, 11, 0, '#f07a2a');
+    ell(g, 140, 288, 24, 11, 0, '#f07a2a');
+  });
+  layer(g, () => {
+    ell(g, 44, 190, 18, 56, 0.35, '#1d2026');
+    ell(g, 186, 190, 18, 56, -0.35, '#1d2026');
+  });
+  layer(g, () => ell(g, 115, 186, 76, 100, 0, '#22262e'), 1.5);
+  layer(g, () => ell(g, 115, 214, 52, 70, 0, '#fbf5e6'));
+  layer(g, () => ell(g, 115, 112, 46, 40, 0, '#ece6da'));
+  // beak: striped
+  layer(g, () => {
+    poly(g, [112, 106, 168, 118, 112, 140], '#e8542c');
+    poly(g, [112, 106, 128, 109, 128, 137, 112, 140], '#f2c443');
+    poly(g, [128, 109, 140, 112, 140, 134, 128, 137], '#3d4652');
+  });
+  circ(g, 94, 104, 7, '#141a22');
+  circ(g, 96, 101, 2.4, '#ffffff');
+  g.strokeStyle = '#c0392b';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(84, 96); g.lineTo(90, 92);
+  g.stroke();
+  circ(g, 82, 124, 8, 'rgba(240,130,130,0.5)');
+  // knitting needles and a half-made scarf
+  layer(g, () => {
+    g.strokeStyle = '#b08850';
+    g.lineWidth = 4;
+    g.beginPath();
+    g.moveTo(70, 186); g.lineTo(160, 156);
+    g.moveTo(74, 160); g.lineTo(162, 188);
+    g.stroke();
+    poly(g, [96, 172, 136, 172, 132, 236, 100, 236], '#e2b13c');
+    g.fillStyle = 'rgba(255,255,255,0.3)';
+    for (let y = 182; y < 232; y += 12) g.fillRect(100, y, 32, 4);
+  });
+  return c;
+}
+
+export function yarn() {
+  const c = makeCanvas(150, 150);
+  const g = ctx2d(c);
+  layer(g, () => circ(g, 75, 78, 58, '#c8413b'), 1.4);
+  g.strokeStyle = 'rgba(255,220,210,0.55)';
+  g.lineWidth = 3;
+  for (let i = 0; i < 6; i++) {
+    g.beginPath();
+    g.ellipse(75, 78, 56, 18 + i * 7, -0.6 + i * 0.25, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.strokeStyle = '#c8413b';
+  g.lineWidth = 4;
+  g.beginPath();
+  g.moveTo(120, 112);
+  g.quadraticCurveTo(140, 140, 112, 146);
+  g.stroke();
+  return c;
+}

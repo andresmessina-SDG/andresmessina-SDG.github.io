@@ -7,6 +7,11 @@ export interface Speaker {
   voice: number;
 }
 export type Line = [Speaker, string];
+export interface Quest {
+  text: string;
+  done?: boolean;
+  optional?: boolean;
+}
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -107,9 +112,18 @@ export class UI {
     return choice;
   }
 
-  setObjective(text: string) {
-    this.objective.textContent = text;
-    this.objective.hidden = !text;
+  /** The journal: a short checklist of what to do next. */
+  setQuests(quests: Quest[]) {
+    this.objective.replaceChildren(
+      ...quests.map((q) => {
+        const li = document.createElement('li');
+        li.textContent = q.text;
+        if (q.done) li.classList.add('done');
+        if (q.optional) li.classList.add('optional');
+        return li;
+      }),
+    );
+    this.objective.hidden = quests.length === 0;
   }
 
   toast(text: string) {
@@ -125,12 +139,14 @@ export class UI {
     window.setTimeout(() => this.bannerEl.classList.remove('show'), 3200);
   }
 
-  setInventory(icons: Record<string, string>, have: Set<string>) {
+  setInventory(icons: Record<string, string>, have: Set<string>, counts: Record<string, number> = {}) {
     document.querySelectorAll<HTMLElement>('#inv .slot').forEach((s) => {
       const id = s.dataset.id!;
       const img = s.querySelector('img')!;
       if (!img.src && icons[id]) img.src = icons[id];
       s.classList.toggle('got', have.has(id));
+      const b = s.querySelector('b');
+      if (b) b.textContent = counts[id] ? `×${counts[id]}` : '';
     });
   }
 }

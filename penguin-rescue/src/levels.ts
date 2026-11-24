@@ -2,7 +2,8 @@
 //   .  snow            ~  water          o  ice floe (walkable)
 //   #  rock / iceberg  ^  snow hill      I  igloo
 //   A  Pip             B  Pebble         T  Tuck in his cage
-//   L  lantern         S  paper boat     F  fish bucket
+//   S  paper boat      U  Auntie Puffin  K  ice block (push it)
+//   *  paper star
 //   D  dock            E  moored boat    H  fishing hole
 //   P  where you start
 
@@ -18,12 +19,12 @@ export const LEVELS: LevelDef[] = [
     night: false,
     map: [
       '~~~~~~~~~~~~',
-      '~~#..L..^^.~',
-      '~...^....#.~',
+      '~*#..*..^^*~',
+      '~.*.^....#.~',
       '~.I...A.B..~',
-      '~..#.......D',
-      '~.^^..#..F.~',
-      '~S.....P..^~',
+      '~..#.K..U..D',
+      '~~*^^.#....~',
+      '~S~.....P.^~',
       '~~~~~~~~~~~~',
     ],
   },

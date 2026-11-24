@@ -1,11 +1,11 @@
-// The adventure itself: building each chapter's pop-up board, walking, the orca, and the story.
+// The adventure itself: building each chapter's pop-up board, walking, quests, the orca, and the story.
 import * as THREE from 'three';
 import { tween, wait, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
 import { makeCutout, standee, paperMat, tileGeometry, rand, pick, canvasTex } from './paper';
 import { LEVELS, type LevelDef } from './levels';
 import type { Sound } from './audio';
-import type { UI, Speaker, Line } from './ui';
+import type { UI, Speaker, Line, Quest } from './ui';
 
 export type Cell = [number, number];
 const COLS = 12;
@@ -14,10 +14,12 @@ export const toWorld = (x: number, z: number, y = 0) => new THREE.Vector3(x - 5.
 const key = (c: Cell) => `${c[0]},${c[1]}`;
 const same = (a: Cell, b: Cell) => a[0] === b[0] && a[1] === b[1];
 const manhattan = (a: Cell, b: Cell) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-const WALK = new Set(['.', 'P', 'L', 'S', 'F', 'D', 'o']);
+const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*']);
 const DIRS: Cell[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const SURFACE = -0.3;
 const DEEP = -1.35;
+export const STAR_TOTAL = 5;
+const FISH_TURNS = 6;
 
 interface Pop {
   delay: number;
@@ -35,25 +37,13 @@ interface Level {
   pops: Pop[];
   pick: THREE.Object3D[];
   items: Map<string, { id: string; name: string; obj: THREE.Group }>;
+  stars: Map<string, THREE.Group>;
   actors: Map<string, THREE.Group>;
   actorCell: Map<string, Cell>;
-  idlers: { obj: THREE.Object3D; phase: number; kind: 'waddle' | 'bob' | 'wave' | 'float' }[];
+  idlers: { obj: THREE.Object3D; phase: number; kind: 'waddle' | 'bob' | 'wave' | 'float' | 'spin' }[];
   rings: Map<string, THREE.Mesh>;
   ringMat: THREE.MeshBasicMaterial;
   shadows: THREE.Object3D[];
-}
-
-const ITEMS: Record<string, { id: string; name: string; art: () => HTMLCanvasElement; h: number }> = {
-  L: { id: 'lantern', name: 'the paper lantern', art: A.lantern, h: 0.6 },
-  S: { id: 'boat', name: 'the paper boat', art: A.boat, h: 0.5 },
-  F: { id: 'fish', name: 'the bucket of fish', art: A.bucket, h: 0.55 },
-};
-const ITEM_ORDER = ['lantern', 'boat', 'fish'];
-const ITEM_NAMES: Record<string, string> = { lantern: 'a lantern', boat: 'a boat', fish: 'some fish' };
-
-function listNames(ids: string[]) {
-  const n = ids.map((i) => ITEM_NAMES[i]);
-  return n.length < 2 ? n.join('') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
 }
 
 export class Game {
@@ -62,10 +52,18 @@ export class Game {
   private hopper = new THREE.Group();
   private facing = new THREE.Group();
   private lanternLight = new THREE.PointLight(0xffa955, 0, 0, 1.7);
+  private marker: THREE.Mesh;
+  private markerMat: THREE.MeshBasicMaterial;
   pos: Cell = [0, 0];
   inv = new Set<string>();
+  fish = 0;
+  stars = 0;
   private talked = false;
+  private puffinMet = false;
+  puffinHelped = false;
+  private yarnFound = false;
   private tuckFree = false;
+  private block: { cell: Cell; origin: Cell; obj: THREE.Group } | null = null;
   busy = true;
   walking = false;
   private pending: { cell: Cell; act?: string } | null = null;
@@ -87,6 +85,7 @@ export class Game {
       pebble: A.penguin({ scarf: '#2f8f83', bow: '#e58fb0' }),
       tuck: A.penguin({ scarf: '#e2b13c', beanie: '#3f6fb0' }),
       tuckSad: A.penguin({ scarf: '#e2b13c', beanie: '#3f6fb0', sad: true }),
+      puffin: A.puffin(),
       hero: A.hero(),
       orca: A.orca(),
     };
@@ -95,10 +94,16 @@ export class Game {
       pip: { name: 'Pip', portrait: this.art.pip.toDataURL(), voice: 700 },
       pebble: { name: 'Pebble', portrait: this.art.pebble.toDataURL(), voice: 860 },
       tuck: { name: 'Tuck', portrait: this.art.tuck.toDataURL(), voice: 620 },
+      puffin: { name: 'Auntie Puffin', portrait: this.art.puffin.toDataURL(), voice: 560 },
       grim: { name: 'Grimfin', portrait: this.art.orca.toDataURL(), voice: 80 },
     };
-    this.icons = { lantern: A.lantern().toDataURL(), boat: A.boat().toDataURL(), fish: A.bucket().toDataURL() };
-    ui.setInventory(this.icons, this.inv);
+    this.icons = {
+      lantern: A.lantern().toDataURL(),
+      boat: A.boat().toDataURL(),
+      yarn: A.yarn().toDataURL(),
+      fish: A.bucket().toDataURL(),
+    };
+    this.refreshInventory();
 
     this.facing.add(makeCutout(this.art.hero, 0.95));
     this.hopper.add(this.facing);
@@ -107,11 +112,22 @@ export class Game {
     this.facing.add(this.lanternLight);
     this.player.visible = false;
     scene.add(this.player);
+
+    // A paper-square cursor showing where a click will lead.
+    this.markerMat = new THREE.MeshBasicMaterial({ color: 0xfff3d0, transparent: true, opacity: 0.75, depthWrite: false });
+    this.marker = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.62, 4, 1, Math.PI / 4).rotateX(-Math.PI / 2), this.markerMat);
+    this.marker.visible = false;
+    this.marker.renderOrder = 2;
+    scene.add(this.marker);
   }
 
   /** World-space point the camera and tilt-shift should follow. */
   get focusPoint() {
     return this.player.position;
+  }
+
+  get stats() {
+    return { stars: this.stars, starTotal: STAR_TOTAL, puffin: this.puffinHelped };
   }
 
   // ---------------------------------------------------------------- building
@@ -159,13 +175,13 @@ export class Game {
   private tent(L: Level, c: Cell, color: string, delay: number) {
     const w = 0.78, len = 0.6, d = 0.78;
     const theta = Math.acos(w / 2 / len);
-    const mat = paperMat(color);
+    const mat = paperMat(color).clone();
+    mat.side = THREE.DoubleSide;
     const mk = (sign: number) => {
       const geo = new THREE.PlaneGeometry(len, d);
       geo.rotateX(-Math.PI / 2);
       geo.translate((sign * len) / 2, 0, 0);
-      const m = new THREE.Mesh(geo, mat.clone());
-      (m.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+      const m = new THREE.Mesh(geo, mat);
       m.castShadow = m.receiveShadow = true;
       m.position.x = -sign * (w / 2);
       return m;
@@ -199,6 +215,50 @@ export class Game {
     return pv;
   }
 
+  private makeFloe(L: Level, c: Cell) {
+    const night = L.def.night;
+    const shape = new THREE.Shape();
+    const n = 8;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2, r = 0.36 + rand() * 0.08;
+      if (i) shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      else shape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.07, bevelEnabled: false });
+    geo.rotateX(-Math.PI / 2);
+    const floe = new THREE.Mesh(geo, paperMat(night ? '#d6e2f2' : '#f4f9fd'));
+    floe.castShadow = floe.receiveShadow = true;
+    floe.userData.cell = c;
+    const fg = new THREE.Group();
+    fg.position.copy(toWorld(c[0], c[1], 0.03));
+    fg.add(floe);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.33, 28).rotateX(-Math.PI / 2), L.ringMat);
+    ring.position.y = 0.095;
+    ring.visible = false;
+    fg.add(ring);
+    L.rings.set(key(c), ring);
+    L.root.add(fg);
+    L.pick.push(floe);
+    L.idlers.push({ obj: floe, phase: rand() * 6, kind: 'float' });
+    return fg;
+  }
+
+  private makeBlock(L: Level, c: Cell) {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(tileGeometry(0.74, 0.56, 0.74), paperMat('#d4e9f7'));
+    m.position.y = 0.28;
+    m.rotation.y = (rand() - 0.5) * 0.1;
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    g.position.copy(toWorld(c[0], c[1], 0.09));
+    g.userData.act = 'block';
+    L.root.add(g);
+    L.pick.push(m);
+    L.actorCell.set('block', c);
+    L.grid[c[1]][c[0]] = 'K';
+    return g;
+  }
+
   private build(index: number): Level {
     const def = LEVELS[index];
     const night = def.night;
@@ -206,13 +266,14 @@ export class Game {
     this.scene.add(root);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.8, depthWrite: false });
     const L: Level = {
-      index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [],
-      items: new Map(), actors: new Map(), actorCell: new Map(), idlers: [], rings: new Map(), ringMat, shadows: [],
+      index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
+      stars: new Map(), actors: new Map(), actorCell: new Map(), idlers: [], rings: new Map(), ringMat, shadows: [],
     };
     const snow = night ? ['#bfcde3', '#b8c8e0', '#c6d1e6'] : ['#f6f7f8', '#edf2f7', '#f7f4ec'];
     const water = night ? ['#23497a', '#1f4371', '#295382'] : ['#5a9ad0', '#5293cb', '#64a3d6'];
     const wood = new THREE.MeshStandardMaterial({ map: canvasTex(A.planks()), roughness: 0.85 });
     const tileDelay = (x: number, z: number) => (Math.abs(x - 5.5) - 0.5) * 110 + z * 18;
+    this.block = null;
 
     for (let z = 0; z < ROWS; z++) {
       for (let x = 0; x < COLS; x++) {
@@ -249,33 +310,9 @@ export class Game {
             }
             break;
           }
-          case 'o': {
-            const shape = new THREE.Shape();
-            const n = 8;
-            for (let i = 0; i < n; i++) {
-              const a = (i / n) * Math.PI * 2, r = 0.36 + rand() * 0.08;
-              if (i) shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-              else shape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-            }
-            const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.07, bevelEnabled: false });
-            geo.rotateX(-Math.PI / 2);
-            const floe = new THREE.Mesh(geo, paperMat(night ? '#d6e2f2' : '#f4f9fd'));
-            floe.castShadow = floe.receiveShadow = true;
-            floe.userData.cell = c;
-            const fg = new THREE.Group();
-            fg.position.copy(p).setY(0.03);
-            fg.add(floe);
-            const ring = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.33, 28).rotateX(-Math.PI / 2), ringMat);
-            ring.position.y = 0.095;
-            ring.visible = false;
-            fg.add(ring);
-            L.rings.set(key(c), ring);
-            root.add(fg);
-            L.pick.push(floe);
-            this.addScale(L, fg, later);
-            L.idlers.push({ obj: floe, phase: rand() * 6, kind: 'float' });
+          case 'o':
+            this.addScale(L, this.makeFloe(L, c), later);
             break;
-          }
           case 'H': {
             const ice = new THREE.Mesh(new THREE.RingGeometry(0.24, 0.44, 20).rotateX(-Math.PI / 2), paperMat('#e8f1fa'));
             ice.position.copy(p).setY(0.04);
@@ -301,10 +338,13 @@ export class Game {
           case '^':
             this.tent(L, c, night ? '#d3deef' : '#ffffff', later);
             break;
-          case 'I': {
-            const pv = this.stand(L, A.igloo(), 0.95, p.clone().setY(0.09), later);
-            pv.userData.cell = c;
-            L.pick.push((pv.userData.inner as THREE.Group).userData.front);
+          case 'I':
+            this.actor(L, 'igloo', A.igloo(), 0.95, c, later, null);
+            break;
+          case 'K': {
+            const b = this.makeBlock(L, c);
+            this.block = { cell: c, origin: c, obj: b };
+            this.addScale(L, b, later);
             break;
           }
           case 'A':
@@ -312,6 +352,9 @@ export class Game {
             break;
           case 'B':
             this.actor(L, 'pebble', this.art.pebble, 0.78, c, later, 'waddle');
+            break;
+          case 'U':
+            this.actor(L, 'puffin', this.art.puffin, 0.78, c, later, 'waddle');
             break;
           case 'T': {
             const pv = this.actor(L, 'tuck', this.art.tuckSad, 0.78, c, later, 'waddle');
@@ -329,13 +372,16 @@ export class Game {
           case 'E':
             this.actor(L, 'boat', A.boat(), 0.62, c, later, null);
             break;
-          case 'L':
-          case 'S':
-          case 'F': {
-            const it = ITEMS[ch];
-            const pv = this.stand(L, it.art(), it.h, p.clone().setY(0.09), later);
-            L.items.set(key(c), { id: it.id, name: it.name, obj: pv });
+          case 'S': {
+            const pv = this.stand(L, A.boat(), 0.5, p.clone().setY(0.09), later);
+            L.items.set(key(c), { id: 'boat', name: 'the paper boat', obj: pv });
             L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'bob' });
+            break;
+          }
+          case '*': {
+            const pv = this.stand(L, A.star(), 0.32, p.clone().setY(0.12), later, 4);
+            L.stars.set(key(c), pv);
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
             break;
           }
           case 'D':
@@ -360,8 +406,10 @@ export class Game {
       this.onStick(L, A.moon(), 1.0, -4.2, -4.2, 2.8, 1100);
       const stars: [number, number, number][] = [[-2.6, 3.1, 0.32], [-0.8, 2.6, 0.26], [0.9, 3.3, 0.3], [-5.2, 2.0, 0.22]];
       stars.forEach(([sx, sy, sh], i) => this.onStick(L, A.star(), sh, sx, -4.3, sy, 1150 + i * 70));
-      const sils: [HTMLCanvasElement, number][] = [[this.art.pip, -2.2], [this.art.hero, -0.6], [this.art.tuck, 0.9], [this.art.pebble, 2.3]];
-      for (const [art, sx] of sils) {
+      // The shadow army: everyone you helped stands behind you in the finale.
+      const army = [this.art.pip, this.art.hero, this.art.tuck, this.art.pebble];
+      if (this.puffinHelped) army.push(this.art.puffin);
+      army.forEach((art, i) => {
         const sil = A.silhouette(art);
         const h = 2.3, w = (h * sil.width) / sil.height;
         const geo = new THREE.PlaneGeometry(w, h);
@@ -369,11 +417,12 @@ export class Game {
         const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: canvasTex(sil), transparent: true, opacity: 0.62, depthWrite: false }));
         const g = new THREE.Group();
         g.add(m);
-        g.position.set(sx, 0.35, 0.05);
+        const span = 4.6;
+        g.position.set(-span / 2 + (span * i) / (army.length - 1), 0.35, 0.05);
         g.scale.setScalar(0.001);
         cliff.add(g);
         L.shadows.push(g);
-      }
+      });
       const orca = standee(makeCutout(this.art.orca, 1.0));
       (orca.userData.inner as THREE.Group).position.y = DEEP;
       orca.visible = false;
@@ -421,15 +470,16 @@ export class Game {
     this.player.visible = true;
     this.addUp(L, this.player, 520);
     this.ui.banner(L.def.title);
-    this.ui.setObjective('');
+    this.ui.setQuests([]);
     await this.unfold(L);
     if (i === 0) await this.introOne();
     else await this.introTwo();
-    this.updateObjective();
+    this.refreshQuests();
     this.busy = false;
     await new Promise<void>((r) => (this.finish = r));
     this.busy = true;
-    this.ui.setObjective('');
+    this.marker.visible = false;
+    this.ui.setQuests([]);
   }
 
   async closeChapter() {
@@ -458,42 +508,109 @@ export class Game {
     this.shake = 0.25;
     await this.orcaRise(this.orca.pos!);
     this.updateRings();
+    const fishLine: Line = this.fish
+      ? [pebble, `You have ${this.fish} fish. Toss one in the fishing hole by the flag and Grimfin will munch for ${FISH_TURNS} hops.`]
+      : [pebble, "We haven't got any fish, so you'll have to time your hops. You can do it!"];
     await this.ui.say([
       [nar, 'Night fell across the page. Out on the dark water, something with a very tall fin was circling.'],
       [pebble, 'There! Tuck is on that iceberg, all the way across!'],
       [pip, "Hop from floe to floe, but never onto a floe with a red ring. That's where Grimfin will be next!"],
-      [pebble, "If he's too close, toss a fish into the fishing hole by the little flag. Grimfin can never resist a fish."],
+      fishLine,
       [nar, 'Every hop you take, Grimfin swims one stroke. Click where you stand, or press Space, to wait a turn.'],
     ]);
   }
 
-  private updateObjective() {
+  private refreshQuests() {
     const L = this.level;
     if (!L) return;
+    const q: Quest[] = [];
     if (L.index === 0) {
-      if (!this.talked) return this.ui.setObjective('Talk to the penguins');
-      const missing = ITEM_ORDER.filter((i) => !this.inv.has(i));
-      if (missing.length) return this.ui.setObjective(`Find ${listNames(missing)} · ${3 - missing.length}/3`);
-      return this.ui.setObjective('All packed! Head to the dock on the right edge →');
+      if (!this.talked) q.push({ text: 'Say hello to the two penguins' });
+      else {
+        q.push({ text: 'Rescue the paper boat from the little island', done: this.inv.has('boat') });
+        if (this.puffinMet || this.yarnFound) {
+          const text = this.puffinHelped
+            ? "Return Auntie Puffin's yarn"
+            : this.yarnFound
+              ? 'Bring the red yarn back to Auntie Puffin'
+              : "Find Auntie Puffin's yarn in the dark igloo";
+          q.push({ text, done: this.puffinHelped, optional: true });
+        }
+        if (this.inv.has('boat')) q.push({ text: 'Meet Pip and Pebble at the dock →' });
+      }
+    } else {
+      q.push({ text: 'Cross the ice floes and free Tuck', done: this.tuckFree });
+      if (!this.tuckFree) {
+        if (this.orca.distracted > 0) q.push({ text: `Grimfin is munching: ${this.orca.distracted} hops left` });
+        else q.push({ text: 'Stay off the floes with red rings' });
+      }
     }
-    if (this.tuckFree) return this.ui.setObjective('');
-    if (this.orca.distracted > 0) return this.ui.setObjective(`Grimfin is munching… ${this.orca.distracted} turns left`);
-    return this.ui.setObjective('Cross the ice floes and free Tuck. Avoid the red rings!');
+    q.push({ text: `Paper stars ${this.stars}/${STAR_TOTAL}`, done: this.stars === STAR_TOTAL, optional: true });
+    this.ui.setQuests(q);
+  }
+
+  private refreshInventory() {
+    this.ui.setInventory(this.icons, this.inv, { fish: this.fish });
+  }
+
+  private give(id: string, message: string) {
+    this.inv.add(id);
+    this.refreshInventory();
+    this.sound.chime();
+    this.ui.toast(message);
+    if (id === 'lantern') {
+      const cut = makeCutout(A.lantern(), 0.32, 5);
+      cut.position.set(0.3, 0.22, 0.05);
+      this.facing.add(cut);
+    }
+    this.refreshQuests();
   }
 
   // ---------------------------------------------------------------- input
 
-  click(ndc: THREE.Vector2) {
+  /** Resolve a screen point to a board target. */
+  private target(ndc: THREE.Vector2): { cell: Cell; act?: string } | null {
     const L = this.level;
-    if (this.busy || this.ui.open || !L) return;
+    if (!L) return null;
     this.ray.setFromCamera(ndc, this.camera);
     for (const h of this.ray.intersectObjects(L.pick, false)) {
       let o: THREE.Object3D | null = h.object;
       while (o && o.userData.act === undefined && o.userData.cell === undefined) o = o.parent;
       if (!o || !o.visible) continue;
-      if (o.userData.act) return this.go(L.actorCell.get(o.userData.act)!, o.userData.act);
-      return this.go(o.userData.cell as Cell);
+      if (o.userData.act) {
+        const c = L.actorCell.get(o.userData.act);
+        if (c) return { cell: c, act: o.userData.act };
+        continue;
+      }
+      return { cell: o.userData.cell as Cell };
     }
+    return null;
+  }
+
+  click(ndc: THREE.Vector2) {
+    if (this.busy || this.ui.open || !this.level) return;
+    const t = this.target(ndc);
+    if (t) this.go(t.cell, t.act);
+  }
+
+  /** Mouse hover: show where a click would go, dimmed if it can't be reached. */
+  hover(ndc: THREE.Vector2 | null) {
+    if (!ndc || this.busy || this.ui.open || !this.level) {
+      this.marker.visible = false;
+      return;
+    }
+    const t = this.target(ndc);
+    if (!t) {
+      this.marker.visible = false;
+      return;
+    }
+    let ok: boolean;
+    if (t.act) ok = true;
+    else if (same(t.cell, this.pos)) ok = this.level.index === 1;
+    else ok = this.walkable(t.cell) && !!this.path(this.pos, [t.cell]);
+    this.markerMat.color.set(t.act ? 0xffc94a : ok ? 0xfff3d0 : 0x6d6d78);
+    this.marker.position.copy(toWorld(t.cell[0], t.cell[1], this.cellY(t.cell) + 0.012));
+    this.marker.visible = true;
   }
 
   stepDir(dx: number, dz: number) {
@@ -519,10 +636,12 @@ export class Game {
     this.walk(cell, act);
   }
 
+  private inBounds(c: Cell) {
+    return c[0] >= 0 && c[1] >= 0 && c[0] < COLS && c[1] < ROWS;
+  }
+
   private walkable(c: Cell) {
-    const L = this.level!;
-    if (c[0] < 0 || c[1] < 0 || c[0] >= COLS || c[1] >= ROWS) return false;
-    return WALK.has(L.grid[c[1]][c[0]]);
+    return this.inBounds(c) && WALK.has(this.level!.grid[c[1]][c[0]]);
   }
 
   private path(from: Cell, goals: Cell[]): Cell[] | null {
@@ -566,6 +685,7 @@ export class Game {
         const path = this.path(this.pos, goals);
         if (!path) {
           this.sound.bump();
+          if (act === 'block') this.ui.toast("You can't reach that side of the ice block.");
           return;
         }
         let redirected = false;
@@ -621,8 +741,11 @@ export class Game {
   /** Returns true when the step ended in an event that should stop walking. */
   private async afterStep() {
     const L = this.level!;
-    const it = L.items.get(key(this.pos));
+    const k = key(this.pos);
+    const it = L.items.get(k);
     if (it) this.pickup(it);
+    const star = L.stars.get(k);
+    if (star) this.collectStar(star);
     if (L.index === 0 && L.grid[this.pos[1]][this.pos[0]] === 'D') {
       await this.atDock();
       return true;
@@ -638,26 +761,33 @@ export class Game {
     await this.orcaTurn();
   }
 
+  private flyAway(obj: THREE.Object3D) {
+    const L = this.level!;
+    const y0 = obj.position.y;
+    tween(520, (k) => {
+      obj.position.y = y0 + k * 0.9;
+      obj.scale.setScalar(Math.max(0.001, 1 - k));
+      obj.rotation.y = k * Math.PI * 2;
+    }, easeIn).then(() => L.root.remove(obj));
+  }
+
   private pickup(it: { id: string; name: string; obj: THREE.Group }) {
     const L = this.level!;
     L.items.delete(key(this.pos));
     L.grid[this.pos[1]][this.pos[0]] = '.';
-    this.inv.add(it.id);
-    this.ui.setInventory(this.icons, this.inv);
-    this.sound.chime();
-    this.ui.toast(`You found ${it.name}!`);
-    const obj = it.obj;
-    tween(520, (k) => {
-      obj.position.y = 0.09 + k * 0.9;
-      obj.scale.setScalar(Math.max(0.001, 1 - k));
-      obj.rotation.y = k * Math.PI * 2;
-    }, easeIn).then(() => L.root.remove(obj));
-    if (it.id === 'lantern') {
-      const cut = makeCutout(A.lantern(), 0.32, 5);
-      cut.position.set(0.3, 0.22, 0.05);
-      this.facing.add(cut);
-    }
-    this.updateObjective();
+    this.flyAway(it.obj);
+    this.give(it.id, `You found ${it.name}!`);
+  }
+
+  private collectStar(obj: THREE.Group) {
+    const L = this.level!;
+    L.stars.delete(key(this.pos));
+    L.grid[this.pos[1]][this.pos[0]] = '.';
+    this.stars++;
+    this.flyAway(obj);
+    this.sound.chime([7, 12, 16]);
+    this.ui.toast(this.stars === STAR_TOTAL ? `All ${STAR_TOTAL} paper stars! What a sharp eye.` : `A paper star! ${this.stars}/${STAR_TOTAL}`);
+    this.refreshQuests();
   }
 
   private interact(act: string) {
@@ -665,6 +795,12 @@ export class Game {
       case 'pip':
       case 'pebble':
         return this.talk(act);
+      case 'puffin':
+        return this.talkPuffin();
+      case 'igloo':
+        return this.searchIgloo();
+      case 'block':
+        return this.pushBlock();
       case 'tuck':
         return this.tuckFree ? this.ui.say([[this.S.tuck, 'Thank you, thank you!']]) : this.finale();
       case 'hole':
@@ -695,11 +831,12 @@ export class Game {
 
   private async talk(who: string) {
     const { pip, pebble } = this.S;
+    const me = who === 'pip' ? pip : pebble;
     const L = this.level!;
     if (L.index === 1) {
       const lines: Line[][] = [
         [[pip, 'Watch the red rings. Grimfin always swims to the next one.']],
-        [[pebble, 'The fishing hole is just below me, by the flag. One fish keeps him busy for a dozen hops!']],
+        [[pebble, this.fish ? `The fishing hole is just below me, by the flag. One fish keeps him busy for ${FISH_TURNS} hops, and two keep him busy for twice as long!` : 'Grimfin dives under for two strokes at each end of his swim. That is your chance!']],
         [[pip, 'Be brave! Tuck is counting on you.']],
       ];
       return this.ui.say(lines[this.chat++ % lines.length]);
@@ -709,22 +846,149 @@ export class Game {
       await this.ui.say([
         [pip, 'Oh! A visitor! Please, you have to help us!'],
         [pebble, 'Grimfin the orca snatched our friend Tuck and carried him off to his cove!'],
-        [pip, "It's dark out there, and Grimfin is fierce. You'll need a lantern to see by,"],
-        [pebble, '...a paper boat to sail across,'],
-        [pip, '...and fish! Grimfin can never, ever resist a fish.'],
-        [pebble, "Find all three, then meet us at the dock and we'll set sail!"],
+        [pip, "It's dark out there. Here, take my lantern."],
       ]);
-      this.updateObjective();
+      this.give('lantern', 'Pip gave you the paper lantern!');
+      await this.ui.say([
+        [pebble, 'We need my paper boat too, but the wind blew it onto that little island in the corner.'],
+        [pip, "Ice blocks float, you know. If you shoved one into the water, you'd have a stepping-stone."],
+        [pebble, "And if you can find some fish, Grimfin can never resist them. Auntie Puffin always has a few, but she looks upset about something."],
+        [pip, 'Meet us at the dock on the right when you have the boat!'],
+      ]);
+      this.refreshQuests();
       return;
     }
-    const missing = ITEM_ORDER.filter((i) => !this.inv.has(i));
-    const hints: Record<string, Line> = {
-      lantern: [pip, 'I saw a lantern glowing near the top of the page, between the rocks and the hills.'],
-      boat: [pebble, 'I folded a paper boat and left it on the shore, past the igloo at the bottom left.'],
-      fish: [pip, "The fish bucket is down by the rocks on the right. Don't eat them all!"],
-    };
-    if (!missing.length) return this.ui.say([[who === 'pip' ? pip : pebble, 'You found everything! To the dock on the right!']]);
-    return this.ui.say([[who === 'pip' ? pip : pebble, `Still looking for ${listNames(missing)}?`], hints[missing[0]]]);
+    if (!this.inv.has('boat')) {
+      return this.ui.say([
+        [me, 'Push the ice block by walking into it. Get it into the water next to the little island.'],
+        [me, "If it gets stuck, click it and you can shove it back where it started."],
+      ]);
+    }
+    if (!this.puffinHelped) return this.ui.say([[me, 'Have you talked to Auntie Puffin? Fish would make Grimfin much easier to sneak past.']]);
+    if (this.stars < STAR_TOTAL) return this.ui.say([[me, 'There are paper stars tucked behind things all over the page. But only if you want to look! The dock is that way.']]);
+    return this.ui.say([[me, 'You found everything! To the dock!']]);
+  }
+
+  private async talkPuffin() {
+    const { puffin, nar } = this.S;
+    if (this.puffinHelped) {
+      return this.ui.say([[puffin, "Tell Tuck his scarf will be ready by the time he's home."]]);
+    }
+    if (this.yarnFound) {
+      await this.ui.say([
+        [puffin, 'My yarn! Oh, bless your mittens.'],
+        [puffin, 'Here, take my fishing bucket. Three of my best fish.'],
+        [puffin, "Grimfin goes all silly for fish. Toss one into his fishing hole and he'll forget about you for a while."],
+      ]);
+      this.inv.delete('yarn');
+      this.puffinHelped = true;
+      this.fish = 3;
+      this.give('fish', 'Auntie Puffin gave you 3 fish!');
+      return;
+    }
+    if (!this.puffinMet) {
+      this.puffinMet = true;
+      await this.ui.say([
+        [puffin, "Oh, hello, dear. You haven't seen a ball of red yarn, have you?"],
+        [puffin, "I was knitting Tuck a welcome-home scarf and it rolled away into that igloo. It's ever so dark in there."],
+        [puffin, "Find it for me and I'll give you my fishing bucket."],
+      ]);
+      if (!this.inv.has('lantern')) await this.ui.say([[nar, 'You will need a light to search the igloo.']]);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[puffin, 'The yarn rolled into the igloo, dear. Take a light with you.']]);
+  }
+
+  private async searchIgloo() {
+    const { nar } = this.S;
+    if (!this.inv.has('lantern')) {
+      return this.ui.say([[nar, "It's pitch dark inside the igloo. You'd need a light to see anything."]]);
+    }
+    if (this.yarnFound) return this.ui.say([[nar, 'Just snow, and a very surprised beetle.']]);
+    this.busy = true;
+    tween(500, (k) => (this.lanternPower = 1 + Math.sin(Math.PI * k) * 3), linear);
+    await this.ui.say([[nar, 'You hold the lantern up to the doorway. Something red glints at the back of the igloo...']]);
+    this.yarnFound = true;
+    this.give('yarn', 'You found a ball of red yarn!');
+    if (!this.puffinMet) await this.ui.say([[nar, 'Somebody must be missing this.']]);
+    this.busy = false;
+  }
+
+  private async pushBlock() {
+    const L = this.level!;
+    const b = this.block;
+    if (!b) return;
+    const d: Cell = [b.cell[0] - this.pos[0], b.cell[1] - this.pos[1]];
+    if (Math.abs(d[0]) + Math.abs(d[1]) !== 1) return;
+    const t: Cell = [b.cell[0] + d[0], b.cell[1] + d[1]];
+    const ch = this.inBounds(t) ? L.grid[t[1]][t[0]] : '#';
+    const occupied = [...L.actorCell.entries()].some(([id, c]) => id !== 'block' && same(c, t));
+    const intoWater = ch === '~';
+    if (occupied || !(ch === '.' || ch === 'P' || intoWater)) {
+      this.sound.bump();
+      const r = await this.ui.ask(this.S.nar, "The ice block won't budge that way. Shove it back to where it started?", ['Yes, reset it', 'No']);
+      if (r === 0) await this.resetBlock();
+      return;
+    }
+    this.busy = true;
+    this.sound.rustle(0.5);
+    const from = b.obj.position.clone();
+    const to = toWorld(t[0], t[1], 0.09);
+    const old = b.cell;
+    L.grid[old[1]][old[0]] = '.';
+    await Promise.all([tween(240, (k) => b.obj.position.lerpVectors(from, to, k), easeInOut), this.step(old)]);
+    if (intoWater) {
+      this.sound.splash(0.6);
+      await tween(420, (k) => {
+        b.obj.position.y = 0.09 - k * 0.5;
+        b.obj.scale.y = Math.max(0.001, 1 - k * 0.9);
+      }, easeIn);
+      L.root.remove(b.obj);
+      L.actorCell.delete('block');
+      L.grid[t[1]][t[0]] = 'o';
+      const fg = this.makeFloe(L, t);
+      fg.scale.setScalar(0.001);
+      await tween(380, (k) => fg.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+      this.ui.toast('Splash! The ice block makes a stepping-stone.');
+      this.block = null;
+      const boatCell = [...L.items.entries()].find(([, v]) => v.id === 'boat');
+      if (boatCell) {
+        const [bx, bz] = boatCell[0].split(',').map(Number);
+        if (!this.path(this.pos, [[bx, bz]])) {
+          await wait(500);
+          const nb = this.makeBlock(L, b.origin);
+          this.block = { cell: b.origin, origin: b.origin, obj: nb };
+          nb.scale.setScalar(0.001);
+          this.sound.fold();
+          tween(380, (k) => nb.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+          this.ui.toast('Crack! A fresh block of ice pops up where the first one was.');
+        }
+      }
+    } else {
+      b.cell = t;
+      L.grid[t[1]][t[0]] = 'K';
+      L.actorCell.set('block', t);
+    }
+    this.busy = false;
+  }
+
+  private async resetBlock() {
+    const L = this.level!;
+    const b = this.block;
+    if (!b || same(b.cell, b.origin)) return;
+    if (same(this.pos, b.origin)) {
+      this.ui.toast('Step off that spot first.');
+      return;
+    }
+    L.grid[b.cell[1]][b.cell[0]] = '.';
+    await tween(260, (k) => b.obj.scale.setScalar(Math.max(0.001, 1 - k)), easeIn);
+    b.cell = b.origin;
+    b.obj.position.copy(toWorld(b.origin[0], b.origin[1], 0.09));
+    L.grid[b.origin[1]][b.origin[0]] = 'K';
+    L.actorCell.set('block', b.origin);
+    this.sound.fold();
+    await tween(320, (k) => b.obj.scale.setScalar(Math.max(0.001, k)), easeOutBack);
   }
 
   private async atDock() {
@@ -733,14 +997,16 @@ export class Game {
       await this.ui.say([[nar, 'The little dock creaks over the cold water. Perhaps those penguins know where you are headed.']]);
       return;
     }
-    const missing = ITEM_ORDER.filter((i) => !this.inv.has(i));
-    if (missing.length) {
-      await this.ui.say([[pip, `Not yet! We still need ${listNames(missing)}.`]]);
+    if (!this.inv.has('boat')) {
+      await this.ui.say([[pip, "We can't sail without Pebble's boat! It's on the little island in the bottom corner."]]);
       return;
     }
     this.busy = true;
     await Promise.all([this.hopActor('pip', [10, 3]), this.hopActor('pebble', [10, 5])]);
-    const choice = await this.ui.ask(pebble, "Lantern, boat and fish, all packed! Shall we set sail for Grimfin's Cove?", ['Set sail!', 'Not yet']);
+    const prompt = this.fish
+      ? `Lantern, boat and ${this.fish} fish, all packed! Shall we set sail for Grimfin's Cove?`
+      : "We have the boat, but no fish for Grimfin. Auntie Puffin might help. Set sail anyway?";
+    const choice = await this.ui.ask(pebble, prompt, ['Set sail!', 'Not yet']);
     if (choice === 0) {
       await this.ui.say([[pip, 'Hold on to your hood!']]);
       this.finish?.();
@@ -808,7 +1074,7 @@ export class Game {
         this.sound.blip(120);
       }
       this.updateRings();
-      this.updateObjective();
+      this.refreshQuests();
       return false;
     }
     const prev = o.pos;
@@ -844,7 +1110,7 @@ export class Game {
     const L = this.level!;
     this.hideRings();
     const o = this.orca;
-    if (o.distracted > 0 || this.tuckFree) return;
+    if (L.index !== 1 || o.distracted > 0 || this.tuckFree) return;
     const next = o.path[(o.i + 1) % o.path.length];
     if (!next) return;
     for (const [k, ring] of L.rings) {
@@ -885,13 +1151,19 @@ export class Game {
     this.orca.pos = null;
     this.orca.i = 6;
     this.updateRings();
-    this.updateObjective();
+    this.refreshQuests();
     this.busy = false;
   }
 
   private async tossFish() {
-    this.busy = true;
     const L = this.level!;
+    if (this.fish <= 0) {
+      return this.ui.say([[this.S.nar, this.puffinHelped ? 'Your bucket is empty. Time your hops with the red rings instead.' : "You haven't got any fish. Time your hops with the red rings instead."]]);
+    }
+    this.busy = true;
+    this.fish--;
+    if (!this.fish) this.inv.delete('fish');
+    this.refreshInventory();
     const hole = L.actorCell.get('hole')!;
     this.face(hole);
     const f = makeCutout(A.fish(), 0.2, 4);
@@ -907,17 +1179,17 @@ export class Game {
     L.root.remove(f);
     this.sound.splash(0.5);
     const o = this.orca;
-    if (o.pos && o.distracted === 0) await this.orcaDive();
     const fresh = o.distracted === 0;
-    o.distracted = 12;
+    if (o.pos && fresh) await this.orcaDive();
+    o.distracted = Math.min(FISH_TURNS * 2, o.distracted + FISH_TURNS);
     o.pos = hole;
     if (fresh) {
       await this.orcaRise(hole);
       this.orcaInner.scale.x = 1;
     }
-    this.ui.toast('Munch munch munch… Grimfin is busy!');
+    this.ui.toast(fresh ? 'Munch munch munch… Grimfin is busy!' : 'Another fish! Grimfin will be busy even longer.');
     this.updateRings();
-    this.updateObjective();
+    this.refreshQuests();
     this.busy = false;
   }
 
@@ -927,7 +1199,7 @@ export class Game {
     this.busy = true;
     this.tuckFree = true;
     this.hideRings();
-    this.updateObjective();
+    this.refreshQuests();
     const L = this.level!;
     const { nar, pip, pebble, tuck, grim } = this.S;
     const tuckPv = L.actors.get('tuck')!;
@@ -967,18 +1239,17 @@ export class Game {
     }, easeOut);
     tween(900, (k) => (this.camLift = k), easeInOut);
     L.shadows.forEach((s, i) => tween(1000, (k) => s.scale.setScalar(Math.max(0.001, k)), easeOutBack, 300 + i * 160));
-    await wait(1700);
-    await this.ui.say([
-      [grim, 'W-w-what?! A GIANT penguin army?!'],
-      [grim, 'I just remembered I have to be fierce somewhere else. Very far away. Goodbye!'],
-    ]);
+    await wait(1700 + L.shadows.length * 100);
+    const scared: Line[] = [[grim, 'W-w-what?! A GIANT penguin army?!']];
+    if (this.puffinHelped) scared.push([grim, 'And a GIANT PUFFIN?! With KNITTING NEEDLES?!']);
+    scared.push([grim, 'I just remembered I have to be fierce somewhere else. Very far away. Goodbye!']);
+    await this.ui.say(scared);
     const pv = this.orcaPv, inner = this.orcaInner;
     const z0 = pv.position.z;
     this.sound.splash();
     inner.scale.x = -1;
     await tween(1000, (k) => {
       pv.position.z = z0 - k * 1.5;
-      pv.position.x -= 0.02;
       inner.position.y = SURFACE + (DEEP - SURFACE) * k;
     }, easeIn);
     pv.visible = false;
@@ -1007,12 +1278,14 @@ export class Game {
     const spots = ([[9, 4], [9, 2], [10, 2], [9, 3], [9, 1]] as Cell[]).filter((c) => !same(c, this.pos));
     await Promise.all([this.hopActor('pip', spots[0]), this.hopActor('pebble', spots[1])]);
 
-    await this.ui.say([
+    const cheer: Line[] = [
       [pip, 'TUCK!'],
       [pebble, 'We knew you could do it!'],
       [tuck, 'Thank you, friend. You were braver than a whole army of penguins.'],
       [pip, '...even a GIANT one.'],
-    ]);
+    ];
+    if (this.puffinHelped) cheer.push([pebble, 'And Auntie Puffin is knitting you a welcome-home scarf, Tuck!']);
+    await this.ui.say(cheer);
     this.sound.chime([0, 4, 7, 12, 7, 12, 16, 19]);
     const jumpers = [pipPv, pebPv, tuckPv, this.player];
     for (let j = 0; j < 3; j++) {
@@ -1021,7 +1294,7 @@ export class Game {
         return tween(300, (k) => (pvj.position.y = y0 + Math.sin(Math.PI * k) * 0.25), linear, i * 60);
       }));
     }
-    await this.ui.say([[nar, 'And so, with a lantern held high and three paper penguins at your side, you sailed home across the folded sea.']]);
+    await this.ui.say([[nar, 'And so, with a lantern held high and your friends at your side, you sailed home across the folded sea.']]);
     this.finish?.();
   }
 
@@ -1046,6 +1319,10 @@ export class Game {
           i.obj.position.y = Math.sin(s * 1.3) * 0.012;
           i.obj.rotation.y = Math.sin(s * 0.4) * 0.12;
           break;
+        case 'spin':
+          i.obj.position.y = 0.05 + Math.sin(s * 2.4) * 0.05;
+          i.obj.rotation.y = Math.sin(s * 1.1) * 0.6;
+          break;
       }
     }
     const flicker = 1 + Math.sin(t * 13) * 0.04 + Math.sin(t * 7.3) * 0.05;
@@ -1054,6 +1331,7 @@ export class Game {
     const orca = L.actors.get('orca');
     if (orca) orca.position.y = Math.sin(t * 1.6) * 0.03;
     L.ringMat.opacity = 0.55 + 0.3 * Math.sin(t * 6);
+    this.markerMat.opacity = 0.55 + 0.2 * Math.sin(t * 4);
     this.shake *= 0.9;
   }
 }
