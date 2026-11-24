@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 const vert = /* glsl */ `
 varying vec2 vUv;
@@ -75,10 +76,14 @@ export class Post {
   tiltH: ShaderPass;
   tiltV: ShaderPass;
   grade: ShaderPass;
+  bloom: UnrealBloomPass;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.composer = new EffectComposer(renderer);
     this.composer.addPass(new RenderPass(scene, camera));
+    // soft glow on the lantern, the moon and the brightest paper
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.4, 0.55, 0.92);
+    this.composer.addPass(this.bloom);
     this.tiltH = new ShaderPass(TiltShift);
     this.tiltV = new ShaderPass(TiltShift);
     this.tiltV.uniforms.dir.value = new THREE.Vector2(0, 1);

@@ -687,3 +687,81 @@ export function yarn() {
   g.stroke();
   return c;
 }
+
+/** A snowy paper pine. */
+export function pine(seed: number) {
+  const r = mulberry(seed);
+  const c = makeCanvas(200, 300);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#6b4a2e';
+    g.fillRect(90, 240, 20, 56);
+  });
+  const greens = ['#2f5d4e', '#356a58', '#2a5446'];
+  for (let i = 0; i < 4; i++) {
+    const y = 30 + i * 55, w = 46 + i * 22 + r() * 8;
+    layer(g, () => {
+      poly(g, [100, y - 30, 100 - w, y + 70, 100 + w, y + 70], greens[i % 3]);
+      poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
+    }, 1.3);
+  }
+  return c;
+}
+
+/** Bobble, a seal pup. */
+export function seal() {
+  const c = makeCanvas(260, 220);
+  const g = ctx2d(c);
+  const grey = '#9aa7b4';
+  layer(g, () => {
+    poly(g, [30, 190, 4, 160, 18, 200, 4, 214, 40, 206], '#7f8c99');
+    ell(g, 76, 200, 26, 12, -0.3, '#7f8c99');
+  });
+  layer(g, () => {
+    g.fillStyle = grey;
+    g.beginPath();
+    g.moveTo(30, 196);
+    g.bezierCurveTo(60, 130, 120, 90, 170, 80);
+    g.bezierCurveTo(230, 70, 252, 120, 236, 156);
+    g.bezierCurveTo(220, 196, 150, 210, 30, 206);
+    g.fill();
+  }, 1.5);
+  ell(g, 120, 186, 70, 18, -0.08, 'rgba(255,255,255,0.35)');
+  for (let i = 0; i < 8; i++) circ(g, 70 + i * 18, 150 + (i % 3) * 10, 3.5, 'rgba(90,100,110,0.45)');
+  circ(g, 186, 112, 10, '#141a22');
+  circ(g, 214, 116, 10, '#141a22');
+  circ(g, 189, 108, 3.5, '#fff');
+  circ(g, 217, 112, 3.5, '#fff');
+  ell(g, 206, 134, 9, 6, 0, '#2a2f38');
+  g.strokeStyle = 'rgba(40,45,55,0.6)';
+  g.lineWidth = 2;
+  g.beginPath();
+  for (const s of [-1, 1]) {
+    g.moveTo(206 + s * 8, 138); g.lineTo(206 + s * 34, 132);
+    g.moveTo(206 + s * 8, 142); g.lineTo(206 + s * 32, 146);
+  }
+  g.stroke();
+  circ(g, 176, 134, 8, 'rgba(240,130,130,0.5)');
+  return c;
+}
+
+export function ball() {
+  const c = makeCanvas(140, 140);
+  const g = ctx2d(c);
+  layer(g, () => circ(g, 70, 72, 56, '#f4f0e4'), 1.4);
+  const cols = ['#d9443a', '#f2b441', '#3f7db3'];
+  for (let i = 0; i < 3; i++) {
+    g.fillStyle = cols[i];
+    g.beginPath();
+    g.moveTo(70, 72);
+    g.arc(70, 72, 56, -Math.PI / 2 + (i * 2 * Math.PI) / 3, -Math.PI / 2 + (i * 2 * Math.PI) / 3 + Math.PI / 3);
+    g.fill();
+  }
+  circ(g, 70, 72, 9, '#f4f0e4');
+  return c;
+}
+
+/** Wider ridges so the scenery spans the bigger book. */
+export const ridgeBack = (seed: number) => ridge(1300, 340, seed, 6, '#a9bcd3', '#eef3f9', 20);
+export const ridgeFront = (seed: number) => ridge(1300, 260, seed, 8, '#d7e3ef', '#ffffff', 40);
+export const cliffWide = () => ridge(1300, 460, 3, 6, '#5b74a0', '#9fb4d6', 20);

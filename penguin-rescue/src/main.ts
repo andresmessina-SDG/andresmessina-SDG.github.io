@@ -6,6 +6,7 @@ import { UI } from './ui';
 import { Game } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
+import { Snow } from './weather';
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -17,28 +18,32 @@ renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#1d140e');
 
-const camera = new THREE.PerspectiveCamera(28, 1, 0.5, 120);
-const camDir = new THREE.Vector3(0, 0.7, 0.71).normalize();
-const camTarget = new THREE.Vector3(0, 0.2, -0.25);
-let camDist = 22;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.5, 200);
+const camDir = new THREE.Vector3(0, 0.74, 0.67).normalize();
+const camTarget = new THREE.Vector3(0, 0.2, -0.6);
+// Two framings: the whole open book, and a closer view that follows the hero.
+let wideDist = 40;
+let followDist = 22;
+let camDist = 40;
+const look = new THREE.Vector3().copy(camTarget);
 
 // Lighting: a warm lamp over the table, a soft bounce, and (at night) cool moonlight.
 const hemi = new THREE.HemisphereLight(0xe7eeff, 0x8a6446, 0.55);
 scene.add(hemi);
-const lamp = new THREE.SpotLight(0xffc98a, 5.2, 0, 0.42, 0.85, 0);
-lamp.position.set(-6, 15, 8);
-lamp.target.position.set(0.5, 0, 0);
+const lamp = new THREE.SpotLight(0xffc98a, 5.2, 0, 0.5, 0.8, 0);
+lamp.position.set(-11, 28, 15);
+lamp.target.position.set(0.5, 0, -0.5);
 lamp.castShadow = true;
-lamp.shadow.mapSize.set(2048, 2048);
-lamp.shadow.camera.near = 6;
-lamp.shadow.camera.far = 40;
+lamp.shadow.mapSize.set(4096, 4096);
+lamp.shadow.camera.near = 15;
+lamp.shadow.camera.far = 60;
 lamp.shadow.bias = -0.0004;
 lamp.shadow.normalBias = 0.02;
 lamp.shadow.radius = 4;
 scene.add(lamp, lamp.target);
 
-const DAY = { hemiSky: new THREE.Color(0xe7eeff), hemiGround: new THREE.Color(0x8a6446), hemi: 0.55, lamp: 5.2, lampColor: new THREE.Color(0xffc98a), lampPos: new THREE.Vector3(-6, 15, 8), bg: new THREE.Color('#1d140e') };
-const NIGHT = { hemiSky: new THREE.Color(0x5a70b0), hemiGround: new THREE.Color(0x24180f), hemi: 0.42, lamp: 2.6, lampColor: new THREE.Color(0x9db2ff), lampPos: new THREE.Vector3(5, 14, 9), bg: new THREE.Color('#0b0b12') };
+const DAY = { hemiSky: new THREE.Color(0xe7eeff), hemiGround: new THREE.Color(0x8a6446), hemi: 0.55, lamp: 5.2, lampColor: new THREE.Color(0xffc98a), lampPos: new THREE.Vector3(-11, 28, 15), bg: new THREE.Color('#1d140e') };
+const NIGHT = { hemiSky: new THREE.Color(0x5a70b0), hemiGround: new THREE.Color(0x24180f), hemi: 0.42, lamp: 2.6, lampColor: new THREE.Color(0x9db2ff), lampPos: new THREE.Vector3(9, 27, 17), bg: new THREE.Color('#0b0b12') };
 let night = 0;
 function setNight(k: number) {
   night = k;
@@ -49,6 +54,7 @@ function setNight(k: number) {
   lamp.color.copy(DAY.lampColor).lerp(NIGHT.lampColor, k);
   lamp.position.copy(DAY.lampPos).lerp(NIGHT.lampPos, k);
   (scene.background as THREE.Color).copy(DAY.bg).lerp(NIGHT.bg, k);
+  snow.setNight(k);
 }
 
 const book = new Book(scene);
@@ -56,6 +62,7 @@ const post = new Post(renderer, scene, camera);
 const sound = new Sound();
 const ui = new UI(sound);
 const game = new Game(scene, camera, sound, ui);
+const snow = new Snow(scene);
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -64,10 +71,11 @@ function resize() {
   renderer.setSize(w, h, false);
   post.setSize(w, h, dpr);
   camera.aspect = w / h;
-  // Fit the open spread (about 13.4 wide, 11 deep with the scenery) in view.
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const tanH = tanV * camera.aspect;
-  camDist = Math.max(4.7 / tanV, 6.85 / tanH);
+  // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 15 by 9 cells.
+  wideDist = Math.max(8.2 / tanV, 13.4 / tanH);
+  followDist = Math.max(4.6 / tanV, 7.6 / tanH);
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
@@ -116,15 +124,28 @@ muteBtn.addEventListener('click', toggleMute);
 
 // ------------------------------------------------------------------ loop
 const focusV = new THREE.Vector3();
-const look = new THREE.Vector3();
+const want = new THREE.Vector3();
+let last = 0;
 function frame(now: number) {
   updateTweens(now);
   const t = now / 1000;
+  const dt = Math.min(0.05, last ? t - last : 0.016);
+  last = t;
   game.update(t);
 
   const p = game.focusPoint;
-  const follow = game.player.visible ? 1 : 0;
-  look.set(camTarget.x + p.x * 0.12 * follow, camTarget.y + game.camLift * 1.4, camTarget.z + p.z * 0.08 * follow - game.camLift * 2.2);
+  const follow = game.player.visible && !game.camWide;
+  if (follow) {
+    // keep the view on the book: don't drift past its edges
+    want.set(THREE.MathUtils.clamp(p.x, -6.5, 6.5), 0.2, THREE.MathUtils.clamp(p.z, -3.2, 3.6));
+  } else {
+    want.copy(camTarget);
+  }
+  want.y += game.camLift * 2.2;
+  want.z -= game.camLift * 3.2;
+  const ease = 1 - Math.pow(0.04, dt);
+  look.lerp(want, ease);
+  camDist += ((follow ? followDist : wideDist) - camDist) * ease;
   camera.position.copy(look).addScaledVector(camDir, camDist);
   camera.position.x += Math.sin(t * 0.21) * 0.12;
   if (game.shake > 0.005) {
@@ -134,8 +155,9 @@ function frame(now: number) {
   camera.lookAt(look);
 
   focusV.copy(p).setY(p.y + 0.4).project(camera);
-  const want = (follow ? (focusV.y + 1) / 2 : 0.48) * (1 - game.camLift) + 0.68 * game.camLift;
-  post.focus += (Math.min(0.75, Math.max(0.25, want)) - post.focus) * 0.06;
+  const focusY = (follow ? (focusV.y + 1) / 2 : 0.48) * (1 - game.camLift) + 0.68 * game.camLift;
+  post.focus += (Math.min(0.75, Math.max(0.25, focusY)) - post.focus) * 0.06;
+  snow.update(dt, t, look);
 
   post.render(t, night);
   requestAnimationFrame(frame);
@@ -170,7 +192,8 @@ async function run() {
   sound.fold();
   const st = game.stats;
   document.getElementById('stats')!.textContent =
-    `Paper stars found: ${st.stars} of ${st.starTotal}` + (st.puffin ? ' · Auntie Puffin helped' : ' · Auntie Puffin is still looking for her yarn');
+    `Paper stars found: ${st.stars} of ${st.starTotal} · Side quests: ${Number(st.puffin) + Number(st.bobble)} of 2` +
+    (st.puffin && st.bobble ? '' : ` (${[!st.puffin && 'Auntie Puffin', !st.bobble && 'Bobble'].filter(Boolean).join(' and ')} still need help)`);
   document.getElementById('end')!.hidden = false;
 }
 document.getElementById('again')!.addEventListener('click', () => location.reload());
