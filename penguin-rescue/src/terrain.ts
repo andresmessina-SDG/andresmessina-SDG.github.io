@@ -8,6 +8,9 @@ const PX = 80; // texture pixels per cell
 const LO = 8; // field pixels per cell
 
 const isBank = (ch: string) => ch === '=';
+/** Slick glacier ice (and things lying on it): you slide across it. */
+export const ICE = '_+e';
+const isIce = (ch: string) => ICE.includes(ch);
 
 interface Field {
   w: number;
@@ -119,6 +122,8 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
   const W = halfCols * PX, H = rows * PX;
   const land = makeField(grid, isLand);
   const bank = makeField(grid, isBank);
+  const hasIce = grid.some((r) => r.some(isIce));
+  const ice = hasIce ? makeField(grid, isIce) : null;
   const n1 = valueNoise(seed), n2 = valueNoise(seed + 7);
   const grain = paperCanvas(256, seed + 3, 250);
   const pal = night
@@ -133,6 +138,7 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     // snowbanks are cut as a stack of nested contours, like layered card
     const TIERS = [0.4, 0.55, 0.7, 0.84];
     const tierA = TIERS.map(() => new Uint8ClampedArray(N));
+    const iceA = new Uint8ClampedArray(N);
     const waterC = makeCanvas(W, H);
     const wimg = ctx2d(waterC).createImageData(W, H);
     for (let y = 0; y < H; y++) {
@@ -146,6 +152,7 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
         if (f > 0.4) rimA[i] = 255;
         const bf = sample(bank, u, v) + nz * 0.8;
         for (let t = 0; t < TIERS.length; t++) if (bf > TIERS[t]) tierA[t][i] = 255;
+        if (ice && sample(ice, u, v) + nz * 0.5 > 0.5) iceA[i] = 255;
         // water: lighter shallows hugging the coast, a little mottling
         const t = Math.min(1, Math.max(0, (0.42 - f) / 0.32));
         const m = n2(X / 60, y / 60) * 10;
@@ -206,11 +213,41 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
         }
       }
     };
-    const layers: { canvas: HTMLCanvasElement; y: number; opaque?: boolean }[] = [
+    const layers: { canvas: HTMLCanvasElement; y: number; opaque?: boolean; rough?: number }[] = [
       { canvas: waterC, y: 0.012, opaque: true },
       { canvas: paperLayer(W, H, pal.rim, maskCanvas(W, H, rimA), grain), y: 0.04 },
       { canvas: paperLayer(W, H, pal.snow, landMask, grain, snowDetails), y: LAND_Y },
     ];
+    if (ice) {
+      const iceDetails = (g: CanvasRenderingContext2D) => {
+        const rr = mulberry(seed * 5 + h);
+        // shine streaks and hairline cracks: it looks slippery
+        g.lineCap = 'round';
+        for (let k = 0; k < 140; k++) {
+          const x = rr() * W, y = rr() * H, len = 18 + rr() * 40;
+          g.strokeStyle = `rgba(255,255,255,${0.45 + rr() * 0.4})`;
+          g.lineWidth = 2 + rr() * 3;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x + len, y - len * 0.45);
+          g.stroke();
+        }
+        g.strokeStyle = 'rgba(70,120,170,0.35)';
+        g.lineWidth = 1.4;
+        for (let k = 0; k < 40; k++) {
+          let x = rr() * W, y = rr() * H;
+          g.beginPath();
+          g.moveTo(x, y);
+          for (let j = 0; j < 4; j++) {
+            x += (rr() - 0.5) * 40;
+            y += (rr() - 0.5) * 40;
+            g.lineTo(x, y);
+          }
+          g.stroke();
+        }
+      };
+      layers.push({ canvas: paperLayer(W, H, night ? '#6f9cd0' : '#8cc2ec', maskCanvas(W, H, iceA), grain, iceDetails), y: LAND_Y + 0.006, rough: 0.32 });
+    }
     if (tierA[0].some((a) => a)) {
       const tones = night ? ['#7d90b4', '#9cadcc', '#b7c5de', '#d6e0f0'] : ['#a9bccf', '#c6d4e2', '#e0e8f1', '#ffffff'];
       tierA.forEach((a, t) => layers.push({ canvas: paperLayer(W, H, tones[t], maskCanvas(W, H, a), grain), y: 0.13 + t * 0.11 }));
@@ -226,7 +263,7 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
         new THREE.MeshStandardMaterial({
           map: tex(L.canvas),
           alphaTest: L.opaque ? 0 : 0.5,
-          roughness: 0.92,
+          roughness: L.rough ?? 0.92,
         }),
       );
       m.position.set((side * halfCols) / 2, L.y, 0);

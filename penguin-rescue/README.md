@@ -11,21 +11,38 @@ follows you around the open book.
   stepping-stone to the island where the paper boat blew away. Optionally,
   use the lantern to search the dark igloo for Auntie Puffin's yarn (she pays
   you in fish), and build a second ice bridge across the pond to fetch Bobble
-  the seal pup's ball (he promises to splash Grimfin once). Eight paper stars
-  are hidden around the page.
-- **Chapter Two, Grimfin's Cove.** Night. Cross the bay in two legs, resting
+  the seal pup's ball (he promises to splash Grimfin once).
+- **Chapter Two, The Glittering Glacier.** Slick ice: once you start sliding
+  you don't stop until you bump into a rock, a snowbank or a snowy patch. Each
+  click or tap is one slide, so crossing is a puzzle (eight slides at best; a
+  solver checked that you can never get stuck). Side quests: Grandpa Walrus's
+  spectacles slid out onto the ice (he gives you a sardine), and Mama Fox's
+  three kits are hiding behind snowdrifts with their tails poking out (they
+  help out at the party).
+- **Chapter Three, Grimfin's Cove.** Night. Cross the bay in two legs, resting
   on the island halfway, and free Tuck. Grimfin swims one stroke for every hop
   you take and looks ahead through his spyglass (the glowing squares show
   where he will look next). If he spots you, a "!" pops up and he charges
   next turn unless you get out of sight: behind a little sea iceberg, onto
   land, or out of his view. Red rings mark where he can reach. Tossing a fish
   in a fishing hole keeps him busy for six hops.
-- **Chapter Three, The Way Home.** Sail the paper boat through Grimfin's fog.
+- **Chapter Four, The Way Home.** Sail the paper boat through Grimfin's fog.
   The lantern clears the fog around you. Wake three sleepy lighthouses: each
   one clears the fog for good and keeps Grimfin away from its light. With all
   three awake, the harbour gate opens. Collect floating fish crates on the way.
-- **Finale.** Raise the lantern and the shadows of everyone you helped tower
-  over Grimfin, then morning comes.
+  Raise the lantern and the shadows of everyone you helped tower over Grimfin,
+  then morning comes.
+- **Chapter Five, The Welcome-Home Party.** Find the scattered paper bunting
+  (one piece needs an ice-block bridge, unless the fox kits sniffed it out for
+  you) and hang it up. Then Tuck spots Grimfin watching the party through his
+  spyglass, all alone. Invite him from the dock. Side quests: snowberries for
+  Auntie Puffin's cake, and Tuck's present, hidden in one of three snowmen.
+
+**The journal.** The to-do card in the corner shows what to do on this page,
+with portraits and progress dots for side quests. Click it (or press J) for
+the journal: a Story page with every chapter so far, and a Side quests page
+with who asked, what for, the reward, and a DONE or MISSED stamp. A paper
+card pops up when you start or finish a side quest.
 
 **The lantern:** press L (or the lantern button) to cover it. Grimfin can then
 only spot you up close, but glowing stars at night only appear in uncovered
@@ -34,7 +51,7 @@ kinder Grimfin: he sees one cell less, and always shouts before he grabs.
 
 Controls: click or tap to walk, sail, talk or push; hovering shows where a click goes;
 arrow keys or WASD to step; Space to continue dialogue or wait a turn; L to cover the
-lantern; F to toss a fish; M to mute. In the Grimfin chapters, round buttons in the
+lantern; F to toss a fish; J for the journal; M to mute. In the Grimfin chapters, round buttons in the
 bottom-right corner do the same: wait a turn, cover the lantern, toss a fish.
 
 **Phones and tablets.** Tap to walk, and tap anywhere to read on. The to-do list
@@ -45,7 +62,7 @@ lighter renderer, and on any device the picture steps down on its own (fewer
 pixels, then no glow) if the frame rate stays under 45. Add `?quality=high` to the
 address to turn that off.
 
-**Saving.** The game saves itself at the start of chapters two and three (items,
+**Saving.** The game saves itself at the start of every chapter after the first (items,
 fish, paper stars, who you helped, Gentle mode), in this browser only. The title
 card then offers Continue, which opens the book at that chapter, or Start over,
 which clears the save. Finishing the book clears it too.

@@ -3,22 +3,22 @@ import * as THREE from 'three';
 import { tween, wait, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
 import { makeCutout, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
-import { LEVELS, type LevelDef, type Cell } from './levels';
-import { buildTerrain, LAND_Y } from './terrain';
+import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
+import { buildTerrain, LAND_Y, ICE } from './terrain';
 import {
   buildPath, orcaStep, sightCells, farLaneBefore, manhattan, same, SAFE_RADIUS,
   type OrcaPath, type OrcaState, type TurnWorld,
 } from './rules';
 import type { Sound } from './audio';
-import type { UI, Speaker, Line, Quest } from './ui';
-import { tr, touch, hops, fishes } from './i18n';
+import type { UI, Speaker, Line, Quest, Journal, JournalSide } from './ui';
+import { tr, t, touch, hops, fishes } from './i18n';
 
 export type { Cell };
 export const COLS = LEVELS[0].map[0].length;
 export const ROWS = LEVELS[0].map.length;
 export const toWorld = (x: number, z: number, y = 0) => new THREE.Vector3(x - (COLS - 1) / 2, y, z - (ROWS - 1) / 2);
 const key = (c: Cell) => `${c[0]},${c[1]}`;
-const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b', '%']);
+const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b', '%', '_', '+', 'e', 'X', 'n']);
 const SAIL = new Set(['~', 'c', '*', 'G', 'P']);
 const DIRS: Cell[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const SURFACE = -0.3;
@@ -41,9 +41,74 @@ const sp = (en: string, ru: string, art: HTMLCanvasElement, voice: number): Spea
 
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
 
+type Pair = [string, string];
+interface SideDef {
+  id: string;
+  chapter: ChapterId;
+  giver: string;
+  title: Pair;
+  desc: Pair;
+  reward: Pair;
+}
+/** Every side quest in the book, for the tracker, the pop-ups and the journal. */
+const SIDE: SideDef[] = [
+  {
+    id: 'yarn', chapter: 'shore', giver: 'puffin',
+    title: ["Auntie Puffin's yarn", 'Пряжа тётушки Тупик'],
+    desc: ["Her ball of red yarn rolled into the dark igloo. You'll need a light.", 'Клубок красной пряжи укатился в тёмное иглу. Понадобится свет.'],
+    reward: ['three of her best fish', 'три её лучшие рыбки'],
+  },
+  {
+    id: 'ball', chapter: 'shore', giver: 'bobble',
+    title: ["Bobble's ball", 'Мячик Бобла'],
+    desc: ["Bobble's ball bounced onto the little island in the pond.", 'Мячик Бобла ускакал на островок в пруду.'],
+    reward: ['one big splash, saved for Grimfin', 'один большой плюх для Гримфина'],
+  },
+  {
+    id: 'specs', chapter: 'glacier', giver: 'walrus',
+    title: ["Grandpa Walrus's spectacles", 'Очки Дедушки Моржа'],
+    desc: ['They slid away across the slippery ice. Everything looks like a blurry sardine!', 'Очки уехали по скользкому льду. Всё вокруг как размытая сардинка!'],
+    reward: ['a sardine, and a dancing guest for the party', 'сардинка и весёлый гость на празднике'],
+  },
+  {
+    id: 'kits', chapter: 'glacier', giver: 'fox',
+    title: ['Hide-and-seek', 'Прятки'],
+    desc: ["Mama Fox's three kits are hiding on the glacier. Look for a fluffy tail!", 'Трое лисят Мамы Лисы спрятались на леднике. Ищи пушистый хвостик!'],
+    reward: ['three little helpers for the party', 'три маленьких помощника на празднике'],
+  },
+  {
+    id: 'crates', chapter: 'fog', giver: 'puffin',
+    title: ['Floating fish crates', 'Плавучие ящики с рыбой'],
+    desc: ["Three of Auntie Puffin's fish crates are bobbing somewhere in the fog.", 'Три ящика с рыбой тётушки Тупик качаются где-то в тумане.'],
+    reward: ['a fish from every crate', 'по рыбке из каждого ящика'],
+  },
+  {
+    id: 'cake', chapter: 'party', giver: 'puffin',
+    title: ['A cake for Tuck', 'Торт для Тука'],
+    desc: ["Pick three snowberries for Auntie Puffin's welcome-home cake.", 'Собери три снежные ягоды для праздничного торта тётушки Тупик.'],
+    reward: ['the yummiest fish cake in the book', 'самый вкусный рыбный торт в книжке'],
+  },
+  {
+    id: 'present', chapter: 'party', giver: 'pip',
+    title: ['The forgotten present', 'Забытый подарок'],
+    desc: ["Pip hid Tuck's present inside a snowman, and can't remember which one.", 'Пип спрятал подарок для Тука в снеговика и забыл, в какого.'],
+    reward: ['one very happy Tuck', 'очень счастливый Тук'],
+  },
+];
+export const SIDE_TOTAL = SIDE.length;
+
+/** What each finished chapter looks like in the journal. */
+const SUMMARY: Record<ChapterId, Pair> = {
+  shore: ['You rescued the paper boat and set sail with Pip and Pebble.', 'Бумажный кораблик спасён, и все отплыли вместе с Пипом и Галькой.'],
+  glacier: ['You belly-slid all the way across the Glittering Glacier.', 'Скольжение на животе через весь Сверкающий ледник — готово!'],
+  cove: ['You crept past Grimfin and freed Tuck from his cage.', 'Мимо Гримфина — на цыпочках, и Тук свободен!'],
+  fog: ['You woke the sleepy lighthouses and sailed home at dawn.', 'Сонные маяки проснулись, и на рассвете кораблик приплыл домой.'],
+  party: ['Everyone came to the party. Even Grimfin.', 'На праздник пришли все. Даже Гримфин.'],
+};
+
 /** A saved game: the state at the start of a chapter. */
 export interface Progress {
-  v: 1;
+  v: 2;
   chapter: number;
   inv: string[];
   fish: number;
@@ -53,6 +118,9 @@ export interface Progress {
   splashUsed: boolean;
   gentle: boolean;
   covered: boolean;
+  walrus: boolean;
+  foxes: boolean;
+  crates: number;
 }
 
 interface Pop {
@@ -93,6 +161,9 @@ interface Level {
   bigLight: THREE.PointLight | null;
   /** True once the page has finished unfolding. */
   ready: boolean;
+  /** The party garland and cake, hidden until they're earned. */
+  garland: THREE.Group | null;
+  cake: THREE.Group | null;
 }
 
 export class Game {
@@ -120,6 +191,21 @@ export class Game {
   private puffinMet = false;
   puffinHelped = false;
   private yarnFound = false;
+  // the glacier
+  private walrusMet = false;
+  walrusHelped = false;
+  private foxMet = false;
+  foxHelped = false;
+  private kitsFound = 0;
+  // the party
+  private partyStep = 0;
+  private bunting = 0;
+  private berries = 0;
+  private cakeMet = false;
+  cakeDone = false;
+  private presentMet = false;
+  presentFound = false;
+  private snowmenSearched = new Set<string>();
   private bobbleMet = false;
   bobbleHelped = false;
   private bobbleSplashUsed = false;
@@ -160,6 +246,10 @@ export class Game {
       hero: A.hero(),
       orca: A.orcaSpyglass(),
       lighthouse: A.lighthouse(true),
+      walrus: A.walrus(false),
+      walrusSpecs: A.walrus(true),
+      fox: A.fox(false),
+      kit: A.fox(true),
     };
     this.S = {
       nar: { name: '', voice: 520 },
@@ -170,6 +260,9 @@ export class Game {
       bobble: sp('Bobble', 'Бобл', this.art.bobble, 960),
       grim: sp('Grimfin', 'Гримфин', this.art.orca, 80),
       light: sp('Lighthouse', 'Маяк', this.art.lighthouse, 420),
+      walrus: sp('Grandpa Walrus', 'Дедушка Морж', this.art.walrusSpecs, 160),
+      fox: sp('Mama Fox', 'Мама Лиса', this.art.fox, 760),
+      kit: sp('Fox kit', 'Лисёнок', this.art.kit, 1150),
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
@@ -177,6 +270,10 @@ export class Game {
       yarn: A.yarn().toDataURL(),
       ball: A.ball().toDataURL(),
       fish: A.bucket().toDataURL(),
+      specs: A.spectacles().toDataURL(),
+      bunting: A.bunting().toDataURL(),
+      berries: A.berryBush(true).toDataURL(),
+      present: A.present().toDataURL(),
     };
     this.refreshInventory();
 
@@ -237,7 +334,61 @@ export class Game {
   }
 
   get stats() {
-    return { stars: this.stars, starTotal: STAR_TOTAL, puffin: this.puffinHelped, bobble: this.bobbleHelped };
+    const done = SIDE.filter((d) => this.sideStatus(d).state === 'done');
+    const missed = SIDE.filter((d) => this.sideStatus(d).state !== 'done').map((d) => tr(...d.title));
+    return { stars: this.stars, starTotal: STAR_TOTAL, sideDone: done.length, sideTotal: SIDE.length, missed };
+  }
+
+  private get chapterIndex() {
+    return this.level?.index ?? 0;
+  }
+
+  /** How a side quest stands right now. */
+  private sideStatus(d: SideDef): { state: JournalSide['state']; progress?: [number, number] } {
+    let done = false, met = false;
+    let progress: [number, number] | undefined;
+    switch (d.id) {
+      case 'yarn': done = this.puffinHelped; met = this.puffinMet || this.yarnFound; break;
+      case 'ball': done = this.bobbleHelped; met = this.bobbleMet || this.inv.has('ball'); break;
+      case 'specs': done = this.walrusHelped; met = this.walrusMet || this.inv.has('specs'); break;
+      case 'kits': done = this.foxHelped; met = this.foxMet || this.kitsFound > 0; progress = [this.kitsFound, 3]; break;
+      case 'crates': done = this.crates >= 3; met = true; progress = [this.crates, 3]; break;
+      case 'cake': done = this.cakeDone; met = this.cakeMet; progress = [Math.min(3, this.berries), 3]; break;
+      case 'present': done = this.presentFound; met = this.presentMet; break;
+    }
+    const at = LEVELS.findIndex((l) => l.id === d.chapter);
+    const state = done ? 'done' : at < this.chapterIndex ? 'missed' : met && at === this.chapterIndex ? 'active' : 'locked';
+    return { state, progress };
+  }
+
+  private sideQuest(id: string, text: string): Quest {
+    const d = SIDE.find((x) => x.id === id)!;
+    const st = this.sideStatus(d);
+    const done = st.state === 'done';
+    return { id: 's:' + id, kind: 'side', optional: true, text, title: tr(...d.title), icon: this.S[d.giver].portrait, done, progress: done ? undefined : st.progress };
+  }
+
+  /** Everything the journal shows. */
+  journal(): Journal {
+    const cur = this.chapterIndex;
+    const chapters = LEVELS.slice(0, cur + 1).map((def, i) => ({
+      title: tr(def.title, def.titleRu),
+      state: (i < cur ? 'done' : 'current') as 'done' | 'current',
+      summary: tr(...SUMMARY[def.id]),
+      steps: i === cur && this.level ? this.questList(this.level).filter((q) => q.kind === 'main') : [],
+    }));
+    const side = SIDE.filter((d) => LEVELS.findIndex((l) => l.id === d.chapter) <= cur).map((d): JournalSide => {
+      const st = this.sideStatus(d);
+      const def = LEVELS.find((l) => l.id === d.chapter)!;
+      return {
+        id: d.id, title: tr(...d.title), desc: tr(...d.desc), reward: tr(...d.reward), icon: this.S[d.giver].portrait,
+        chapter: tr(def.title, def.titleRu), state: st.state, progress: st.progress,
+      };
+    });
+    return {
+      chapters, side, stars: [this.stars, STAR_TOTAL],
+      labels: { stars: t('stars'), locked: t('locked'), lockedHint: t('lockedHint'), stampDone: t('stampDone'), stampMissed: t('stampMissed') },
+    };
   }
 
   private get sail() {
@@ -294,7 +445,7 @@ export class Game {
 
   private footprint(c: Cell) {
     const L = this.level!;
-    if (L.def.night || L.def.mode !== 'walk' || L.grid[c[1]][c[0]] === 'o') return;
+    if (L.def.night || L.def.mode !== 'walk' || L.grid[c[1]][c[0]] === 'o' || this.isIce(c)) return;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28).rotateX(-Math.PI / 2), this.printMat.clone());
     m.position.copy(toWorld(c[0], c[1], LAND_Y + 0.004));
     m.rotation.y = (rand() - 0.5) * 0.5;
@@ -511,19 +662,25 @@ export class Game {
   private build(index: number): Level {
     const def = LEVELS[index];
     const night = def.night;
-    const last = index === LEVELS.length - 1;
+    const last = def.id === 'fog';
     const root = new THREE.Group();
     this.scene.add(root);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.8, depthWrite: false });
     const L: Level = {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
       stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
-      rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false,
+      rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false, garland: null, cake: null,
     };
     // Friends you never helped don't turn up later.
-    L.grid.forEach((r) => r.forEach((ch, x) => {
-      if (ch === 'Q' && index > 0 && !this.bobbleHelped) r[x] = '.';
-      if (ch === 'U' && index > 0 && !this.puffinHelped) r[x] = '.';
+    // At the party, the kits have already found the bunting out on the pond island.
+    const withFriends = def.id === 'cove' || def.id === 'fog';
+    L.grid.forEach((r, z) => r.forEach((ch, x) => {
+      if (ch === 'Q' && withFriends && !this.bobbleHelped) r[x] = '.';
+      if (ch === 'U' && withFriends && !this.puffinHelped) r[x] = '.';
+      if ((ch === 'W' && !this.walrusHelped) || (ch === 'F' && !this.foxHelped)) {
+        if (def.id === 'party') r[x] = '.';
+      }
+      if (ch === 'n' && this.foxHelped && DIRS.every(([dx, dz]) => def.water.includes(def.map[z + dz]?.[x + dx] ?? '~'))) r[x] = '.';
     }));
 
     // The board: two page halves of cut paper that fold out from the spine.
@@ -688,6 +845,66 @@ export class Game {
             this.stand(L, A.post(), 0.55, p.clone().add(new THREE.Vector3(0.36, 0.08, -0.32)), later + 60);
             break;
           }
+          case '+': {
+            const pv = this.stand(L, A.star(), 0.46, p.clone().setY(LAND_Y + 0.04), later, 4);
+            L.stars.set(key(c), pv);
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
+            break;
+          }
+          case 'e': {
+            const pv = this.stand(L, A.spectacles(), 0.26, p.clone().setY(LAND_Y + 0.02), later, 4);
+            L.items.set(key(c), { id: 'specs', name: tr("Grandpa Walrus's spectacles", 'очки Дедушки Моржа'), obj: pv });
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
+            break;
+          }
+          case 'n': {
+            const pv = this.stand(L, A.bunting(), 0.34, p.clone().setY(LAND_Y), later, 4);
+            L.items.set(key(c), { id: 'bunting', name: tr('a piece of party bunting', 'кусочек праздничных флажков'), obj: pv });
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'bob' });
+            break;
+          }
+          case 'W': {
+            const glasses = this.walrusHelped;
+            const pv = this.actor(L, 'walrus', glasses ? this.art.walrusSpecs : this.art.walrus, 0.95, c, later, 'waddle');
+            const other = makeCutout(glasses ? this.art.walrus : this.art.walrusSpecs, 0.95);
+            other.visible = false;
+            pv.add(other);
+            pv.userData.faces = glasses ? [other, pv.userData.inner] : [pv.userData.inner, other];
+            L.pick.push(other.userData.front);
+            break;
+          }
+          case 'F':
+            this.actor(L, 'fox', this.art.fox, 0.78, c, later, 'waddle');
+            break;
+          case 'k': {
+            const id = `kit:${key(c)}`;
+            const pv = this.actor(L, id, A.hidingTail(), 0.5, c, later, null);
+            const kit = makeCutout(this.art.kit, 0.5);
+            kit.visible = false;
+            pv.add(kit);
+            pv.userData.faces = [pv.userData.inner, kit];
+            L.pick.push(kit.userData.front);
+            break;
+          }
+          case 't':
+            this.actor(L, 'tuck', this.art.tuck, 0.78, c, later, 'waddle');
+            break;
+          case 'r': {
+            const id = `bush:${key(c)}`;
+            const pv = this.actor(L, id, A.berryBush(true), 0.6, c, later, null);
+            const bare = makeCutout(A.berryBush(false), 0.6);
+            bare.visible = false;
+            pv.add(bare);
+            pv.userData.faces = [pv.userData.inner, bare];
+            L.pick.push(bare.userData.front);
+            break;
+          }
+          case 'm':
+            this.actor(L, `snowman:${key(c)}`, A.snowman(), 0.95, c, later, null);
+            break;
+          case 'X':
+            this.stand(L, A.flag(), 0.7, p.clone().add(new THREE.Vector3(0.3, LAND_Y, -0.3)), later, 4);
+            break;
           case 'P':
             L.start = c;
             break;
@@ -738,10 +955,12 @@ export class Game {
         const army = [this.art.pip, this.art.hero, this.art.tuck, this.art.pebble];
         if (this.puffinHelped) army.push(this.art.puffin);
         if (this.bobbleHelped) army.push(this.art.bobble);
-        const span = 6.6;
+        if (this.walrusHelped) army.push(this.art.walrusSpecs);
+        if (this.foxHelped) army.push(this.art.fox);
+        const span = army.length > 6 ? 8.6 : 6.6;
         army.forEach((art, i) => {
           const sil = A.silhouette(art);
-          const h = art === this.art.bobble ? 1.9 : 2.7, w = (h * sil.width) / sil.height;
+          const h = art === this.art.bobble ? 1.9 : art === this.art.walrusSpecs ? 2.4 : 2.7, w = (h * sil.width) / sil.height;
           const geo = new THREE.PlaneGeometry(w, h);
           geo.translate(0, h / 2, 0);
           const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: canvasTex(sil), transparent: true, opacity: 0.62, depthWrite: false }));
@@ -754,7 +973,32 @@ export class Game {
         });
       }
     }
-    if (def.orca) {
+    // The glacier: Pip and Pebble wave from the far side. The party: kits, garland and cake.
+    if (def.id === 'glacier' && def.dockFriends) {
+      const [a, b] = def.dockFriends;
+      this.actor(L, 'pip', this.art.pip, 0.82, a, 1200, 'waddle');
+      this.actor(L, 'pebble', this.art.pebble, 0.78, b, 1260, 'waddle');
+      L.grid[a[1]][a[0]] = 'A';
+      L.grid[b[1]][b[0]] = 'B';
+    }
+    if (def.party) {
+      const fox = L.actorCell.get('fox');
+      if (fox) {
+        [[1, 0], [0, 1], [-1, 1]].forEach(([dx, dz], i) => {
+          const kc: Cell = [fox[0] + dx, fox[1] + dz];
+          if (L.grid[kc[1]][kc[0]] !== '.') return;
+          this.actor(L, `kitp:${i}`, this.art.kit, 0.48, kc, 1300 + i * 60, 'waddle');
+          L.grid[kc[1]][kc[0]] = 'j';
+        });
+      }
+      const gp = toWorld(def.party.garland[0], def.party.garland[1], LAND_Y);
+      L.garland = standee(makeCutout(A.garland(), 1.6, 6));
+      L.garland.position.copy(gp);
+      L.garland.visible = false;
+      root.add(L.garland);
+      if (this.cakeDone) L.cake = this.placeCake(L);
+    }
+    if (def.orca || def.party) {
       const orca = standee(makeCutout(this.art.orca, 1.0));
       (orca.userData.inner as THREE.Group).position.y = DEEP;
       orca.visible = false;
@@ -797,6 +1041,7 @@ export class Game {
   async playChapter(i: number) {
     if (this.level) this.scene.remove(this.level.root);
     this.camWide = true;
+    this.dawn = 0;
     const L = this.build(i);
     this.level = L;
     this.pos = [...L.start];
@@ -823,9 +1068,14 @@ export class Game {
     L.ready = true;
     this.camWide = false;
     await wait(700);
-    if (i === 0) await this.introOne();
-    else if (i === 1) await this.introTwo();
-    else await this.introThree();
+    const intro: Record<ChapterId, () => Promise<void>> = {
+      shore: () => this.introOne(),
+      glacier: () => this.introGlacier(),
+      cove: () => this.introTwo(),
+      fog: () => this.introThree(),
+      party: () => this.introParty(),
+    };
+    await intro[L.def.id]();
     this.refreshQuests();
     this.busy = false;
     await new Promise<void>((r) => (this.finish = r));
@@ -920,43 +1170,85 @@ export class Game {
   private refreshQuests() {
     const L = this.level;
     if (!L) return;
+    this.ui.setQuests(this.questList(L), tr(L.def.title, L.def.titleRu).split(' · ').pop()!);
+  }
+
+  /** The tracker for this page: main goals, the side quests you know about, and the stars. */
+  private questList(L: Level): Quest[] {
     const q: Quest[] = [];
-    if (L.index === 0) {
-      if (!this.talked) q.push({ text: tr('Say hello to the two penguins', 'Поздоровайся с двумя пингвинами') });
-      else {
-        q.push({ text: tr('Rescue the paper boat from the little island', 'Спаси бумажный кораблик с островка'), done: this.inv.has('boat') });
-        if (this.puffinMet || this.yarnFound) {
-          const text = this.puffinHelped
-            ? tr("Return Auntie Puffin's yarn", 'Верни пряжу тётушке Тупик')
-            : this.yarnFound
-              ? tr('Bring the red yarn back to Auntie Puffin', 'Отнеси красную пряжу тётушке Тупик')
-              : tr("Find Auntie Puffin's yarn in the dark igloo", 'Найди пряжу тётушки Тупик в тёмном иглу');
-          q.push({ text, done: this.puffinHelped, optional: true });
+    const main = (id: string, text: string, done?: boolean, progress?: [number, number]): Quest => ({ id: 'm:' + id, kind: 'main', text, done, progress });
+    switch (L.def.id) {
+      case 'shore':
+        if (!this.talked) q.push(main('hello', tr('Say hello to the two penguins', 'Поздоровайся с двумя пингвинами')));
+        else {
+          q.push(main('boat', tr('Rescue the paper boat from the little island', 'Спаси бумажный кораблик с островка'), this.inv.has('boat')));
+          if (this.puffinMet || this.yarnFound) {
+            q.push(this.sideQuest('yarn', this.puffinHelped
+              ? tr("Return Auntie Puffin's yarn", 'Верни пряжу тётушке Тупик')
+              : this.yarnFound
+                ? tr('Bring the red yarn back to Auntie Puffin', 'Отнеси красную пряжу тётушке Тупик')
+                : tr("Find Auntie Puffin's yarn in the dark igloo", 'Найди пряжу тётушки Тупик в тёмном иглу')));
+          }
+          if (this.bobbleMet || this.inv.has('ball')) {
+            q.push(this.sideQuest('ball', this.bobbleHelped
+              ? tr("Fetch Bobble's ball", 'Достань мячик Бобла')
+              : this.inv.has('ball')
+                ? tr('Give Bobble back his ball', 'Верни Боблу его мячик')
+                : tr("Fetch Bobble's ball from the pond island", 'Достань мячик Бобла с островка в пруду')));
+          }
+          if (this.inv.has('boat')) q.push(main('dock', tr('Meet Pip and Pebble at the dock →', 'Встреться с Пипом и Галькой у причала →')));
         }
-        if (this.bobbleMet || this.inv.has('ball')) {
-          const text = this.bobbleHelped
-            ? tr("Fetch Bobble's ball", 'Достань мячик Бобла')
-            : this.inv.has('ball')
-              ? tr('Give Bobble back his ball', 'Верни Боблу его мячик')
-              : tr("Fetch Bobble's ball from the pond island", 'Достань мячик Бобла с островка в пруду');
-          q.push({ text, done: this.bobbleHelped, optional: true });
+        break;
+      case 'glacier':
+        q.push(main('cross', tr('Slide across the glacier to Pip and Pebble →', 'Скатись через ледник к Пипу и Гальке →')));
+        if (this.walrusMet || this.inv.has('specs')) {
+          q.push(this.sideQuest('specs', this.walrusHelped
+            ? tr('Grandpa Walrus can see again', 'Дедушка Морж снова видит')
+            : this.inv.has('specs')
+              ? tr('Bring the spectacles back to Grandpa Walrus', 'Верни очки Дедушке Моржу')
+              : tr("Find Grandpa Walrus's spectacles on the ice", 'Найди очки Дедушки Моржа на льду')));
         }
-        if (this.inv.has('boat')) q.push({ text: tr('Meet Pip and Pebble at the dock →', 'Встреться с Пипом и Галькой у причала →') });
+        if (this.foxMet || this.kitsFound > 0) q.push(this.sideQuest('kits', tr("Find Mama Fox's hiding kits", 'Найди спрятавшихся лисят')));
+        break;
+      case 'cove':
+        q.push(main('tuck', tr('Cross the ice floes and free Tuck', 'Перейди по льдинам и освободи Тука'), this.tuckFree));
+        if (!this.tuckFree) q.push({ ...this.orcaQuest(), kind: 'main' });
+        if (this.bobbleHelped && !this.tuckFree) q.push({ kind: 'main', optional: true, icon: this.S.bobble.portrait, text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed });
+        break;
+      case 'fog': {
+        const lit = [...L.beacons.values()].filter((b) => b.lit).length;
+        q.push(main('lights', tr('Wake the sleepy lighthouses', 'Разбуди сонные маяки'), lit === L.beacons.size, [lit, L.beacons.size]));
+        if (this.gateOpen) q.push(main('harbour', tr('Sail into the home harbour →', 'Плыви в родную гавань →')));
+        q.push({ ...this.orcaQuest(), kind: 'main' });
+        q.push(this.sideQuest('crates', tr('Collect the floating fish crates', 'Собери плавучие ящики с рыбой')));
+        if (this.bobbleHelped) q.push({ kind: 'main', optional: true, icon: this.S.bobble.portrait, text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed });
+        break;
       }
-    } else if (L.def.mode === 'walk') {
-      q.push({ text: tr('Cross the ice floes and free Tuck', 'Перейди по льдинам и освободи Тука'), done: this.tuckFree });
-      if (!this.tuckFree) q.push(this.orcaQuest());
-      if (this.bobbleHelped && !this.tuckFree) q.push({ text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed, optional: true });
-    } else {
-      const lit = [...L.beacons.values()].filter((b) => b.lit).length;
-      q.push({ text: tr(`Wake the sleepy lighthouses · ${lit}/${L.beacons.size}`, `Разбуди сонные маяки · ${lit}/${L.beacons.size}`), done: lit === L.beacons.size });
-      if (this.gateOpen) q.push({ text: tr('Sail into the home harbour →', 'Плыви в родную гавань →') });
-      q.push(this.orcaQuest());
-      q.push({ text: tr(`Fish crates found · ${this.crates}/3`, `Ящики с рыбой · ${this.crates}/3`), done: this.crates === 3, optional: true });
-      if (this.bobbleHelped) q.push({ text: tr('Bobble will splash Grimfin once', 'Бобл один раз обрызгает Гримфина'), done: this.bobbleSplashUsed, optional: true });
+      case 'party':
+        if (this.partyStep === 0) {
+          q.push(main('bunting', this.bunting >= 3
+            ? tr('Bring the bunting to Pebble', 'Отнеси флажки Гальке')
+            : tr('Find the scattered party bunting', 'Найди разлетевшиеся флажки'), false, [Math.min(3, this.bunting), 3]));
+        } else {
+          q.push(main('bunting', tr('Hang up the party bunting', 'Повесь праздничные флажки'), true));
+          q.push(main('invite', tr('Invite Grimfin to the party (at the dock) →', 'Позови Гримфина на праздник (у причала) →'), this.partyStep > 1));
+        }
+        if (this.cakeMet) {
+          q.push(this.sideQuest('cake', this.cakeDone
+            ? tr('Bake Tuck a cake', 'Испеки Туку торт')
+            : this.berries >= 3
+              ? tr('Bring the snowberries to Auntie Puffin', 'Отнеси ягоды тётушке Тупик')
+              : tr("Pick snowberries for Auntie Puffin's cake", 'Собери снежные ягоды для торта')));
+        }
+        if (this.presentMet) {
+          q.push(this.sideQuest('present', this.presentFound
+            ? tr("Find Tuck's present", 'Найди подарок для Тука')
+            : tr("Find Tuck's present in one of the snowmen", 'Найди подарок Тука в одном из снеговиков')));
+        }
+        break;
     }
-    q.push({ text: tr(`Paper stars ${this.stars}/${STAR_TOTAL}`, `Бумажные звёздочки ${this.stars}/${STAR_TOTAL}`), done: this.stars === STAR_TOTAL, optional: true });
-    this.ui.setQuests(q);
+    q.push({ id: 'stars', kind: 'stars', optional: true, text: tr(`Paper stars ${this.stars}/${STAR_TOTAL}`, `Бумажные звёздочки ${this.stars}/${STAR_TOTAL}`), done: this.stars === STAR_TOTAL });
+    return q;
   }
 
   private orcaQuest(): Quest {
@@ -966,7 +1258,11 @@ export class Game {
   }
 
   private refreshInventory() {
-    this.ui.setInventory(this.icons, this.inv, { fish: this.fish });
+    for (const [id, n] of [['bunting', this.bunting], ['berries', this.berries]] as const) {
+      if (n > 0) this.inv.add(id);
+      else this.inv.delete(id);
+    }
+    this.ui.setInventory(this.icons, this.inv, { fish: this.fish, bunting: this.bunting, berries: this.berries });
   }
 
   private give(id: string, message: string) {
@@ -990,9 +1286,10 @@ export class Game {
   /** Everything that carries over from one chapter to the next, as it stands now. */
   snapshot(chapter: number): Progress {
     return {
-      v: 1, chapter, inv: [...this.inv], fish: this.fish, stars: this.stars,
+      v: 2, chapter, inv: [...this.inv], fish: this.fish, stars: this.stars,
       puffin: this.puffinHelped, bobble: this.bobbleHelped, splashUsed: this.bobbleSplashUsed,
       gentle: this.gentle, covered: this.lanternCovered,
+      walrus: this.walrusHelped, foxes: this.foxHelped, crates: this.crates,
     };
   }
 
@@ -1007,8 +1304,12 @@ export class Game {
     this.bobbleSplashUsed = p.splashUsed;
     this.gentle = p.gentle;
     this.lanternCovered = p.covered;
+    this.walrusHelped = p.walrus;
+    this.foxHelped = p.foxes;
+    this.kitsFound = p.foxes ? 3 : 0;
+    this.crates = p.crates;
     this.talked = true;
-    this.tuckFree = p.chapter >= 2;
+    this.tuckFree = p.chapter > LEVELS.findIndex((l) => l.id === 'cove');
     if (this.inv.has('lantern')) this.holdLantern();
     this.refreshInventory();
   }
@@ -1060,7 +1361,7 @@ export class Game {
     let ok: boolean;
     if (t.act) ok = true;
     else if (same(t.cell, this.pos)) ok = !!this.level.def.orca;
-    else ok = this.walkable(t.cell) && !!this.path(this.pos, [t.cell]);
+    else ok = this.walkable(t.cell) && !!(this.path(this.pos, [t.cell], this.icy ? 1 : Infinity) ?? (this.icy && this.slideToward(t.cell)));
     this.markerMat.color.set(t.act ? 0xffc94a : ok ? 0xfff3d0 : 0x6d6d78);
     this.marker.position.copy(toWorld(t.cell[0], t.cell[1], (this.sail ? 0.57 : this.cellY(t.cell)) + 0.012));
     this.marker.visible = true;
@@ -1071,7 +1372,8 @@ export class Game {
     if (this.busy || this.walking || this.ui.open || !L) return;
     const t: Cell = [this.pos[0] + dx, this.pos[1] + dz];
     for (const [id, c] of L.actorCell) if (same(c, t) && id !== 'orca') return this.go(t, id);
-    if (this.walkable(t)) return this.go(t);
+    const cells = this.slideFrom(this.pos, [dx, dz]);
+    if (cells) return this.go(cells[cells.length - 1]);
     if (dx) this.facing.scale.x = dx;
     this.sound.bump();
   }
@@ -1100,28 +1402,62 @@ export class Game {
     return WALK.has(ch);
   }
 
-  private path(from: Cell, goals: Cell[]): Cell[] | null {
+  /** Slick glacier ice under this cell? */
+  private isIce(c: Cell) {
+    return this.inBounds(c) && ICE.includes(this.level!.grid[c[1]][c[0]]);
+  }
+
+  /** On the glacier a click gives you at most one slide, so the ice stays a puzzle. */
+  private get icy() {
+    return this.level?.def.id === 'glacier';
+  }
+
+  /** One move in a direction: a single step, or a slide across the ice until something stops you. */
+  private slideFrom(c: Cell, d: Cell): Cell[] | null {
+    let n: Cell = [c[0] + d[0], c[1] + d[1]];
+    if (!this.walkable(n)) return null;
+    const cells: Cell[] = [n];
+    while (this.isIce(n) && this.walkable([n[0] + d[0], n[1] + d[1]])) {
+      n = [n[0] + d[0], n[1] + d[1]];
+      cells.push(n);
+    }
+    return cells;
+  }
+
+  /** Slide (or step) one move in the direction of a tapped cell. */
+  private slideToward(target: Cell): Cell[] | null {
+    const dx = target[0] - this.pos[0], dz = target[1] - this.pos[1];
+    if (!dx && !dz) return null;
+    const d: Cell = Math.abs(dx) >= Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz)];
+    return this.slideFrom(this.pos, d);
+  }
+
+  /** Shortest route as a list of cells, using at most maxSlides slides across the ice. */
+  private path(from: Cell, goals: Cell[], maxSlides = Infinity): Cell[] | null {
     const gs = new Set(goals.map(key));
     if (gs.has(key(from))) return [];
-    const prev = new Map<string, Cell | null>([[key(from), null]]);
-    const q: Cell[] = [from];
+    const capped = Number.isFinite(maxSlides);
+    const sk = (c: Cell, n: number) => (capped ? `${key(c)}|${n}` : key(c));
+    const start = sk(from, 0);
+    const prev = new Map<string, { from: string; cells: Cell[] } | null>([[start, null]]);
+    const q: [Cell, number, string][] = [[from, 0, start]];
     while (q.length) {
-      const c = q.shift()!;
+      const [c, n, k] = q.shift()!;
       for (const d of DIRS) {
-        const n: Cell = [c[0] + d[0], c[1] + d[1]];
-        const k = key(n);
-        if (prev.has(k) || !this.walkable(n)) continue;
-        prev.set(k, c);
-        if (gs.has(k)) {
-          const out: Cell[] = [n];
-          let p = c;
-          while (!same(p, from)) {
-            out.unshift(p);
-            p = prev.get(key(p))!;
-          }
+        const cells = this.slideFrom(c, d);
+        if (!cells) continue;
+        const end = cells[cells.length - 1];
+        const n2 = n + (this.isIce(c) || cells.some((x) => this.isIce(x)) ? 1 : 0);
+        if (n2 > maxSlides) continue;
+        const k2 = sk(end, n2);
+        if (prev.has(k2)) continue;
+        prev.set(k2, { from: k, cells });
+        if (gs.has(key(end))) {
+          const out: Cell[] = [];
+          for (let e = prev.get(k2); e; e = prev.get(e.from)) out.unshift(...e.cells);
           return out;
         }
-        q.push(n);
+        q.push([end, n2, k2]);
       }
     }
     return null;
@@ -1138,20 +1474,24 @@ export class Game {
         const goals = act || !this.walkable(target)
           ? DIRS.map((d): Cell => [target[0] + d[0], target[1] + d[1]]).filter((c) => this.walkable(c))
           : [target];
-        const path = this.path(this.pos, goals);
+        let path = this.path(this.pos, goals, this.icy ? 1 : Infinity);
+        // too far to reach in one slide: slide that way instead
+        if (!path && this.icy) path = this.slideToward(target);
         if (!path) {
           this.sound.bump();
           if (act?.startsWith('block')) this.ui.toast(tr("You can't reach that side of the ice block.", 'К этой стороне ледяного блока не подойти.'));
           return;
         }
         let redirected = false;
-        for (const s of path) {
-          await this.step(s);
+        const from = this.pos;
+        for (let i = 0; i < path.length; i++) {
+          await this.step(path[i]);
           if (await this.afterStep()) {
             this.pending = null;
             return;
           }
-          if (this.pending) {
+          // nobody can stop halfway across the ice
+          if (this.pending && !this.midSlide(path, i, from)) {
             target = this.pending.cell;
             act = this.pending.act;
             this.pending = null;
@@ -1160,7 +1500,7 @@ export class Game {
           }
         }
         if (redirected) continue;
-        if (act) {
+        if (act && manhattan(target, this.pos) === 1) {
           this.face(target);
           await this.interact(act);
         }
@@ -1169,6 +1509,13 @@ export class Game {
     } finally {
       this.walking = false;
     }
+  }
+
+  private midSlide(path: Cell[], i: number, from: Cell) {
+    const c = path[i], next = path[i + 1];
+    if (!next || !this.isIce(c)) return false;
+    const p = i > 0 ? path[i - 1] : from;
+    return next[0] - c[0] === c[0] - p[0] && next[1] - c[1] === c[1] - p[1];
   }
 
   private cellY(c: Cell) {
@@ -1189,10 +1536,13 @@ export class Game {
     const old = this.pos;
     this.face(c);
     if (this.sail) this.sound.rustle(0.25);
-    else this.sound.step(this.level!.grid[c[1]][c[0]] !== 'o');
+    else if (this.isIce(c) && !this.isIce(old)) this.sound.rustle(0.45);
+    else if (!this.isIce(old)) this.sound.step(this.level!.grid[c[1]][c[0]] !== 'o');
     this.footprint(old);
     this.pos = c;
     const lean = -this.facing.scale.x;
+    // belly-sliding on the ice: low, fast and leaning forward
+    const sliding = this.isIce(c) || this.isIce(old);
     if (this.follower) {
       const f = this.follower, f0 = f.position.clone(), f1 = toWorld(old[0], old[1], 0.02);
       tween(260, (k) => {
@@ -1200,11 +1550,20 @@ export class Game {
         f.position.y = 0.02 + Math.sin(Math.PI * k) * 0.12;
       }, linear);
     }
-    await tween(this.sail ? 240 : 210, (k) => {
-      this.player.position.lerpVectors(from, to, k);
-      this.hopper.position.y = Math.sin(Math.PI * k) * (this.sail ? 0.06 : 0.2);
-      this.hopper.rotation.z = Math.sin(Math.PI * k) * 0.09 * lean;
-    }, linear);
+    if (sliding) {
+      await tween(105, (k) => {
+        this.player.position.lerpVectors(from, to, k);
+        this.hopper.position.y = 0;
+        this.hopper.rotation.z = 0.32 * lean * (this.isIce(c) ? 1 : 1 - k);
+      }, linear);
+      if (!this.isIce(c)) this.hopper.rotation.z = 0;
+    } else {
+      await tween(this.sail ? 240 : 210, (k) => {
+        this.player.position.lerpVectors(from, to, k);
+        this.hopper.position.y = Math.sin(Math.PI * k) * (this.sail ? 0.06 : 0.2);
+        this.hopper.rotation.z = Math.sin(Math.PI * k) * 0.09 * lean;
+      }, linear);
+    }
     if (this.sail) this.revealAround(c);
   }
 
@@ -1217,8 +1576,16 @@ export class Game {
     const star = L.stars.get(k);
     if (star && star.visible) this.collectStar(star);
     const ch = L.grid[this.pos[1]][this.pos[0]];
-    if (L.index === 0 && ch === 'D') {
+    if (L.def.id === 'shore' && ch === 'D') {
       await this.atDock();
+      return true;
+    }
+    if (L.def.id === 'glacier' && ch === 'X') {
+      await this.glacierEnd();
+      return true;
+    }
+    if (L.def.id === 'party' && ch === 'D' && this.partyStep === 1) {
+      await this.inviteGrimfin();
       return true;
     }
     if (ch === 'G') {
@@ -1250,8 +1617,17 @@ export class Game {
   private pickup(it: { id: string; name: string; obj: THREE.Group }) {
     const L = this.level!;
     L.items.delete(key(this.pos));
-    L.grid[this.pos[1]][this.pos[0]] = this.sail ? '~' : '.';
+    L.grid[this.pos[1]][this.pos[0]] = this.isIce(this.pos) ? '_' : this.sail ? '~' : '.';
     this.flyAway(it.obj);
+    if (it.id === 'bunting') {
+      this.bunting++;
+      this.refreshInventory();
+      this.sound.chime([0, 4, 7, 12]);
+      this.hearts(this.player.position, 3);
+      this.ui.toast(tr(`A piece of party bunting! ${this.bunting}/3`, `Кусочек праздничных флажков! ${this.bunting}/3`));
+      this.refreshQuests();
+      return;
+    }
     if (it.id === 'crate') {
       this.crates++;
       this.fish++;
@@ -1269,7 +1645,7 @@ export class Game {
     const L = this.level!;
     L.stars.delete(key(this.pos));
     const ch = L.grid[this.pos[1]][this.pos[0]];
-    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : this.sail ? '~' : '.';
+    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : this.sail ? '~' : '.';
     this.stars++;
     this.flyAway(obj);
     this.sound.chime([7, 12, 16]);
@@ -1284,7 +1660,15 @@ export class Game {
     if (act.startsWith('block')) return this.pushBlock(act);
     if (act.startsWith('hole')) return this.tossFish(this.level!.actorCell.get(act)!);
     if (act.startsWith('beacon')) return this.wakeLighthouse(act);
+    if (act.startsWith('kit:')) return this.findKit(act);
+    if (act.startsWith('kitp:')) return this.ui.say([[this.S.kit, pick([tr('Hee hee!', 'Хи-хи!'), tr('Is it cake time yet?', 'А торт уже скоро?'), tr('We found the bunting with our noses!', 'Мы нашли флажки по запаху!')])]]);
+    if (act.startsWith('bush:')) return this.pickBerries(act);
+    if (act.startsWith('snowman:')) return this.searchSnowman(act);
     switch (act) {
+      case 'walrus':
+        return this.talkWalrus();
+      case 'fox':
+        return this.talkFox();
       case 'pip':
       case 'pebble':
         return this.talk(act);
@@ -1293,8 +1677,14 @@ export class Game {
       case 'bobble':
         return this.talkBobble();
       case 'igloo':
+        if (this.level!.def.id === 'party') {
+          return this.ui.say([[this.S.nar, this.cakeDone
+            ? tr("Auntie Puffin's igloo smells of warm fish cake.", 'В иглу тётушки Тупик пахнет тёплым рыбным тортом.')
+            : tr("Auntie Puffin's igloo smells of fish. Lots and lots of fish.", 'В иглу тётушки Тупик пахнет рыбой. Очень-очень рыбой.')]]);
+        }
         return this.searchIgloo();
       case 'tuck':
+        if (this.level!.def.id === 'party') return this.talkTuckParty();
         return this.tuckFree ? this.ui.say([[this.S.tuck, tr('Thank you, thank you!', 'Спасибо, спасибо!')]]) : this.freeTuck();
       case 'boat':
         return this.ui.say([[this.S.pebble, tr("That's our boat. Once Tuck is free, we'll paddle over and fetch you both!", 'Это наша лодочка. Как только Тук будет на свободе, мы приплывём за вами обоими!')]]);
@@ -1324,7 +1714,14 @@ export class Game {
     const { pip, pebble } = this.S;
     const me = who === 'pip' ? pip : pebble;
     const L = this.level!;
-    if (L.index > 0) {
+    if (L.def.id === 'glacier') {
+      return this.ui.say([[me, pick([
+        tr('Rocks and snowbanks make the best brakes!', 'Камни и сугробы — лучшие тормоза!'),
+        tr('Step on the flag when you are ready to go on.', 'Встань на флажок — и вперёд, в бухту!'),
+      ])]]);
+    }
+    if (L.def.id === 'party') return this.talkParty(who);
+    if (L.def.id !== 'shore') {
       const lines: Line[][] = [
         [[pip, tr('Watch the glowy squares: that is where his spyglass is pointing next.', 'Следи за светящимися квадратиками: туда он посмотрит в подзорную трубу в следующий ход.')]],
         [[pebble, this.fish
@@ -1367,7 +1764,8 @@ export class Game {
 
   private async talkPuffin() {
     const { puffin, nar } = this.S;
-    if (this.level!.index > 0) return this.ui.say([[puffin, tr('Welcome home, dears! Tuck, come here and let me wrap you up.', 'С возвращением, мои дорогие! Тук, иди сюда, я тебя укутаю.')]]);
+    if (this.level!.def.id === 'party') return this.talkPuffinParty();
+    if (this.level!.def.id !== 'shore') return this.ui.say([[puffin, tr('Welcome home, dears! Tuck, come here and let me wrap you up.', 'С возвращением, мои дорогие! Тук, иди сюда, я тебя укутаю.')]]);
     if (this.puffinHelped) return this.ui.say([[puffin, tr("Tell Tuck his scarf will be ready by the time he's home.", 'Передай Туку, что к его возвращению шарф будет готов.')]]);
     if (this.yarnFound) {
       await this.ui.say([
@@ -1398,7 +1796,13 @@ export class Game {
 
   private async talkBobble() {
     const { bobble } = this.S;
-    if (this.level!.index === 1) return this.ui.say([[bobble, tr("I'm ready! One big splash, saved just for Grimfin.", 'Я готов! Один большой плюх, специально для Гримфина.')]]);
+    if (this.level!.def.id === 'party') {
+      return this.ui.say([[bobble, pick([
+        tr("I'm in charge of balloons! ...We don't have any balloons.", 'Я отвечаю за воздушные шарики! ...Только шариков у нас нет.'),
+        tr('Did you know I can clap with my flippers? Listen! Flap flap flap!', 'А я умею хлопать ластами! Слушай: шлёп-шлёп-шлёп!'),
+      ])]]);
+    }
+    if (this.level!.def.id === 'cove') return this.ui.say([[bobble, tr("I'm ready! One big splash, saved just for Grimfin.", 'Я готов! Один большой плюх, специально для Гримфина.')]]);
     if (this.bobbleHelped) return this.ui.say([[bobble, tr('Thank you! If that big bully ever bothers you, I will splash him right in the eye!', 'Спасибо! Если этот задира к тебе пристанет, я плесну ему прямо в глаз!')]]);
     if (this.inv.has('ball')) {
       await this.ui.say([
@@ -2034,6 +2438,8 @@ export class Game {
     const scared: Line[] = [[grim, tr('W-w-what?! A GIANT penguin army?!', 'Ч-ч-что?! ГИГАНТСКАЯ армия пингвинов?!')]];
     if (this.puffinHelped) scared.push([grim, tr('And a GIANT PUFFIN?! With KNITTING NEEDLES?!', 'И ГИГАНТСКИЙ ТУПИК?! Со СПИЦАМИ?!')]);
     if (this.bobbleHelped) scared.push([grim, tr('And a GIANT... wait, is that the little seal? He looks ENORMOUS!', 'И ГИГАНТСКИЙ... погодите, это что, тот малыш-тюлень? Да он ОГРОМНЫЙ!')]);
+    if (this.walrusHelped) scared.push([grim, tr('And a GIANT WALRUS?! In SPECTACLES?! He can see me PERFECTLY!', 'И ГИГАНТСКИЙ МОРЖ?! В ОЧКАХ?! Он же видит меня НАСКВОЗЬ!')]);
+    if (this.foxHelped) scared.push([grim, tr('And a GIANT FOX?! Is she... smiling at me?!', 'И ГИГАНТСКАЯ ЛИСА?! Она что... мне улыбается?!')]);
     scared.push([grim, tr('I just remembered I have to be fierce somewhere else. Very far away. Goodbye!', 'Я тут вспомнил, что мне надо быть грозным где-нибудь в другом месте. Очень далеко. До свидания!')]);
     await this.ui.say(scared);
     const pv = this.orcaPv, inner = this.orcaInner;
@@ -2103,6 +2509,413 @@ export class Game {
     }
     await this.ui.say([[nar, tr('And so, with a lantern held high and your friends at your side, you came home across the folded sea, just as the sun came up.', 'Так, с высоко поднятым фонариком, все друзья вместе вернулись домой по сложенному бумажному морю — как раз когда взошло солнце.')]]);
     this.finish?.();
+  }
+
+  // ---------------------------------------------------------------- chapter two: the glacier
+
+  private async introGlacier() {
+    const { nar, pip, pebble } = this.S;
+    await this.ui.say([
+      [nar, tr("The little boat bumped ashore at the foot of a great glittering glacier. Grimfin's Cove lay somewhere on the other side.", 'Кораблик ткнулся в берег у подножия огромного сверкающего ледника. Бухта Гримфина лежала где-то по ту сторону.')],
+      [pebble, tr("The wind's too strong to sail round the point! We'll paddle the long way and meet you on the far side.", 'Ветер слишком сильный, мыс не обогнуть! Мы поплывём в обход и встретим тебя на той стороне.')],
+      [nar, tr('...and in no time at all, two small penguins were waving from across the ice.', '...и очень скоро два маленьких пингвина уже махали с той стороны льда.')],
+      [pip, tr("Over here! Careful, it's slippery: once you start sliding, you won't stop until you bump into something!", 'Мы тут! Осторожно, скользко: как поедешь — не остановишься, пока во что-нибудь не врежешься!')],
+      [pebble, tr('Rocks and snowbanks make good brakes. And little snowy patches stop you too.', 'Камни и сугробы — отличные тормоза. И снежные островки тоже останавливают.')],
+      [nar, touch
+        ? tr('Tap in a direction to slide that way. Each tap is one slide.', 'Нажми в нужную сторону, чтобы скатиться туда. Одно нажатие — одно скольжение.')
+        : tr('Click in a direction, or press an arrow key, to slide that way. Each click is one slide.', 'Нажми в нужную сторону или стрелку на клавиатуре, чтобы скатиться туда. Одно нажатие — одно скольжение.')],
+    ]);
+  }
+
+  private async talkWalrus() {
+    const { walrus } = this.S;
+    if (this.level!.def.id === 'party') {
+      return this.ui.say([[walrus, this.partyStep > 1
+        ? tr('Watch this! Wiggle, wiggle, and... TWIRL!', 'Смотрите! Покачаться, покачаться и... ПОВОРОТ!')
+        : tr("I'm saving my marvellous dance for the party. And I can see everyone's lovely faces!", 'Свой чудесный танец я берегу для праздника. И я вижу все ваши милые мордашки!')]]);
+    }
+    if (this.walrusHelped) return this.ui.say([[walrus, tr('Lovely day for a slide! Mind the rocks.', 'Чудесный денёк, чтобы покататься! Берегись камней.')]]);
+    if (this.inv.has('specs')) {
+      await this.ui.say([[walrus, tr('Is that... my spectacles? Oh, you kind little blur!', 'Это... мои очки? Ах ты, доброе маленькое пятнышко!')]]);
+      this.inv.delete('specs');
+      this.walrusHelped = true;
+      const pv = this.level!.actors.get('walrus')!;
+      const [blur, sharp] = pv.userData.faces as THREE.Group[];
+      this.sound.chime([0, 4, 7, 12]);
+      await tween(200, (k) => blur.scale.setScalar(Math.max(0.001, 1 - k)), easeIn);
+      blur.visible = false;
+      sharp.visible = true;
+      sharp.scale.setScalar(0.001);
+      await tween(320, (k) => sharp.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+      this.hearts(pv.position, 6);
+      await this.ui.say([
+        [walrus, tr('Ah! Now I can see! A small explorer, a big glacier and a lovely blue sky.', 'Ах! Теперь вижу! Маленького путешественника, большой ледник и чудесное голубое небо.')],
+        [walrus, tr('Here, have a sardine from my lunchbox. Grimfin can never resist a sardine.', 'Вот, возьми сардинку из моего обеда. Гримфин перед сардинкой не устоит.')],
+        [walrus, tr("And if there's ever a party, count me in. I do a marvellous dance!", 'А если будет праздник — зовите меня. Я чудесно танцую!')],
+      ]);
+      this.fish++;
+      this.inv.add('fish');
+      this.refreshInventory();
+      this.ui.toast(tr('Grandpa Walrus gave you a sardine! +1 fish', 'Дедушка Морж дал тебе сардинку! +1 рыбка'));
+      this.refreshQuests();
+      return;
+    }
+    if (!this.walrusMet) {
+      this.walrusMet = true;
+      await this.ui.say([
+        [walrus, tr('Hello? Is somebody there? You look like a small red blur.', 'Ау? Тут кто-то есть? Вижу только маленькое красное пятнышко.')],
+        [walrus, tr('My spectacles slipped off my nose and slid away across the ice. Everything looks like a blurry sardine!', 'Мои очки соскользнули с носа и уехали по льду. Всё вокруг как размытая сардинка!')],
+        [walrus, tr('They must have stopped somewhere out there. Could you fetch them for an old walrus?', 'Наверное, они где-то там остановились. Принесёшь их старому моржу?')],
+      ]);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[walrus, tr('They went swish... swish... CLONK. Somewhere near a rock, I think.', 'Они поехали: вжик... вжик... БУМ. Где-то у камня, наверное.')]]);
+  }
+
+  private async talkFox() {
+    const { fox } = this.S;
+    if (this.level!.def.id === 'party') {
+      return this.ui.say([[fox, tr("My kits are so excited, they can't sit still! They sniffed out a piece of bunting all by themselves.", 'Мои лисята так волнуются, что не могут усидеть на месте! Они сами нашли по запаху кусочек флажков.')]]);
+    }
+    if (this.foxHelped) return this.ui.say([[fox, tr('Thank you! All three are curled up for their nap.', 'Спасибо тебе! Все трое уже свернулись клубочком и спят.')]]);
+    if (!this.foxMet) {
+      this.foxMet = true;
+      const lines: Line[] = [
+        [fox, tr("Oh, hello! My three kits are playing hide-and-seek on the glacier, and it's nearly nap time.", 'Ой, здравствуй! Мои трое лисят играют в прятки на леднике, а уже пора спать.')],
+        [fox, tr('They always forget to hide their tails. Look for something fluffy poking out!', 'Они вечно забывают спрятать хвостики. Ищи, где торчит что-то пушистое!')],
+      ];
+      if (this.kitsFound > 0) lines.push([fox, tr(`Oh! You've already found ${this.kitsFound}!`, `Ой! Уже найдено: ${this.kitsFound}!`)]);
+      await this.ui.say(lines);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[fox, tr(`${this.kitsFound} of 3 found. The little rascals!`, `Найдено: ${this.kitsFound} из 3. Вот проказники!`)]]);
+  }
+
+  private async findKit(id: string) {
+    const L = this.level!;
+    const pv = L.actors.get(id)!;
+    if (pv.userData.found) return this.ui.say([[this.S.kit, tr('Hee hee! You found me already!', 'Хи-хи! А меня уже нашли!')]]);
+    pv.userData.found = true;
+    this.busy = true;
+    this.foxMet = true;
+    const [tail, kit] = pv.userData.faces as THREE.Group[];
+    const from = L.actorCell.get(id)!;
+    this.sound.blip(1300);
+    tail.visible = false;
+    kit.visible = true;
+    kit.scale.setScalar(0.001);
+    await tween(360, (k) => {
+      kit.scale.setScalar(Math.max(0.001, k));
+      kit.position.y = Math.sin(Math.PI * k) * 0.35;
+    }, easeOutBack);
+    this.hearts(pv.position, 4);
+    this.sound.chime([7, 12, 16]);
+    await this.ui.say([[this.S.kit, [
+      tr('Hee hee! You found me!', 'Хи-хи! Нашли!'),
+      tr('Aww, my tail gave me away again!', 'Ну вот, опять хвостик меня выдал!'),
+      tr('Found! Is it nap time already?', 'Нашли! Что, уже пора спать?'),
+    ][this.kitsFound % 3]]]);
+    this.kitsFound++;
+    // a big happy bound home to Mama
+    const mama = L.actorCell.get('fox')!;
+    const homes: Cell[] = [[mama[0] - 1, mama[1] + 1], [mama[0] + 1, mama[1] + 1], [mama[0] + 1, mama[1] - 1]];
+    const home = homes[(this.kitsFound - 1) % homes.length];
+    const a = pv.position.clone(), b = toWorld(home[0], home[1], LAND_Y);
+    this.sound.rustle(0.4);
+    await tween(750, (k) => {
+      pv.position.lerpVectors(a, b, k);
+      pv.position.y += Math.sin(Math.PI * k) * 2.2;
+      pv.rotation.y = k * Math.PI * 2;
+    }, easeInOut);
+    pv.rotation.y = 0;
+    L.grid[from[1]][from[0]] = '.';
+    L.grid[home[1]][home[0]] = 'j';
+    L.actorCell.set(id, home);
+    L.idlers.push({ obj: kit, phase: rand() * 6, kind: 'waddle' });
+    if (this.kitsFound === 3) {
+      this.foxHelped = true;
+      this.hearts(L.actors.get('fox')!.position, 8);
+      await this.ui.say([
+        [this.S.fox, tr('All three home, just in time for their nap. Thank you!', 'Все трое дома, как раз к тихому часу. Спасибо тебе!')],
+        [this.S.fox, tr("My kits have the best noses on the page. If you ever lose anything, they'll sniff it out!", 'У моих лисят самые чуткие носы на всей странице. Если что-нибудь потеряется — они найдут по запаху!')],
+      ]);
+    } else {
+      this.ui.toast(tr(`A fox kit! ${this.kitsFound}/3`, `Лисёнок! ${this.kitsFound}/3`));
+    }
+    this.refreshQuests();
+    this.busy = false;
+  }
+
+  private async glacierEnd() {
+    const { pip, pebble, nar } = this.S;
+    this.busy = true;
+    await this.ui.say([[pip, tr('You made it! That was the best sliding I have ever seen.', 'Получилось! Лучшего скольжения я в жизни не видел.')]]);
+    const someoneWaiting = !this.walrusHelped || !this.foxHelped;
+    const choice = await this.ui.ask(pebble, someoneWaiting
+      ? tr("Grimfin's Cove is just below. But somebody on the glacier still needs help. Go on anyway?", 'Бухта Гримфина прямо внизу. Но на леднике кому-то ещё нужна помощь. Всё равно идём?')
+      : tr("Grimfin's Cove is just below. Ready?", 'Бухта Гримфина прямо внизу. Готовы?'), [tr('To the cove!', 'В бухту!'), tr('Not yet', 'Ещё нет')]);
+    if (choice === 0) {
+      await this.ui.say([[nar, tr('From the top of the glacier, the cove looked very dark indeed...', 'С вершины ледника бухта казалась очень-очень тёмной...')]]);
+      this.finish?.();
+    } else {
+      this.busy = false;
+    }
+  }
+
+  // ---------------------------------------------------------------- chapter five: the party
+
+  private async introParty() {
+    const { nar, pebble, pip, tuck, fox, kit } = this.S;
+    const lines: Line[] = [
+      [nar, tr('The next morning, the whole shore woke up early. There was going to be a party!', 'На следующее утро весь берег проснулся рано. Ведь сегодня праздник!')],
+      [tuck, tr('A party? For ME?', 'Праздник? В честь МЕНЯ?')],
+      [pebble, tr('A welcome-home party! But the wind blew our paper bunting all over the page.', 'Праздник в честь возвращения! Только ветер разнёс наши бумажные флажки по всей странице.')],
+      [pebble, tr('Could you find all three pieces and bring them to me? Then we can hang them up!', 'Найдёшь все три кусочка и принесёшь мне? Тогда мы их развесим!')],
+    ];
+    if (this.foxHelped) {
+      this.bunting = 1;
+      lines.push([kit, tr('Hee hee! We sniffed one out by the pond! Here!', 'Хи-хи! Мы нашли один у пруда по запаху! Держи!')]);
+      lines.push([fox, tr('I told you they have the best noses on the page.', 'Я же говорила: у них самые чуткие носы на странице.')]);
+    }
+    lines.push([pip, tr("Everybody's coming. Well... almost everybody.", 'Придут все. Ну... почти все.')]);
+    await this.ui.say(lines);
+    this.refreshInventory();
+  }
+
+  private async talkParty(who: string) {
+    const { pip, pebble } = this.S;
+    if (who === 'pebble') {
+      if (this.partyStep === 0 && this.bunting >= 3) return this.hangGarland();
+      if (this.partyStep === 0) {
+        return this.ui.say([[pebble, tr(`${this.bunting} of 3 so far! One blew all the way out to the island in the pond.`, `Пока ${this.bunting} из 3! Один улетел аж на островок в пруду.`)]]);
+      }
+      if (this.partyStep === 1) return this.ui.say([[pebble, tr("Go on, invite him! Grimfin's at the end of the dock.", 'Ну же, позови его! Гримфин у самого края причала.')]]);
+      return this.ui.say([[pebble, tr('Best party ever!', 'Лучший праздник на свете!')]]);
+    }
+    // Pip and the forgotten present
+    if (this.presentFound) return this.ui.say([[pip, tr("You found it! Shh, it's a surprise for later.", 'Нашёлся! Тсс, это сюрприз на потом.')]]);
+    if (!this.presentMet) {
+      this.presentMet = true;
+      await this.ui.say([
+        [pip, tr("Psst! I hid Tuck's present inside one of the snowmen, so he wouldn't find it.", 'Тсс! Я спрятал подарок для Тука в снеговика, чтобы он не нашёл.')],
+        [pip, tr("...and now I can't remember which snowman. Can you help me look?", '...и теперь не помню, в какого. Поможешь поискать?')],
+      ]);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[pip, tr("It's in one of the snowmen, I'm sure! Probably. Almost sure.", 'Он точно в одном из снеговиков! Наверное. Почти точно.')]]);
+  }
+
+  private async talkTuckParty() {
+    const { tuck } = this.S;
+    return this.ui.say([[tuck, pick([
+      tr('Everyone did all this for me? I am the luckiest penguin on the page!', 'Это всё для меня? Я самый везучий пингвин на всей странице!'),
+      tr('My flippers are still a bit cold from that cage. But my heart is all warm.', 'Ласты ещё немножко мёрзнут после клетки. Зато на сердце тепло.'),
+      tr('Do you think Grimfin is lonely out there?', 'Как думаешь, Гримфину там не одиноко?'),
+    ])]]);
+  }
+
+  private async talkPuffinParty() {
+    const { puffin } = this.S;
+    if (this.cakeDone) return this.ui.say([[puffin, tr("The cake's all ready, dear. Don't tell Tuck!", 'Торт готов, золотце. Только Туку ни слова!')]]);
+    if (this.berries >= 3) {
+      this.berries -= 3;
+      this.refreshInventory();
+      await this.ui.say([[puffin, tr('Three lovely snowberries! Into the bowl... a pinch of fish... and into the oven!', 'Три чудесные ягодки! В миску... щепотку рыбки... и в печку!')]]);
+      this.cakeDone = true;
+      this.sound.chime([0, 4, 7, 12, 16]);
+      const L = this.level!;
+      L.cake = this.placeCake(L);
+      L.cake.scale.setScalar(0.001);
+      await tween(450, (k) => L.cake!.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+      this.hearts(L.cake.position, 6);
+      await this.ui.say([[puffin, tr("Ta-da! The yummiest fish cake in the whole book. I'll put it on the party table.", 'Та-дам! Самый вкусный рыбный торт во всей книжке. Поставлю его на праздничный стол.')]]);
+      this.refreshQuests();
+      return;
+    }
+    if (!this.cakeMet) {
+      this.cakeMet = true;
+      await this.ui.say([
+        [puffin, tr('Oh, there you are, dear! Tuck needs a welcome-home cake, and my fish cake needs snowberries.', 'А вот и ты, золотце! Туку нужен праздничный торт, а моему рыбному торту нужны снежные ягоды.')],
+        [puffin, tr('Three of them, from the snowy bushes with the little red dots. Could you pick them for me?', 'Три штучки, с заснеженных кустиков с красными точечками. Соберёшь для меня?')],
+      ]);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[puffin, tr(`${this.berries} of 3 snowberries. Keep looking, dear!`, `${this.berries} из 3 ягод. Ищи дальше, золотце!`)]]);
+  }
+
+  private placeCake(L: Level) {
+    const c = L.def.party!.cake;
+    const pv = standee(makeCutout(A.cake(), 0.62, 5));
+    pv.position.copy(toWorld(c[0], c[1], LAND_Y));
+    L.root.add(pv);
+    L.grid[c[1]][c[0]] = 'C';
+    return pv;
+  }
+
+  private async pickBerries(id: string) {
+    const L = this.level!;
+    const pv = L.actors.get(id)!;
+    const [full, bare] = pv.userData.faces as THREE.Group[];
+    if (bare.visible) return this.ui.say([[this.S.nar, tr('No berries left on this bush.', 'На этом кустике ягод больше нет.')]]);
+    full.visible = false;
+    bare.visible = true;
+    this.berries++;
+    this.refreshInventory();
+    this.sound.chime([7, 11, 14]);
+    this.hearts(pv.position, 2);
+    this.ui.toast(this.cakeMet
+      ? tr(`A snowberry! ${this.berries}/3`, `Снежная ягодка! ${this.berries}/3`)
+      : tr('A snowberry! Somebody might need these.', 'Снежная ягодка! Кому-нибудь она точно пригодится.'));
+    this.refreshQuests();
+  }
+
+  private async searchSnowman(id: string) {
+    const { nar } = this.S;
+    if (!this.presentMet) return this.ui.say([[nar, tr('A very proud snowman, in a very smart hat.', 'Очень гордый снеговик в очень нарядной шляпе.')]]);
+    if (this.presentFound || this.snowmenSearched.has(id)) return this.ui.say([[nar, tr('Just snow, and a carrot.', 'Только снег и морковка.')]]);
+    this.snowmenSearched.add(id);
+    const total = [...this.level!.actors.keys()].filter((k) => k.startsWith('snowman:')).length;
+    // of course it's always in the very last place you look
+    if (this.snowmenSearched.size < total) {
+      return this.ui.say([[nar, pick([
+        tr('You peek inside the snowman. Just snow... and a very surprised carrot.', 'Ты заглядываешь в снеговика. Только снег... и очень удивлённая морковка.'),
+        tr("Just snow. The snowman looks a little ticklish.", 'Только снег. Кажется, снеговик боится щекотки.'),
+      ])]]);
+    }
+    this.presentFound = true;
+    await this.ui.say([[nar, tr("You dig into the snowman's tummy... and find a present with a big yellow bow!", 'Ты копаешь у снеговика в животике... и находишь подарок с большим жёлтым бантом!')]]);
+    this.give('present', tr("Found Tuck's present!", 'Подарок для Тука нашёлся!'));
+    this.hearts(this.level!.actors.get(id)!.position, 5);
+  }
+
+  private async hangGarland() {
+    const L = this.level!;
+    const { pebble, pip, tuck } = this.S;
+    this.busy = true;
+    await this.ui.say([[pebble, tr('All three! You hold that end... up... a bit more... there!', 'Все три! Держи этот конец... выше... ещё чуть-чуть... вот так!')]]);
+    this.bunting = 0;
+    this.partyStep = 1;
+    this.refreshInventory();
+    const g = L.garland!;
+    g.visible = true;
+    this.sound.fold();
+    await tween(700, (k) => (g.rotation.x = (-Math.PI / 2) * (1 - k)), easeOutBack);
+    this.sound.chime([0, 4, 7, 12, 16, 19]);
+    this.confetti(g.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+    this.hearts(g.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 8);
+    await this.ui.say([
+      [pip, tr('It looks wonderful!', 'Как красиво!')],
+      [tuck, tr('Wait... look, out in the bay. Is that a spyglass?', 'Погодите... смотрите, там, в бухте. Это подзорная труба?')],
+    ]);
+    const watch = L.def.party!.orcaWatch;
+    this.sound.splash(0.4);
+    await this.orcaRise(watch);
+    this.orcaInner.scale.x = -1;
+    await this.ui.say([
+      [tuck, tr("It's Grimfin. He's watching our party, all by himself.", 'Это Гримфин. Он смотрит на наш праздник, совсем один.')],
+      [pebble, tr('He looks... lonely.', 'Он какой-то... одинокий.')],
+      [tuck, tr('Maybe somebody should invite him. Somebody brave.', 'Может, кто-нибудь его позовёт? Кто-нибудь смелый.')],
+    ]);
+    this.refreshQuests();
+    this.busy = false;
+  }
+
+  /** The very end: Grimfin comes to the party. */
+  private async inviteGrimfin() {
+    const L = this.level!;
+    const P = L.def.party!;
+    const { nar, grim, tuck, pip, puffin, walrus, bobble, fox } = this.S;
+    this.busy = true;
+    this.partyStep = 2;
+    this.refreshQuests();
+    await this.orcaSwim(P.orcaWatch, P.orcaDock);
+    this.orcaInner.scale.x = -1;
+    await this.ui.say([[grim, tr("Oh! Er. I wasn't watching your party. I was... counting fish. Yes. Lots of fish.", 'Ой! Э-э. Я вовсе не смотрел на ваш праздник. Я... рыбу считал. Да. Много рыбы.')]]);
+    await this.ui.ask(nar, tr('Grimfin tries very hard not to look at the bunting.', 'Гримфин изо всех сил старается не смотреть на флажки.'), [tr('"Would you like to come to the party?"', '«Хочешь к нам на праздник?»')]);
+    await this.ui.say([
+      [grim, tr('M-me? To a PARTY?', 'М-меня? На ПРАЗДНИК?')],
+      [grim, tr('Nobody has ever invited an orca to anything. I only ever watched parties through my spyglass. From very far away.', 'Косаток никогда никуда не зовут. Я только смотрел на чужие праздники в подзорную трубу. Издалека.')],
+      [grim, tr("I'm sorry I was so grumpy. And about the cage. And the fog. That was a lot of grumpy.", 'Простите, что я был такой вредный. И за клетку. И за туман. Вредности было многовато.')],
+      [tuck, this.cakeDone ? tr('You can say sorry with cake!', 'Извиняйся тортом!') : tr('You can say sorry by dancing!', 'Извиняйся танцем!')],
+      [grim, tr('HAR! I mean... hooray!', 'ХА! То есть... ура!')],
+    ]);
+    // everyone gathers round
+    const guests = ['pip', 'pebble', 'tuck', 'puffin', 'bobble', 'walrus', 'fox', 'kitp:0', 'kitp:1', 'kitp:2'].filter((id) => L.actors.has(id));
+    await Promise.all(guests.map((id, i) => wait(i * 120).then(() => this.hopActor(id, P.gather[i % P.gather.length]))));
+    if (this.presentFound) {
+      const t = L.actors.get('tuck')!;
+      const gift = makeCutout(A.present(), 0.34, 4);
+      gift.position.copy(t.position).add(new THREE.Vector3(0.45, 0, 0.15));
+      gift.scale.setScalar(0.001);
+      L.root.add(gift);
+      await tween(380, (k) => gift.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+      await this.ui.say([
+        [pip, tr('Tuck! This is for you. I hid it in a snowman, and then I lost it, and then we found it!', 'Тук! Это тебе. Я спрятал его в снеговика, потом потерял, а потом мы нашли!')],
+        [tuck, tr('A brand-new paper kite! I LOVE it!', 'Новенький бумажный воздушный змей! Я его ОБОЖАЮ!')],
+      ]);
+      this.hearts(t.position, 6);
+    }
+    await this.ui.say([
+      [puffin, tr('And one more thing, Grimfin dear. I had a little red yarn left over...', 'И ещё кое-что, Гримфин, дорогой. У меня осталось немножко красной пряжи...')],
+      [grim, tr('A SCARF? For ME? *sniff* Nobody ever knitted me anything.', 'ШАРФ? МНЕ? *шмыг* Мне никто никогда ничего не вязал.')],
+    ]);
+    const scarf = makeCutout(A.scarf(), 0.42, 4);
+    scarf.position.set(0, 0.34, 0.08);
+    scarf.scale.setScalar(0.001);
+    this.orcaInner.add(scarf);
+    this.sound.chime([0, 4, 7, 12]);
+    await tween(400, (k) => scarf.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    this.hearts(this.orcaTop(), 8);
+    const extra: Line[] = [];
+    if (this.walrusHelped) extra.push([walrus, tr('And now... my marvellous dance!', 'А теперь... мой чудесный танец!')]);
+    if (this.bobbleHelped) extra.push([bobble, tr("Grimfin, want to see my splash? Don't worry, a little one!", 'Гримфин, хочешь посмотреть мой плюх? Не бойся, маленький!')]);
+    if (this.foxHelped) extra.push([fox, tr('Kits, no climbing on the orca!', 'Лисята, на косатку не залезать!')]);
+    if (extra.length) await this.ui.say(extra);
+    // the party!
+    this.sound.chime([0, 4, 7, 12, 7, 12, 16, 19]);
+    const jumpers = [...guests.map((id) => L.actors.get(id)!), this.player];
+    for (let j = 0; j < 3; j++) {
+      this.confetti(this.player.position.clone().add(new THREE.Vector3((rand() - 0.5) * 4, 2, (rand() - 0.5) * 2)));
+      this.hearts(this.player.position, 4);
+      this.sound.splash(0.2);
+      const o = this.orcaInner;
+      await Promise.all([
+        ...jumpers.map((pv, i) => {
+          const y0 = pv.position.y;
+          return tween(300, (k) => (pv.position.y = y0 + Math.sin(Math.PI * k) * 0.25), linear, i * 50);
+        }),
+        tween(500, (k) => (o.position.y = SURFACE + Math.sin(Math.PI * k) * 0.5), linear),
+      ]);
+    }
+    await this.ui.say([[nar, this.cakeDone
+      ? tr('And so the little book ended the way all the best stories do: with friends, with cake, and with a lantern glowing long into the evening.', 'Так и закончилась эта маленькая книжка — как и все лучшие истории: с друзьями, с тортом и с фонариком, который светил до самого вечера.')
+      : tr('And so the little book ended the way all the best stories do: with friends, with dancing, and with a lantern glowing long into the evening.', 'Так и закончилась эта маленькая книжка — как и все лучшие истории: с друзьями, с танцами и с фонариком, который светил до самого вечера.')]]);
+    this.finish?.();
+  }
+
+  /** A burst of paper confetti that flutters down. */
+  private confetti(at: THREE.Vector3, n = 36) {
+    const geo = new THREE.PlaneGeometry(0.08, 0.12);
+    for (let i = 0; i < n; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: A.PARTY_COLORS[i % A.PARTY_COLORS.length], side: THREE.DoubleSide, transparent: true });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(at);
+      this.scene.add(m);
+      const vx = (rand() - 0.5) * 3, vz = (rand() - 0.5) * 2, vy = 1 + rand() * 2, spin = (rand() - 0.5) * 20;
+      tween(1800 + rand() * 600, (k) => {
+        const tt = k * 2;
+        m.position.set(at.x + vx * tt * 0.6, at.y + vy * tt - 1.6 * tt * tt, at.z + vz * tt * 0.6);
+        m.rotation.set(spin * k, spin * 0.7 * k, spin * 0.3 * k);
+        mat.opacity = k > 0.8 ? (1 - k) / 0.2 : 1;
+      }, linear, i * 8).then(() => {
+        this.scene.remove(m);
+        mat.dispose();
+      });
+    }
   }
 
   // ---------------------------------------------------------------- per frame

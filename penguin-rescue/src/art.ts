@@ -941,3 +941,402 @@ export function footprint() {
 }
 
 export const seaIceberg = (seed: number) => iceberg(seed);
+
+// ------------------------------------------------------------------ the glacier and the party
+
+/** Grandpa Walrus, in a knitted cap, with or without his spectacles. */
+export function walrus(specs: boolean) {
+  const c = makeCanvas(300, 270);
+  const g = ctx2d(c);
+  const brown = '#a8724c', dark = '#8a5a3a';
+  layer(g, () => {
+    ell(g, 70, 250, 46, 14, -0.15, dark);
+    ell(g, 236, 252, 40, 13, 0.2, dark);
+  });
+  layer(g, () => {
+    g.fillStyle = brown;
+    g.beginPath();
+    g.moveTo(30, 252);
+    g.bezierCurveTo(10, 170, 60, 70, 150, 64);
+    g.bezierCurveTo(240, 58, 290, 140, 276, 252);
+    g.closePath();
+    g.fill();
+  }, 1.6);
+  // wrinkles
+  g.strokeStyle = 'rgba(90,55,30,0.35)';
+  g.lineWidth = 3;
+  for (let i = 0; i < 3; i++) {
+    g.beginPath();
+    g.arc(150, 250 + i * 6, 70 + i * 22, Math.PI * 1.15, Math.PI * 1.85);
+    g.stroke();
+  }
+  // muzzle, tusks, whiskers
+  layer(g, () => {
+    poly(g, [124, 168, 120, 236, 134, 232, 140, 170], '#fbf5e6');
+    poly(g, [176, 168, 180, 236, 166, 232, 160, 170], '#fbf5e6');
+  });
+  layer(g, () => {
+    circ(g, 132, 160, 26, '#e3c29f');
+    circ(g, 168, 160, 26, '#e3c29f');
+  });
+  for (const [x, y] of [[118, 152], [126, 166], [138, 172], [182, 152], [174, 166], [162, 172], [140, 150], [160, 150]]) circ(g, x, y, 2.6, 'rgba(90,55,30,0.6)');
+  ell(g, 150, 138, 13, 9, 0, '#5a3423');
+  circ(g, 146, 135, 3, 'rgba(255,255,255,0.5)');
+  if (specs) {
+    for (const ex of [118, 182]) {
+      circ(g, ex, 112, 8, '#141a22');
+      circ(g, ex + 2.5, 109, 2.8, '#ffffff');
+    }
+  }
+  circ(g, 100, 136, 10, 'rgba(240,130,130,0.45)');
+  circ(g, 200, 136, 10, 'rgba(240,130,130,0.45)');
+  if (specs) {
+    g.strokeStyle = '#2a2420';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(118, 112, 19, 0, TAU);
+    g.moveTo(201, 112);
+    g.arc(182, 112, 19, 0, TAU);
+    g.moveTo(137, 108); g.quadraticCurveTo(150, 100, 163, 108);
+    g.stroke();
+    g.fillStyle = 'rgba(200,230,255,0.25)';
+    circ(g, 118, 112, 17, 'rgba(200,230,255,0.25)');
+    circ(g, 182, 112, 17, 'rgba(200,230,255,0.25)');
+  } else {
+    // squinting hard, trying to see
+    g.strokeStyle = '#141a22';
+    g.lineWidth = 4;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(106, 114); g.quadraticCurveTo(118, 104, 130, 114);
+    g.moveTo(170, 114); g.quadraticCurveTo(182, 104, 194, 114);
+    g.stroke();
+  }
+  // knitted cap with a bobble
+  layer(g, () => {
+    g.fillStyle = '#3f8a6a';
+    g.beginPath();
+    g.ellipse(150, 78, 56, 34, 0, Math.PI, TAU);
+    g.fill();
+    g.fillStyle = '#f2d98c';
+    g.beginPath();
+    g.roundRect(92, 70, 116, 14, 7);
+    g.fill();
+    circ(g, 150, 40, 13, '#f2d98c');
+  });
+  return c;
+}
+
+/** An arctic fox: Mama in a lilac shawl, or one of her kits. */
+export function fox(kit: boolean) {
+  const c = makeCanvas(240, 260);
+  const g = ctx2d(c);
+  const white = '#f7f9fc', shade = '#dfe6f0';
+  const hs = kit ? 1.15 : 1; // kits are mostly head
+  layer(g, () => {
+    // the big fluffy tail curled round the side
+    g.fillStyle = white;
+    g.beginPath();
+    g.moveTo(150, 240);
+    g.bezierCurveTo(240, 236, 238, 150, 200, 120);
+    g.bezierCurveTo(226, 170, 196, 214, 140, 214);
+    g.fill();
+    circ(g, 204, 126, 15, '#c9d6e6');
+  });
+  layer(g, () => ell(g, 116, 196, kit ? 52 : 62, kit ? 54 : 64, 0, white), 1.4);
+  ell(g, 116, 214, kit ? 30 : 38, kit ? 34 : 42, 0, shade);
+  layer(g, () => {
+    ell(g, 92, 248, 16, 9, 0, shade);
+    ell(g, 140, 248, 16, 9, 0, shade);
+  });
+  if (!kit) {
+    layer(g, () => {
+      poly(g, [58, 150, 174, 150, 150, 214, 116, 196, 82, 214], '#b49ad6');
+      g.fillStyle = 'rgba(255,255,255,0.35)';
+      for (let i = 0; i < 5; i++) g.fillRect(70 + i * 20, 154, 8, 10);
+    });
+  }
+  g.save();
+  g.translate(116, 104);
+  g.scale(hs, hs);
+  layer(g, () => {
+    poly(g, [-50, -20, -44, -82, -12, -40], white);
+    poly(g, [50, -20, 44, -82, 12, -40], white);
+  });
+  poly(g, [-44, -30, -40, -68, -20, -42], '#f2b6c2');
+  poly(g, [44, -30, 40, -68, 20, -42], '#f2b6c2');
+  layer(g, () => {
+    g.fillStyle = white;
+    g.beginPath();
+    g.moveTo(-58, -20);
+    g.bezierCurveTo(-60, 30, -20, 50, 0, 52);
+    g.bezierCurveTo(20, 50, 60, 30, 58, -20);
+    g.bezierCurveTo(40, -48, -40, -48, -58, -20);
+    g.fill();
+  }, 1.3);
+  for (const ex of [-22, 22]) {
+    circ(g, ex, 0, 7.5, '#141a22');
+    circ(g, ex + 2.5, -3, 2.6, '#ffffff');
+  }
+  ell(g, 0, 26, 8, 6, 0, '#141a22');
+  circ(g, -36, 20, 8, 'rgba(240,130,130,0.5)');
+  circ(g, 36, 20, 8, 'rgba(240,130,130,0.5)');
+  g.strokeStyle = '#141a22';
+  g.lineWidth = 2.5;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(-8, 36); g.quadraticCurveTo(0, 42, 8, 36);
+  g.stroke();
+  g.restore();
+  return c;
+}
+
+/** A snowdrift with a fluffy fox tail sticking up behind it: someone is hiding! */
+export function hidingTail() {
+  const c = makeCanvas(220, 180);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#e6ecf5';
+    g.beginPath();
+    g.moveTo(132, 120);
+    g.bezierCurveTo(130, 70, 160, 20, 196, 18);
+    g.bezierCurveTo(206, 50, 178, 90, 168, 120);
+    g.fill();
+    circ(g, 194, 22, 13, '#c9d6e6');
+  });
+  layer(g, () => {
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(6, 176);
+    g.bezierCurveTo(20, 92, 90, 70, 130, 96);
+    g.bezierCurveTo(170, 76, 214, 110, 214, 176);
+    g.closePath();
+    g.fill();
+  }, 1.5);
+  g.strokeStyle = 'rgba(140,170,205,0.45)';
+  g.lineWidth = 3;
+  g.beginPath();
+  g.moveTo(40, 150); g.quadraticCurveTo(90, 128, 140, 144);
+  g.stroke();
+  return c;
+}
+
+export function spectacles() {
+  const c = makeCanvas(150, 80);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.strokeStyle = '#2a2420';
+    g.lineWidth = 7;
+    g.beginPath();
+    g.arc(42, 44, 26, 0, TAU);
+    g.moveTo(134, 44);
+    g.arc(108, 44, 26, 0, TAU);
+    g.moveTo(66, 38); g.quadraticCurveTo(75, 28, 84, 38);
+    g.stroke();
+  });
+  circ(g, 42, 44, 22, 'rgba(200,230,255,0.45)');
+  circ(g, 108, 44, 22, 'rgba(200,230,255,0.45)');
+  g.strokeStyle = 'rgba(255,255,255,0.9)';
+  g.lineWidth = 3;
+  g.beginPath();
+  g.arc(36, 38, 12, Math.PI * 1.1, Math.PI * 1.5);
+  g.moveTo(96, 34);
+  g.arc(102, 38, 12, Math.PI * 1.1, Math.PI * 1.5);
+  g.stroke();
+  return c;
+}
+
+const PARTY = ['#d9443a', '#f2b441', '#3f8ac4', '#e58fb0', '#4fa36e', '#9a7bd0'];
+
+/** One scattered piece of paper bunting. */
+export function bunting() {
+  const c = makeCanvas(220, 120);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.strokeStyle = '#8a6a4a';
+    g.lineWidth = 4;
+    g.beginPath();
+    g.moveTo(8, 20); g.quadraticCurveTo(110, 50, 212, 20);
+    g.stroke();
+    for (let i = 0; i < 4; i++) {
+      const x = 30 + i * 48, y = 20 + Math.sin((i + 0.5) / 4 * Math.PI) * 22;
+      poly(g, [x - 18, y - 2, x + 18, y - 2, x, y + 52], PARTY[i]);
+    }
+  });
+  return c;
+}
+
+/** The whole garland, strung between two poles over the party. */
+export function garland() {
+  const c = makeCanvas(1400, 330);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#7a5232';
+    g.fillRect(10, 30, 22, 296);
+    g.fillRect(1368, 30, 22, 296);
+    circ(g, 21, 28, 16, '#d9443a');
+    circ(g, 1379, 28, 16, '#d9443a');
+  }, 1.4);
+  layer(g, () => {
+    g.strokeStyle = '#8a6a4a';
+    g.lineWidth = 6;
+    g.beginPath();
+    g.moveTo(21, 50); g.quadraticCurveTo(700, 190, 1379, 50);
+    g.stroke();
+    for (let i = 0; i < 18; i++) {
+      const t = (i + 0.5) / 18, x = 21 + t * 1358, y = 50 + 4 * t * (1 - t) * 70;
+      poly(g, [x - 30, y - 2, x + 30, y - 2, x, y + 84], PARTY[i % PARTY.length]);
+      circ(g, x, y + 22, 7, 'rgba(255,255,255,0.45)');
+    }
+  });
+  return c;
+}
+
+/** A snowy bush, with or without its snowberries. */
+export function berryBush(berries: boolean) {
+  const c = makeCanvas(190, 150);
+  const g = ctx2d(c);
+  layer(g, () => {
+    circ(g, 60, 100, 46, '#2f5d4e');
+    circ(g, 130, 100, 46, '#356a58');
+    circ(g, 95, 70, 50, '#2a5446');
+  }, 1.4);
+  layer(g, () => {
+    ell(g, 95, 28, 46, 14, 0, '#f6f9fb');
+    ell(g, 40, 66, 24, 9, -0.4, '#f6f9fb');
+    ell(g, 152, 68, 24, 9, 0.4, '#f6f9fb');
+  });
+  if (berries) {
+    for (const [x, y] of [[56, 96], [74, 116], [100, 92], [124, 112], [140, 88], [88, 62], [112, 66], [46, 120], [150, 122]]) {
+      circ(g, x, y, 9, '#d63a4a');
+      circ(g, x - 3, y - 3, 3, 'rgba(255,255,255,0.6)');
+    }
+  }
+  return c;
+}
+
+export function snowman() {
+  const c = makeCanvas(190, 270);
+  const g = ctx2d(c);
+  layer(g, () => circ(g, 95, 196, 70, '#ffffff'), 1.5);
+  layer(g, () => circ(g, 95, 96, 52, '#ffffff'), 1.4);
+  g.strokeStyle = 'rgba(140,170,205,0.4)';
+  g.lineWidth = 3;
+  g.beginPath();
+  g.arc(95, 196, 60, Math.PI * 0.15, Math.PI * 0.85);
+  g.stroke();
+  layer(g, () => {
+    g.strokeStyle = '#6b4a2e';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(40, 170); g.lineTo(4, 136); g.moveTo(16, 148); g.lineTo(8, 128);
+    g.moveTo(150, 170); g.lineTo(186, 136); g.moveTo(174, 148); g.lineTo(184, 128);
+    g.stroke();
+  });
+  for (const ex of [78, 112]) circ(g, ex, 86, 6, '#2a2a30');
+  for (let i = 0; i < 5; i++) circ(g, 72 + i * 11.5, 116 + Math.sin((i / 4) * Math.PI) * 8, 3.5, '#2a2a30');
+  layer(g, () => poly(g, [92, 94, 136, 104, 92, 106], '#f0962c'));
+  circ(g, 66, 102, 8, 'rgba(240,130,130,0.45)');
+  circ(g, 124, 102, 8, 'rgba(240,130,130,0.45)');
+  layer(g, () => {
+    g.fillStyle = '#3f6fb0';
+    g.beginPath();
+    g.roundRect(44, 138, 102, 18, 9);
+    g.fill();
+    poly(g, [112, 150, 132, 152, 138, 196, 118, 196], '#3f6fb0');
+  });
+  layer(g, () => {
+    g.fillStyle = '#2a2a30';
+    g.fillRect(66, 20, 58, 30);
+    g.fillRect(52, 46, 86, 9);
+    g.fillStyle = '#d9443a';
+    g.fillRect(66, 38, 58, 7);
+  });
+  return c;
+}
+
+export function present() {
+  const c = makeCanvas(150, 150);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#3f8ac4';
+    g.fillRect(16, 56, 118, 88);
+    g.fillStyle = '#5aa3d8';
+    g.fillRect(8, 40, 134, 24);
+  }, 1.4);
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  for (let i = 0; i < 4; i++) circ(g, 34 + i * 28, 104 + (i % 2) * 18, 6, 'rgba(255,255,255,0.35)');
+  g.fillStyle = '#f2b441';
+  g.fillRect(66, 40, 18, 104);
+  g.fillRect(8, 46, 134, 12);
+  layer(g, () => {
+    ell(g, 56, 30, 24, 14, -0.4, '#f2b441');
+    ell(g, 94, 30, 24, 14, 0.4, '#f2b441');
+    circ(g, 75, 38, 10, '#e0a030');
+  });
+  return c;
+}
+
+/** Auntie Puffin's snowberry fish cake, with one candle. */
+export function cake() {
+  const c = makeCanvas(220, 200);
+  const g = ctx2d(c);
+  layer(g, () => ell(g, 110, 184, 100, 14, 0, '#e8eef5'));
+  layer(g, () => {
+    g.fillStyle = '#f6d7b0';
+    g.beginPath();
+    g.roundRect(30, 104, 160, 76, 14);
+    g.fill();
+  }, 1.4);
+  layer(g, () => {
+    g.fillStyle = '#fff6f8';
+    g.beginPath();
+    g.roundRect(26, 96, 168, 26, 13);
+    g.fill();
+    for (let i = 0; i < 6; i++) ell(g, 40 + i * 28, 124, 10, 12, 0, '#fff6f8');
+  });
+  for (let i = 0; i < 7; i++) circ(g, 38 + i * 24, 98, 7, '#d63a4a');
+  const f = fish();
+  g.drawImage(f, 70, 52, 80, 40);
+  layer(g, () => {
+    g.fillStyle = '#e58fb0';
+    g.fillRect(104, 18, 12, 40);
+  });
+  ell(g, 110, 10, 7, 11, 0, '#f2b441');
+  return c;
+}
+
+export function confetti(color: string) {
+  const c = makeCanvas(36, 22);
+  const g = ctx2d(c);
+  g.fillStyle = color;
+  g.fillRect(0, 0, 36, 22);
+  return c;
+}
+export const PARTY_COLORS = PARTY;
+
+/** The scarf Auntie Puffin knits for Grimfin. */
+export function scarf() {
+  const c = makeCanvas(220, 150);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#c8413b';
+    g.beginPath();
+    g.roundRect(10, 20, 200, 38, 19);
+    g.fill();
+    poly(g, [140, 40, 178, 44, 186, 136, 150, 138], '#c8413b');
+  }, 1.3);
+  g.fillStyle = 'rgba(255,255,255,0.45)';
+  for (let i = 0; i < 6; i++) g.fillRect(28 + i * 30, 22, 12, 34);
+  for (let i = 0; i < 3; i++) g.fillRect(152, 64 + i * 22, 30, 8);
+  g.strokeStyle = '#c8413b';
+  g.lineWidth = 4;
+  g.beginPath();
+  for (let i = 0; i < 5; i++) {
+    g.moveTo(152 + i * 8, 136);
+    g.lineTo(150 + i * 8, 148);
+  }
+  g.stroke();
+  return c;
+}

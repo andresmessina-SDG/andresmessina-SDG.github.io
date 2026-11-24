@@ -7,7 +7,7 @@ import { Game, type Progress } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
-import { lang, tr, touch, applyDom, setLang, onLang, type Lang } from './i18n';
+import { lang, tr, t, touch, applyDom, setLang, onLang, type Lang } from './i18n';
 
 const params = new URLSearchParams(location.search);
 // Phones and small tablets get a lighter renderer; it steps down further on its own if frames drop.
@@ -139,6 +139,8 @@ window.addEventListener('keydown', (e) => {
   } else if (e.key === ' ') {
     e.preventDefault();
     game.waitTurn();
+  } else if (e.key === 'j' || e.key === 'J') {
+    if (game.level) ui.openJournal();
   } else if (e.key === 'm' || e.key === 'M') {
     toggleMute();
   } else if (e.key === 'l' || e.key === 'L') {
@@ -180,9 +182,13 @@ function syncActions() {
 }
 
 // The to-do list folds down to what's next: tap it to see everything. Phones start folded.
+// The tracker shows what's next on this page; tapping it opens the whole journal.
+// Phones show only the main goal in the tracker, to keep the page clear.
 const objective = document.getElementById('objective')!;
 if (window.innerWidth < 600 || window.innerHeight < 500) objective.classList.add('mini');
-objective.addEventListener('click', () => objective.classList.toggle('mini'));
+objective.addEventListener('click', () => ui.openJournal());
+ui.journalSource = () => game.journal();
+ui.label = t;
 
 // Fullscreen, where the browser allows it (not on iPhone, which instead offers Add to Home Screen).
 type FsDoc = Document & { webkitFullscreenEnabled?: boolean; webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> };
@@ -296,17 +302,24 @@ function frame(now: number) {
 requestAnimationFrame(frame);
 
 // ------------------------------------------------------------------ saving
-// The game saves itself at the start of chapters two and three, in this browser only.
+// The game saves itself at the start of every chapter after the first, in this browser only.
 const SAVE_KEY = 'penguin-rescue-save';
-const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish']);
+const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish', 'specs', 'present']);
 function loadProgress(): Progress | null {
   try {
-    const p = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as Progress | null;
-    const ok = p && p.v === 1 && Number.isInteger(p.chapter) && p.chapter > 0 && p.chapter < LEVELS.length &&
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as (Omit<Progress, 'v'> & { v: number }) | null;
+    if (!raw) return null;
+    // Saves from the three-chapter book: its chapters two and three are now three and four.
+    const p = (raw.v === 1 ? { ...raw, v: 2, chapter: raw.chapter + 1, walrus: false, foxes: false, crates: 0 } : raw) as Progress;
+    const ok = p.v === 2 && Number.isInteger(p.chapter) && p.chapter > 0 && p.chapter < LEVELS.length &&
       Array.isArray(p.inv) && p.inv.every((x) => ITEMS.has(x)) && Number.isInteger(p.fish) && p.fish >= 0 && p.fish < 50 &&
       Number.isInteger(p.stars) && p.stars >= 0 && p.stars <= game.stats.starTotal;
     if (!ok) return null;
-    return { ...p, puffin: !!p.puffin, bobble: !!p.bobble, splashUsed: !!p.splashUsed, gentle: !!p.gentle, covered: !!p.covered };
+    const crates = Number.isInteger(p.crates) ? Math.max(0, Math.min(3, p.crates)) : 0;
+    return {
+      ...p, puffin: !!p.puffin, bobble: !!p.bobble, splashUsed: !!p.splashUsed, gentle: !!p.gentle, covered: !!p.covered,
+      walrus: !!p.walrus, foxes: !!p.foxes, crates,
+    };
   } catch {
     return null;
   }
@@ -378,19 +391,18 @@ async function run() {
   await game.closeChapter();
   document.getElementById('hud')!.hidden = true;
   sound.rustle(1.2);
-  tween(1400, (k) => setNight(1 - k), easeInOut);
+  // the book closes in daylight, from whatever light the last chapter had
+  const fromNight = night;
+  tween(1400, (k) => setNight(fromNight * (1 - k)), easeInOut);
   await book.close();
   sound.fold();
   const st = game.stats;
-  const helped = Number(st.puffin) + Number(st.bobble);
-  const waiting = [!st.puffin && tr('Auntie Puffin', 'тётушка Тупик'), !st.bobble && tr('Bobble', 'Бобл')].filter(Boolean);
   document.getElementById('stats')!.textContent =
-    tr(`Paper stars found: ${st.stars} of ${st.starTotal} · Side quests: ${helped} of 2`,
-      `Найдено бумажных звёздочек: ${st.stars} из ${st.starTotal} · Побочные задания: ${helped} из 2`) +
-    (waiting.length
-      ? tr(` (${waiting.join(' and ')} still ${waiting.length > 1 ? 'need' : 'needs'} help)`,
-        ` (${waiting.join(' и ')} всё ещё ${waiting.length > 1 ? 'ждут' : 'ждёт'} помощи)`)
-      : '');
+    tr(`Paper stars found: ${st.stars} of ${st.starTotal} · Side quests: ${st.sideDone} of ${st.sideTotal}`,
+      `Найдено бумажных звёздочек: ${st.stars} из ${st.starTotal} · Побочные задания: ${st.sideDone} из ${st.sideTotal}`) +
+    (st.missed.length
+      ? tr(`. Still to do next time: ${st.missed.join(', ')}.`, `. В следующий раз: ${st.missed.join(', ')}.`)
+      : tr('. Every single one. Hooray!', '. Все до единого. Ура!'));
   document.getElementById('end')!.hidden = false;
 }
 document.getElementById('again')!.addEventListener('click', () => location.reload());
