@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Penguin Rescue</title>
+<meta name="description" content="A small pop-up book adventure: help two paper penguins rescue their friend Tuck from Grimfin the orca.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1d140e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='18' rx='10' ry='13' fill='%2324344a'/%3E%3Cellipse cx='16' cy='21' rx='7' ry='9' fill='%23fbf5e6'/%3E%3Cpath d='M13 14h6l-3 4z' fill='%23f0962c'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --paper: #fbf6ea;
+    --ink: #3a2a1c;
+    --ink-soft: #7a634c;
+    --edge: rgba(90, 65, 40, 0.28);
+    --accent: #c8413b;
+    --shadow: 0 2px 0 rgba(90, 65, 40, 0.18), 0 8px 22px rgba(20, 10, 0, 0.35);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1d140e; color: var(--ink); }
+  canvas#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  [hidden] { display: none !important; }
+
+  .label, #talk, .card {
+    background: var(--paper);
+    border: 1px solid var(--edge);
+    box-shadow: var(--shadow);
+  }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #objective {
+    position: absolute; left: 16px; top: 16px; max-width: min(420px, calc(100vw - 32px));
+    padding: 9px 14px; border-radius: 3px; font-size: 15px; line-height: 1.3;
+    transform: rotate(-1deg);
+  }
+  #inv {
+    position: absolute; right: 64px; top: 14px; display: flex; gap: 6px; padding: 6px 8px; border-radius: 3px;
+    transform: rotate(0.8deg);
+  }
+  .slot { width: 46px; height: 52px; display: grid; place-items: center; position: relative; }
+  .slot img { max-width: 40px; max-height: 40px; opacity: 0.18; filter: grayscale(1); transition: opacity .4s, filter .4s, transform .4s; }
+  .slot.got img { opacity: 1; filter: none; transform: rotate(-4deg) scale(1.05); }
+  .slot span { position: absolute; bottom: -2px; font-size: 10px; color: var(--ink-soft); letter-spacing: .04em; }
+  .chip {
+    pointer-events: auto; position: absolute; right: 16px; top: 16px; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--edge); background: var(--paper); color: var(--ink); font-size: 18px; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .chip.off { text-decoration: line-through; opacity: .6; }
+
+  #banner {
+    position: fixed; left: 50%; top: 22%; transform: translate(-50%, -10px) rotate(-1.5deg);
+    padding: 14px 26px; background: var(--paper); border: 1px solid var(--edge); box-shadow: var(--shadow);
+    font-size: clamp(20px, 3.2vw, 30px); font-style: italic; white-space: nowrap; opacity: 0;
+    transition: opacity .6s, transform .6s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center;
+  }
+  #banner.show { opacity: 1; transform: translate(-50%, 0) rotate(-1.5deg); }
+  #toast {
+    position: fixed; left: 50%; bottom: 150px; transform: translate(-50%, 10px); padding: 8px 16px;
+    background: #3a2a1c; color: #fbf6ea; border-radius: 3px; font-size: 15px; opacity: 0;
+    transition: opacity .3s, transform .3s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  #talk {
+    position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(720px, calc(100vw - 32px)); min-height: 108px; padding: 14px 18px 14px 14px; border-radius: 4px;
+    display: flex; gap: 14px; align-items: flex-start; cursor: pointer; user-select: none;
+  }
+  #portrait { width: 76px; height: 96px; object-fit: contain; flex: none; transform: rotate(-3deg); filter: drop-shadow(1px 2px 2px rgba(40,25,10,.35)); }
+  #talk .body { flex: 1; min-width: 0; }
+  #speaker { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 13px; color: var(--accent); margin-bottom: 4px; }
+  #line { font-size: 18px; line-height: 1.45; min-height: 52px; }
+  #talk.narrator #line { font-style: italic; }
+  #talk.narrator #speaker { display: none; }
+  #more { position: absolute; right: 14px; bottom: 8px; font-size: 12px; color: var(--ink-soft); animation: nudge 1s infinite; }
+  @keyframes nudge { 50% { transform: translateY(3px); } }
+  #choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+  .btn {
+    font: inherit; font-size: 18px; padding: 10px 22px; border-radius: 3px; cursor: pointer;
+    background: var(--accent); color: #fff8ec; border: 0; box-shadow: 0 2px 0 #8e2a26, 0 6px 14px rgba(0,0,0,.25);
+    transition: transform .15s;
+  }
+  .btn:hover { transform: translateY(-1px) rotate(-1deg); }
+  .btn:focus-visible { outline: 3px solid #f2b441; outline-offset: 2px; }
+  .btn.small { font-size: 16px; padding: 8px 16px; }
+  .btn.small + .btn.small { background: #6b5a48; box-shadow: 0 2px 0 #4a3d30, 0 6px 14px rgba(0,0,0,.2); }
+
+  .overlay {
+    position: fixed; inset: 0; display: grid; place-items: center; padding: 16px;
+    background: radial-gradient(ellipse at center, rgba(20,12,6,0.15), rgba(20,12,6,0.7));
+    transition: opacity .8s;
+  }
+  .overlay.gone { opacity: 0; pointer-events: none; }
+  .card { max-width: 460px; padding: 28px 30px 24px; border-radius: 4px; text-align: center; transform: rotate(-0.6deg); }
+  .card h1 { margin: 4px 0 10px; font-size: clamp(30px, 6vw, 42px); line-height: 1.05; }
+  .card p { margin: 0 0 16px; line-height: 1.5; font-size: 17px; }
+  .kicker { font-style: italic; color: var(--ink-soft); font-size: 15px !important; margin-bottom: 4px !important; }
+  .help { font-size: 13px !important; color: var(--ink-soft); margin: 16px 0 0 !important; }
+
+  @media (max-width: 600px) {
+    #inv { right: 62px; top: 14px; }
+    .slot { width: 34px; height: 42px; }
+    .slot img { max-width: 30px; max-height: 30px; }
+    .slot span { display: none; }
+    #objective { top: 72px; font-size: 14px; }
+    #line { font-size: 16px; }
+    #portrait { width: 56px; height: 72px; }
+    #toast { bottom: 170px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="hud" hidden>
+  <div id="objective" class="label" hidden></div>
+  <div id="inv" class="label" aria-label="Inventory">
+    <div class="slot" data-id="lantern"><img alt="Lantern"><span>lantern</span></div>
+    <div class="slot" data-id="boat"><img alt="Paper boat"><span>boat</span></div>
+    <div class="slot" data-id="fish"><img alt="Fish bucket"><span>fish</span></div>
+  </div>
+  <button id="mute" class="chip" aria-label="Mute sound" aria-pressed="false" title="Sound (M)">♪</button>
+</div>
+
+<div id="banner"></div>
+<div id="toast" role="status"></div>
+
+<div id="talk" hidden>
+  <img id="portrait" alt="">
+  <div class="body">
+    <div id="speaker"></div>
+    <div id="line" aria-live="polite"></div>
+    <div id="choices"></div>
+  </div>
+  <div id="more">continue ▾</div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="card">
+    <p class="kicker">A pop-up book adventure</p>
+    <h1>The Penguin Rescue</h1>
+    <p>Two penguins need your help. Their friend Tuck has been carried off by Grimfin, the meanest orca on the page.</p>
+    <button id="start" class="btn">Open the book</button>
+    <p class="help">Click or tap to walk · Arrow keys or WASD work too<br>Space to continue or wait a turn · M for sound</p>
+  </div>
+</div>
+
+<div id="end" class="overlay" hidden>
+  <div class="card">
+    <p class="kicker">and they all waddled happily ever after</p>
+    <h1>The End</h1>
+    <p>Tuck is home, Grimfin is somewhere far away being fierce, and the lantern is still glowing.</p>
+    <button id="again" class="btn">Read it again</button>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
