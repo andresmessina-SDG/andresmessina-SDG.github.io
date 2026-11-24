@@ -4,11 +4,11 @@ import { makeCanvas, ctx2d, paperCanvas, canvasTex, paperMat, mulberry } from '.
 import { tween, easeInOut } from './tween';
 import * as A from './art';
 
-export const PAGE_W = 6.3;
-export const PAGE_D = 8.7;
+export const PAGE_W = 12.35;
+export const PAGE_D = 14.6;
 const PAGE_H = 0.24;
-const COVER_W = 6.55;
-const COVER_D = 9.0;
+const COVER_W = 12.65;
+const COVER_D = 14.95;
 const COVER_T = 0.08;
 
 function woodCanvas() {
@@ -34,14 +34,14 @@ function woodCanvas() {
 }
 
 function pageCanvas(side: -1 | 1, folio: number) {
-  const W = 640, H = 884;
+  const W = 760, H = 898;
   const c = makeCanvas(W, H);
   const g = ctx2d(c);
   g.fillStyle = '#efe4cb';
   g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'multiply';
   g.drawImage(paperCanvas(512, 31 + folio, 250), 0, 0, W, W);
-  g.drawImage(paperCanvas(512, 41 + folio, 250), 0, W - 140, W, W);
+  g.drawImage(paperCanvas(512, 41 + folio, 250), 0, H - W, W, W);
   g.globalCompositeOperation = 'source-over';
   // gutter shadow toward the spine
   const gx = side < 0 ? W : 0;
@@ -74,7 +74,7 @@ function edgeCanvas() {
 }
 
 function coverCanvas() {
-  const W = 1024, H = 1400;
+  const W = 1100, H = 1300;
   const c = makeCanvas(W, H);
   const g = ctx2d(c);
   g.fillStyle = '#25395a';
@@ -97,14 +97,14 @@ function coverCanvas() {
   g.fillStyle = gold;
   g.textAlign = 'center';
   g.font = 'italic 64px Georgia, serif';
-  g.fillText('A pop-up adventure', W / 2, 260);
+  g.fillText('A pop-up adventure', W / 2, 230);
   g.font = 'bold 128px Georgia, serif';
-  g.fillText('The Penguin', W / 2, 430);
-  g.fillText('Rescue', W / 2, 570);
+  g.fillText('The Penguin', W / 2, 390);
+  g.fillText('Rescue', W / 2, 520);
   const p = A.penguin({ scarf: '#c8413b', tuft: true });
-  g.drawImage(p, W / 2 - 180, 660, 360, 465);
+  g.drawImage(p, W / 2 - 165, 590, 330, 426);
   g.font = 'italic 44px Georgia, serif';
-  g.fillText('in which a lantern is raised', W / 2, 1220);
+  g.fillText('in which a lantern is raised', W / 2, 1150);
   return c;
 }
 
@@ -119,9 +119,9 @@ export class Book {
     scene.add(this.root);
 
     const woodTex = canvasTex(woodCanvas(), true);
-    woodTex.repeat.set(3, 3);
+    woodTex.repeat.set(4, 4);
     const table = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 60),
+      new THREE.PlaneGeometry(90, 90),
       new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.75, bumpMap: woodTex, bumpScale: 0.6 }),
     );
     table.rotation.x = -Math.PI / 2;
@@ -154,7 +154,7 @@ export class Book {
     this.root.add(mk(pagesGeo, [edge, edge, pageR, under, edge, edge], PAGE_W / 2 + 0.02, -PAGE_H / 2));
     this.left.add(mk(coverGeo, [cloth, cloth, cloth, coverArt, cloth, cloth], -COVER_W / 2, yCover));
     this.left.add(mk(pagesGeo, [edge, edge, pageL, under, edge, edge], -PAGE_W / 2 - 0.02, -PAGE_H / 2));
-    const spine = mk(new THREE.CylinderGeometry(0.17, 0.17, COVER_D, 16, 1, false, Math.PI, Math.PI), cloth, 0, -PAGE_H - 0.02);
+    const spine = mk(new THREE.CylinderGeometry(0.2, 0.2, COVER_D, 16, 1, false, Math.PI, Math.PI), cloth, 0, -PAGE_H - 0.02);
     spine.rotation.x = Math.PI / 2;
     this.root.add(spine);
     this.root.add(this.left);

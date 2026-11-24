@@ -687,3 +687,256 @@ export function yarn() {
   g.stroke();
   return c;
 }
+
+/** A snowy paper pine. */
+export function pine(seed: number) {
+  const r = mulberry(seed);
+  const c = makeCanvas(200, 300);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#6b4a2e';
+    g.fillRect(90, 240, 20, 56);
+  });
+  const greens = ['#2f5d4e', '#356a58', '#2a5446'];
+  for (let i = 0; i < 4; i++) {
+    const y = 30 + i * 55, w = 46 + i * 22 + r() * 8;
+    layer(g, () => {
+      poly(g, [100, y - 30, 100 - w, y + 70, 100 + w, y + 70], greens[i % 3]);
+      poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
+    }, 1.3);
+  }
+  return c;
+}
+
+/** Bobble, a seal pup. */
+export function seal() {
+  const c = makeCanvas(260, 220);
+  const g = ctx2d(c);
+  const grey = '#9aa7b4';
+  layer(g, () => {
+    poly(g, [30, 190, 4, 160, 18, 200, 4, 214, 40, 206], '#7f8c99');
+    ell(g, 76, 200, 26, 12, -0.3, '#7f8c99');
+  });
+  layer(g, () => {
+    g.fillStyle = grey;
+    g.beginPath();
+    g.moveTo(30, 196);
+    g.bezierCurveTo(60, 130, 120, 90, 170, 80);
+    g.bezierCurveTo(230, 70, 252, 120, 236, 156);
+    g.bezierCurveTo(220, 196, 150, 210, 30, 206);
+    g.fill();
+  }, 1.5);
+  ell(g, 120, 186, 70, 18, -0.08, 'rgba(255,255,255,0.35)');
+  for (let i = 0; i < 8; i++) circ(g, 70 + i * 18, 150 + (i % 3) * 10, 3.5, 'rgba(90,100,110,0.45)');
+  circ(g, 186, 112, 10, '#141a22');
+  circ(g, 214, 116, 10, '#141a22');
+  circ(g, 189, 108, 3.5, '#fff');
+  circ(g, 217, 112, 3.5, '#fff');
+  ell(g, 206, 134, 9, 6, 0, '#2a2f38');
+  g.strokeStyle = 'rgba(40,45,55,0.6)';
+  g.lineWidth = 2;
+  g.beginPath();
+  for (const s of [-1, 1]) {
+    g.moveTo(206 + s * 8, 138); g.lineTo(206 + s * 34, 132);
+    g.moveTo(206 + s * 8, 142); g.lineTo(206 + s * 32, 146);
+  }
+  g.stroke();
+  circ(g, 176, 134, 8, 'rgba(240,130,130,0.5)');
+  return c;
+}
+
+export function ball() {
+  const c = makeCanvas(140, 140);
+  const g = ctx2d(c);
+  layer(g, () => circ(g, 70, 72, 56, '#f4f0e4'), 1.4);
+  const cols = ['#d9443a', '#f2b441', '#3f7db3'];
+  for (let i = 0; i < 3; i++) {
+    g.fillStyle = cols[i];
+    g.beginPath();
+    g.moveTo(70, 72);
+    g.arc(70, 72, 56, -Math.PI / 2 + (i * 2 * Math.PI) / 3, -Math.PI / 2 + (i * 2 * Math.PI) / 3 + Math.PI / 3);
+    g.fill();
+  }
+  circ(g, 70, 72, 9, '#f4f0e4');
+  return c;
+}
+
+/** Wider ridges so the scenery spans the bigger book. */
+export const ridgeBack = (seed: number) => ridge(1300, 340, seed, 6, '#a9bcd3', '#eef3f9', 20);
+export const ridgeFront = (seed: number) => ridge(1300, 260, seed, 8, '#d7e3ef', '#ffffff', 40);
+export const cliffWide = () => ridge(1300, 460, 3, 6, '#5b74a0', '#9fb4d6', 20);
+
+// ------------------------------------------------------------------ extra-cute bits
+
+/** Grimfin with a little brass spyglass held up to his eye. */
+export function orcaSpyglass() {
+  const c = orca();
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.save();
+    g.translate(470, 168);
+    g.rotate(-0.12);
+    g.fillStyle = '#c99a3c';
+    g.beginPath();
+    g.roundRect(-6, -13, 74, 26, 6);
+    g.fill();
+    g.fillStyle = '#e3bb5c';
+    g.fillRect(14, -15, 8, 30);
+    g.fillRect(44, -16, 8, 32);
+    g.fillStyle = '#8fd0ff';
+    g.beginPath();
+    g.ellipse(68, 0, 6, 13, 0, 0, TAU);
+    g.fill();
+    g.restore();
+  }, 1.3);
+  return c;
+}
+
+export function heart(color = '#f06a8a') {
+  const c = makeCanvas(90, 84);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = color;
+    g.beginPath();
+    g.moveTo(45, 78);
+    g.bezierCurveTo(4, 50, 2, 18, 24, 10);
+    g.bezierCurveTo(36, 6, 44, 14, 45, 22);
+    g.bezierCurveTo(46, 14, 54, 6, 66, 10);
+    g.bezierCurveTo(88, 18, 86, 50, 45, 78);
+    g.fill();
+  });
+  circ(g, 30, 26, 6, 'rgba(255,255,255,0.55)');
+  return c;
+}
+
+function bubble(text: string, color: string) {
+  const c = makeCanvas(110, 120);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#fffaf0';
+    g.beginPath();
+    g.ellipse(55, 50, 46, 44, 0, 0, TAU);
+    g.moveTo(40, 86);
+    g.lineTo(34, 116);
+    g.lineTo(62, 90);
+    g.fill();
+  }, 1.4);
+  g.fillStyle = color;
+  g.font = 'bold 72px Georgia, serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, 55, 54);
+  return c;
+}
+export const bang = () => bubble('!', '#d9443a');
+export const question = () => bubble('?', '#3f6fb0');
+
+/** A striped lighthouse with a face; asleep until you light it. */
+export function lighthouse(awake: boolean) {
+  const c = makeCanvas(160, 320);
+  const g = ctx2d(c);
+  layer(g, () => {
+    poly(g, [40, 312, 120, 312, 106, 100, 54, 100], '#f4efe4');
+    for (const y of [130, 190, 250]) {
+      const t = (y - 100) / 212, w0 = 26 + t * 14, t2 = (y + 30 - 100) / 212, w1 = 26 + t2 * 14;
+      poly(g, [80 - w0, y, 80 + w0, y, 80 + w1, y + 30, 80 - w1, y + 30], '#d9443a');
+    }
+  }, 1.5);
+  layer(g, () => {
+    g.fillStyle = '#3b3a48';
+    g.fillRect(46, 88, 68, 14);
+    g.fillStyle = awake ? '#ffe58a' : '#8b93a8';
+    g.fillRect(56, 50, 48, 40);
+    poly(g, [48, 52, 112, 52, 80, 14], '#d9443a');
+    circ(g, 80, 12, 6, '#3b3a48');
+  });
+  if (awake) {
+    const grd = g.createRadialGradient(80, 70, 4, 80, 70, 60);
+    grd.addColorStop(0, 'rgba(255,240,170,0.9)');
+    grd.addColorStop(1, 'rgba(255,220,120,0)');
+    g.fillStyle = grd;
+    g.fillRect(20, 10, 120, 120);
+  }
+  // face on the white stripe
+  g.strokeStyle = '#2a2433';
+  g.fillStyle = '#2a2433';
+  g.lineWidth = 3.5;
+  g.lineCap = 'round';
+  if (awake) {
+    circ(g, 68, 172, 5, '#2a2433');
+    circ(g, 92, 172, 5, '#2a2433');
+    circ(g, 70, 170, 1.8, '#fff');
+    circ(g, 94, 170, 1.8, '#fff');
+    g.beginPath();
+    g.arc(80, 178, 8, 0.15 * Math.PI, 0.85 * Math.PI);
+    g.stroke();
+  } else {
+    g.beginPath();
+    g.arc(68, 170, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+    g.moveTo(98, 170);
+    g.arc(92, 170, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+    g.stroke();
+    g.font = 'bold 22px Georgia, serif';
+    g.fillText('z', 112, 150);
+    g.font = 'bold 15px Georgia, serif';
+    g.fillText('z', 124, 134);
+  }
+  circ(g, 60, 182, 6, 'rgba(240,130,130,0.55)');
+  circ(g, 100, 182, 6, 'rgba(240,130,130,0.55)');
+  return c;
+}
+
+/** A drowsy little fog cloud. */
+export function fogCloud() {
+  const c = cloud();
+  const g = ctx2d(c);
+  g.strokeStyle = '#6a7390';
+  g.lineWidth = 3;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.arc(112, 80, 7, 0.1 * Math.PI, 0.9 * Math.PI);
+  g.moveTo(152, 80);
+  g.arc(146, 80, 7, 0.1 * Math.PI, 0.9 * Math.PI);
+  g.stroke();
+  circ(g, 104, 92, 6, 'rgba(240,150,170,0.55)');
+  circ(g, 156, 92, 6, 'rgba(240,150,170,0.55)');
+  g.beginPath();
+  g.arc(130, 96, 4, 0, Math.PI);
+  g.stroke();
+  return c;
+}
+
+/** A floating crate with a fish peeking out. */
+export function crate() {
+  const c = makeCanvas(170, 160);
+  const g = ctx2d(c);
+  layer(g, () => {
+    poly(g, [104, 40, 140, 14, 150, 30, 118, 52], '#94a9bc');
+    circ(g, 132, 26, 4, '#1b222c');
+  });
+  layer(g, () => {
+    g.fillStyle = '#b07d45';
+    g.fillRect(16, 44, 138, 104);
+    g.fillStyle = 'rgba(70,40,15,0.45)';
+    g.fillRect(16, 76, 138, 4);
+    g.fillRect(16, 110, 138, 4);
+    g.fillStyle = '#8a5d30';
+    g.fillRect(16, 44, 14, 104);
+    g.fillRect(140, 44, 14, 104);
+  }, 1.4);
+  g.fillStyle = '#fbf5e6';
+  g.font = 'bold 26px Georgia, serif';
+  g.textAlign = 'center';
+  g.fillText('FISH', 85, 102);
+  return c;
+}
+
+export function footprint() {
+  const c = makeCanvas(64, 64);
+  const g = ctx2d(c);
+  ell(g, 22, 34, 9, 14, -0.2, 'rgba(90,110,150,0.5)');
+  ell(g, 42, 30, 9, 14, 0.2, 'rgba(90,110,150,0.5)');
+  return c;
+}
+
+export const seaIceberg = (seed: number) => iceberg(seed);
