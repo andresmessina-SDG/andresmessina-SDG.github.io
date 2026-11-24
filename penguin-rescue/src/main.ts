@@ -3,7 +3,7 @@ import { Book } from './book';
 import { Post } from './fx';
 import { Sound } from './audio';
 import { UI } from './ui';
-import { Game } from './game';
+import { Game, type Progress } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
@@ -295,18 +295,76 @@ function frame(now: number) {
 }
 requestAnimationFrame(frame);
 
+// ------------------------------------------------------------------ saving
+// The game saves itself at the start of chapters two and three, in this browser only.
+const SAVE_KEY = 'penguin-rescue-save';
+const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish']);
+function loadProgress(): Progress | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as Progress | null;
+    const ok = p && p.v === 1 && Number.isInteger(p.chapter) && p.chapter > 0 && p.chapter < LEVELS.length &&
+      Array.isArray(p.inv) && p.inv.every((x) => ITEMS.has(x)) && Number.isInteger(p.fish) && p.fish >= 0 && p.fish < 50 &&
+      Number.isInteger(p.stars) && p.stars >= 0 && p.stars <= game.stats.starTotal;
+    if (!ok) return null;
+    return { ...p, puffin: !!p.puffin, bobble: !!p.bobble, splashUsed: !!p.splashUsed, gentle: !!p.gentle, covered: !!p.covered };
+  } catch {
+    return null;
+  }
+}
+function saveProgress(p: Progress | null) {
+  try {
+    if (p) localStorage.setItem(SAVE_KEY, JSON.stringify(p));
+    else localStorage.removeItem(SAVE_KEY);
+  } catch {
+    /* storage blocked (private browsing): the game simply won't remember */
+  }
+}
+const saved = loadProgress();
+const startBtn = document.getElementById('start')!;
+const contBtn = document.getElementById('continue')!;
+const gentleBox = document.getElementById('gentle') as HTMLInputElement;
+if (saved) {
+  // With a saved game, Continue is the main button and starting again is the quieter one.
+  contBtn.hidden = false;
+  startBtn.dataset.i18n = 'startOver';
+  startBtn.classList.add('alt');
+  gentleBox.checked = saved.gentle;
+  const label = () => {
+    const def = LEVELS[saved.chapter];
+    document.getElementById('contChapter')!.textContent = tr(def.title, def.titleRu);
+  };
+  label();
+  onLang(label);
+  applyDom();
+}
+
 // ------------------------------------------------------------------ story
 async function run() {
   const title = document.getElementById('title')!;
-  await new Promise<void>((r) => document.getElementById('start')!.addEventListener('click', () => r(), { once: true }));
+  const resume = await new Promise<boolean>((r) => {
+    startBtn.addEventListener('click', () => r(false), { once: true });
+    contBtn.addEventListener('click', () => r(true), { once: true });
+  });
   sound.start();
-  game.gentle = (document.getElementById('gentle') as HTMLInputElement).checked;
+  let first = 0;
+  if (resume && saved) {
+    game.restore(saved);
+    first = saved.chapter;
+  } else {
+    saveProgress(null);
+  }
+  game.gentle = gentleBox.checked;
   title.classList.add('gone');
   sound.rustle(1.2);
+  if (LEVELS[first].night) {
+    sound.setNight(true);
+    tween(1600, (k) => setNight(k), easeInOut);
+  }
   await book.open();
   document.getElementById('hud')!.hidden = false;
-  for (let i = 0; i < LEVELS.length; i++) {
-    if (i > 0) {
+  for (let i = first; i < LEVELS.length; i++) {
+    if (i > 0) saveProgress(game.snapshot(i));
+    if (i > first) {
       await game.closeChapter();
       sound.pageTurn();
       sound.setNight(LEVELS[i].night);
@@ -316,6 +374,7 @@ async function run() {
     }
     await game.playChapter(i);
   }
+  saveProgress(null);
   await game.closeChapter();
   document.getElementById('hud')!.hidden = true;
   sound.rustle(1.2);

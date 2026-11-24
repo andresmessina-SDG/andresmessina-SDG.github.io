@@ -45,6 +45,11 @@ lighter renderer, and on any device the picture steps down on its own (fewer
 pixels, then no glow) if the frame rate stays under 45. Add `?quality=high` to the
 address to turn that off.
 
+**Saving.** The game saves itself at the start of chapters two and three (items,
+fish, paper stars, who you helped, Gentle mode), in this browser only. The title
+card then offers Continue, which opens the book at that chapter, or Start over,
+which clears the save. Finishing the book clears it too.
+
 **Languages.** English and Russian, picked on the title card and remembered.
 The first visit follows the browser's language, and `?lang=ru` or `?lang=en`
 forces one. Story text sits beside its translation in the code as

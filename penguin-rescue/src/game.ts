@@ -41,6 +41,20 @@ const sp = (en: string, ru: string, art: HTMLCanvasElement, voice: number): Spea
 
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
 
+/** A saved game: the state at the start of a chapter. */
+export interface Progress {
+  v: 1;
+  chapter: number;
+  inv: string[];
+  fish: number;
+  stars: number;
+  puffin: boolean;
+  bobble: boolean;
+  splashUsed: boolean;
+  gentle: boolean;
+  covered: boolean;
+}
+
 interface Pop {
   delay: number;
   dur: number;
@@ -960,13 +974,43 @@ export class Game {
     this.refreshInventory();
     this.sound.chime();
     this.ui.toast(message);
-    if (id === 'lantern') {
-      const cut = makeCutout(A.lantern(), 0.32, 5);
-      cut.position.set(0.3, 0.22, 0.05);
-      this.facing.add(cut);
-      this.onLantern(this.lanternCovered);
-    }
+    if (id === 'lantern') this.holdLantern();
     this.refreshQuests();
+  }
+
+  private holdLantern() {
+    const cut = makeCutout(A.lantern(), 0.32, 5);
+    cut.position.set(0.3, 0.22, 0.05);
+    this.facing.add(cut);
+    this.onLantern(this.lanternCovered);
+  }
+
+  // ---------------------------------------------------------------- saving
+
+  /** Everything that carries over from one chapter to the next, as it stands now. */
+  snapshot(chapter: number): Progress {
+    return {
+      v: 1, chapter, inv: [...this.inv], fish: this.fish, stars: this.stars,
+      puffin: this.puffinHelped, bobble: this.bobbleHelped, splashUsed: this.bobbleSplashUsed,
+      gentle: this.gentle, covered: this.lanternCovered,
+    };
+  }
+
+  /** Pick up where a saved game left off, at the start of its chapter. */
+  restore(p: Progress) {
+    this.inv = new Set(p.inv);
+    this.fish = p.fish;
+    if (this.fish > 0) this.inv.add('fish');
+    this.stars = p.stars;
+    this.puffinHelped = p.puffin;
+    this.bobbleHelped = p.bobble;
+    this.bobbleSplashUsed = p.splashUsed;
+    this.gentle = p.gentle;
+    this.lanternCovered = p.covered;
+    this.talked = true;
+    this.tuckFree = p.chapter >= 2;
+    if (this.inv.has('lantern')) this.holdLantern();
+    this.refreshInventory();
   }
 
   // ---------------------------------------------------------------- input

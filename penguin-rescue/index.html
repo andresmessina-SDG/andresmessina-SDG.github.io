@@ -144,6 +144,9 @@
   .btn:hover { transform: translateY(-1px) rotate(-1deg); }
   .btn:focus-visible { outline: 3px solid #f2b441; outline-offset: 2px; }
   .btn.small { font-size: 16px; padding: 8px 16px; }
+  .starts { display: flex; flex-wrap: wrap; gap: 10px 12px; justify-content: center; align-items: center; }
+  #continue small { display: block; font-size: 13px; font-style: italic; opacity: .9; margin-top: 1px; }
+  .btn.alt { background: #6b5a48; box-shadow: 0 2px 0 #4a3d30, 0 6px 14px rgba(0,0,0,.2); font-size: 16px; padding: 8px 16px; }
   .btn.small + .btn.small { background: #6b5a48; box-shadow: 0 2px 0 #4a3d30, 0 6px 14px rgba(0,0,0,.2); }
 
   .overlay {
@@ -209,6 +212,8 @@
     #more { bottom: 3px; font-size: 11px; }
     #choices { margin-top: 6px; }
     .btn.small { font-size: 15px; padding: 6px 14px; }
+    .card .btn { font-size: 16px; padding: 7px 18px; }
+    #continue small { font-size: 12px; }
     #toast { bottom: 96px; font-size: 14px; }
     #banner { top: 14%; font-size: 20px; padding: 8px 18px; }
     .act { width: 56px; height: 56px; }
@@ -274,7 +279,10 @@
     <h1 data-i18n="title">The Penguin Rescue</h1>
     <p data-i18n="blurb">Two penguins need your help. Their friend Tuck has been carried off by Grimfin, the meanest orca on the page.</p>
     <label class="gentle"><input type="checkbox" id="gentle"> <span data-i18n="gentle">Gentle mode</span> <span class="note" data-i18n="gentleNote">(a kinder Grimfin, for little readers)</span></label>
-    <button id="start" class="btn" data-i18n="start">Open the book</button>
+    <div class="starts">
+      <button id="continue" class="btn" hidden><span data-i18n="cont">Continue</span><small id="contChapter"></small></button>
+      <button id="start" class="btn" data-i18n="start">Open the book</button>
+    </div>
     <p class="rotate" data-i18n="rotate">Tip: turn your phone sideways for a bigger book.</p>
     <p class="help" data-i18n-html="help">Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · F to toss a fish · M for sound</p>
   </div>
