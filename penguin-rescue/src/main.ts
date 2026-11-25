@@ -7,6 +7,7 @@ import { Game, type Progress } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
+import { loadModel } from './paper';
 import { lang, tr, t, touch, applyDom, setLang, onLang, type Lang } from './i18n';
 
 const params = new URLSearchParams(location.search);
@@ -72,7 +73,22 @@ const book = new Book(scene);
 const post = new Post(renderer, scene, camera);
 const sound = new Sound();
 const ui = new UI(sound);
-const game = new Game(scene, camera, sound, ui);
+// Baked pop-up figures (models/bake.py), named after the art they replace. Any that fail to load
+// keep their flat cutout.
+const modelUrls = import.meta.glob<string>('../models/baked/*.glb', { query: '?url', import: 'default', eager: true });
+const ART_NAME: Record<string, string> = { grimfin: 'orca' };
+const models: Record<string, THREE.Object3D> = {};
+await Promise.all(
+  Object.entries(modelUrls).map(async ([path, url]) => {
+    const file = path.split('/').pop()!.replace('.glb', '');
+    try {
+      models[ART_NAME[file] ?? file] = await loadModel(url);
+    } catch (e) {
+      console.warn(`paper model ${file} unavailable, using its flat cutout`, e);
+    }
+  }),
+);
+const game = new Game(scene, camera, sound, ui, models);
 const snow = new Snow(scene, mobile ? 360 : 700);
 if (mobile) renderer.shadowMap.autoUpdate = false;
 

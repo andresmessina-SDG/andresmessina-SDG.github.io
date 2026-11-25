@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { tween, wait, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
-import { makeCutout, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
+import { makeCutout, useModel, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
 import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
 import { buildTerrain, LAND_Y, ICE } from './terrain';
 import {
@@ -235,7 +235,8 @@ export class Game {
   /** Called when the lantern is covered or uncovered, so the HUD button can follow. */
   onLantern: (covered: boolean) => void = () => {};
 
-  constructor(private scene: THREE.Scene, private camera: THREE.Camera, private sound: Sound, private ui: UI) {
+  /** `models`: baked paper figures by art name (see models/bake.py) that replace those cutouts. */
+  constructor(private scene: THREE.Scene, private camera: THREE.Camera, private sound: Sound, private ui: UI, models: Record<string, THREE.Object3D> = {}) {
     this.art = {
       pip: A.penguin({ scarf: '#c8413b', tuft: true }),
       pebble: A.penguin({ scarf: '#2f8f83', bow: '#e58fb0' }),
@@ -251,6 +252,7 @@ export class Game {
       fox: A.fox(false),
       kit: A.fox(true),
     };
+    for (const [k, m] of Object.entries(models)) if (this.art[k]) useModel(this.art[k], m);
     this.S = {
       nar: { name: '', voice: 520 },
       pip: sp('Pip', 'Пип', this.art.pip, 700),
