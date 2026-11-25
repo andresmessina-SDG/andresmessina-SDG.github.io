@@ -100,7 +100,8 @@ the automated play-through uses.
 
 ## How it is made
 
-Everything is generated at runtime. There are no image or sound files yet.
+Almost everything is generated at runtime. The exception is the cast: each
+character is a layered pop-up model made in Blender (see "The cast" below).
 
 | File | What it does |
 |---|---|
@@ -116,6 +117,32 @@ Everything is generated at runtime. There are no image or sound files yet.
 | `src/fx.ts` | Bloom on the lantern and moon, tilt-shift blur that follows the hero, and a warm grade, vignette and grain |
 | `src/ui.ts` | Dialogue, choices, objective label, inventory, toasts |
 | `src/i18n.ts` | English and Russian: language choice, the page's labels, and Russian plurals |
+
+## The cast (Blender)
+
+The characters are pop-up figures in a pen-and-watercolour storybook style:
+stacked layers of cut card with ink outlines and hatching, on a white die-cut
+backing, drawn on real-animal proportions. They never turn in 3D. Like the
+other stand-ups, they slide across the page facing the reader.
+
+| File | What it does |
+|---|---|
+| `models/popup.py` | The drawing kit: cut card with a paper core, watercolour wash, nib-weight pen lines and hatching |
+| `models/cast.py` | Every character, plus preview renders (`models/cast/`) and `cast.blend` |
+| `models/bake.py` | Bakes each character's paper look into one texture on a single simplified mesh, and writes `models/baked/<name>.glb` |
+
+To rebuild the models, run these from `penguin-rescue/`:
+
+```
+blender -b -P models/cast.py    # previews and cast.blend (optional)
+blender -b -P models/bake.py    # the game models; add "-- tuck pip" to bake only some
+```
+
+`main.ts` loads every file in `models/baked/` and passes it to `Game`. Each
+model replaces the flat cutout of the art with the same name (`grimfin.glb`
+replaces `orca`). Through `makeCutout()`, every cutout of that art becomes the
+model. Any model that fails to load keeps its flat cutout. Previews, `.blend`
+files and texture PNGs are generated, so they aren't committed.
 
 ## Swapping in real assets (Blender and image generation)
 

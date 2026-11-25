@@ -1,5 +1,6 @@
 // Procedural paper: fibre textures, die-cut cutouts and paper materials.
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export function mulberry(seed: number) {
   return () => {
@@ -179,6 +180,8 @@ export function dieCut(art: HTMLCanvasElement, border = 7) {
 const cutCache = new WeakMap<HTMLCanvasElement, Map<number, { front: HTMLCanvasElement; tf: THREE.Texture; tb: THREE.Texture }>>();
 
 export function makeCutout(art: HTMLCanvasElement, height: number, border = 7) {
+  const model = models.get(art);
+  if (model) return modelCutout(model, height);
   let byBorder = cutCache.get(art);
   if (!byBorder) cutCache.set(art, (byBorder = new Map()));
   let cut = byBorder.get(border);
@@ -212,6 +215,50 @@ export function makeCutout(art: HTMLCanvasElement, height: number, border = 7) {
   g.userData.front = fm;
   g.userData.w = w;
   g.userData.h = h;
+  return g;
+}
+
+// Layered pop-up figures made in Blender (models/bake.py). Once one is registered for a piece of
+// art, every cutout of that art is the model instead, so the rest of the game needn't know.
+const models = new WeakMap<HTMLCanvasElement, THREE.Object3D>();
+
+export function useModel(art: HTMLCanvasElement, model: THREE.Object3D) {
+  models.set(art, model);
+}
+
+/** Load a baked figure; its art gets the same paper-fibre bump as every other cutout. */
+export async function loadModel(url: string) {
+  const gltf = await new GLTFLoader().loadAsync(url);
+  gltf.scene.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (m?.map) {
+      m.map.anisotropy = 8; // as sharp as the canvas cutouts at the camera's slant
+      m.bumpMap = paperTex();
+      m.bumpScale = 0.5;
+    }
+  });
+  return gltf.scene;
+}
+
+/** A model standing in for a cutout: same height, pivot at the base centre, the same userData. */
+function modelCutout(model: THREE.Object3D, height: number) {
+  const m = model.clone();
+  const box = new THREE.Box3().setFromObject(m);
+  const size = box.getSize(new THREE.Vector3());
+  const s = height / size.y;
+  m.scale.setScalar(s);
+  m.position.set((-(box.min.x + box.max.x) / 2) * s, -box.min.y * s, 0);
+  const g = new THREE.Group();
+  g.add(m);
+  m.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      g.userData.front ??= o;
+    }
+  });
+  g.userData.w = size.x * s;
+  g.userData.h = height;
   return g;
 }
 
