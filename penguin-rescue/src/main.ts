@@ -101,12 +101,12 @@ function resize() {
   camera.aspect = w / h;
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const tanH = tanV * camera.aspect;
-  // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 15 by 9 cells,
-  // or about 10 cells across on a phone held upright, so the characters stay a good size.
+  // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 11 by 6.5 cells,
+  // or about 7 cells across on a phone held upright, close enough to see the paper figures well.
   wideDist = Math.max(8.2 / tanV, 13.4 / tanH);
-  // A phone held sideways is short, so it gets a closer view (about 12 by 7 cells) too.
+  // A phone held sideways is short, so it gets a closer view (about 9 by 5 cells) too.
   const short = h < 500;
-  followDist = Math.max((short ? 3.6 : 4.6) / tanV, (camera.aspect < 1 ? 4.9 : short ? 6 : 7.6) / tanH);
+  followDist = Math.max((short ? 2.7 : 3.3) / tanV, (camera.aspect < 1 ? 3.6 : short ? 4.4 : 5.4) / tanH);
   const visW = followDist * tanH, visD = followDist * tanV;
   clampX = Math.max(0, 14.1 - visW);
   clampZ0 = -7.8 + visD;

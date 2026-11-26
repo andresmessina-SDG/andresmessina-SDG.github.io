@@ -4,6 +4,3 @@ cast/
 *.blend1
 baked/*.png
 __pycache__/
-# early Tuck experiments, superseded by cast.py
-/tuck.*
-/tuck_popup*

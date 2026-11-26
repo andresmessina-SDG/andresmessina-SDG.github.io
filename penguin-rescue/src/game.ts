@@ -170,6 +170,7 @@ export class Game {
   level: Level | null = null;
   player = new THREE.Group();
   private hopper = new THREE.Group();
+  private stride = 1; // which foot the next waddle step rocks onto
   private facing = new THREE.Group();
   private boatRig = new THREE.Group();
   private lanternLight = new THREE.PointLight(0xffa955, 0, 0, 1.7);
@@ -1559,12 +1560,21 @@ export class Game {
         this.hopper.rotation.z = 0.32 * lean * (this.isIce(c) ? 1 : 1 - k);
       }, linear);
       if (!this.isIce(c)) this.hopper.rotation.z = 0;
-    } else {
-      await tween(this.sail ? 240 : 210, (k) => {
+    } else if (this.sail) {
+      await tween(240, (k) => {
         this.player.position.lerpVectors(from, to, k);
-        this.hopper.position.y = Math.sin(Math.PI * k) * (this.sail ? 0.06 : 0.2);
+        this.hopper.position.y = Math.sin(Math.PI * k) * 0.06;
         this.hopper.rotation.z = Math.sin(Math.PI * k) * 0.09 * lean;
       }, linear);
+    } else {
+      // a waddle: rock onto one foot, then the other on the next step
+      const side = (this.stride = -this.stride);
+      await tween(210, (k) => {
+        this.player.position.lerpVectors(from, to, k);
+        this.hopper.position.y = Math.sin(Math.PI * k) * 0.1;
+        this.hopper.rotation.z = Math.sin(Math.PI * k) * 0.2 * side;
+      }, linear);
+      this.hopper.rotation.z = 0;
     }
     if (this.sail) this.revealAround(c);
   }
@@ -1702,11 +1712,14 @@ export class Game {
     for (let h = 0; h < hops; h++) {
       const a = from.clone().lerp(to, h / hops), b = from.clone().lerp(to, (h + 1) / hops);
       this.sound.step();
+      const side = h % 2 ? 1 : -1;
       await tween(180, (k) => {
         pv.position.lerpVectors(a, b, k);
-        pv.position.y += Math.sin(Math.PI * k) * 0.2;
+        pv.position.y += Math.sin(Math.PI * k) * 0.1;
+        pv.rotation.z = Math.sin(Math.PI * k) * 0.2 * side;
       }, linear);
     }
+    pv.rotation.z = 0;
     L.actorCell.set(id, c);
   }
 
@@ -2930,7 +2943,9 @@ export class Game {
       const s = t + i.phase;
       switch (i.kind) {
         case 'waddle':
-          i.obj.rotation.z = Math.sin(s * 2.2) * 0.06;
+          // shifting weight from foot to foot, with a little lift between
+          i.obj.rotation.z = Math.sin(s * 2.4) * 0.08;
+          i.obj.position.y = Math.abs(Math.cos(s * 2.4)) * 0.012;
           break;
         case 'bob':
           i.obj.position.y = 0.04 + Math.sin(s * 2) * 0.04;
@@ -2961,7 +2976,7 @@ export class Game {
       const pv = L.actors.get(id), c = L.actorCell.get(id);
       if (!pv || !c) continue;
       const inner = pv.userData.inner as THREE.Group;
-      inner.position.y = !this.busy && manhattan(c, this.pos) === 1 ? Math.abs(Math.sin(t * 7)) * 0.07 : 0;
+      if (!this.busy && manhattan(c, this.pos) === 1) inner.position.y = Math.abs(Math.sin(t * 7)) * 0.07;
     }
     // glowing stars at night only show in uncovered lantern light
     if (L.def.night && L.ready) {
