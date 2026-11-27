@@ -3,7 +3,7 @@ import { Book } from './book';
 import { Post } from './fx';
 import { Sound } from './audio';
 import { UI } from './ui';
-import { Game, type Progress } from './game';
+import { Game, type Progress, type Mid } from './game';
 import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
@@ -253,6 +253,7 @@ document.addEventListener('webkitfullscreenchange', syncFs);
 // Pause the music box when the page is hidden (a phone locked, or another tab).
 document.addEventListener('visibilitychange', () => {
   perfT = perfN = 0;
+  if (document.hidden) game.save();
   if (!sound.ctx) return;
   if (document.hidden) sound.ctx.suspend();
   else sound.ctx.resume();
@@ -333,8 +334,18 @@ function frame(now: number) {
 requestAnimationFrame(frame);
 
 // ------------------------------------------------------------------ saving
-// The game saves itself at the start of every chapter after the first, in this browser only.
+// The game saves itself in this browser only: at the start of every chapter after the first, and
+// after every move, as the list of moves made since the chapter began (Continue replays them).
 const SAVE_KEY = 'penguin-rescue-save';
+/** A fingerprint of a chapter's map: moves saved on a different map can't be replayed. */
+const mapHash = (i: number) => [...LEVELS[i].map.join('')].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) | 0, 7);
+const MOVE_KEYS = new Set(['s', 'n', 'w', 'i', 'c', 'f', 'l', 'u', 'g']);
+function validMid(m: Mid | undefined, chapter: number): Mid | undefined {
+  if (!m || !Array.isArray(m.moves) || !Array.isArray(m.answers) || m.map !== mapHash(chapter) || m.moves.length > 20000) return undefined;
+  const ok = m.moves.every((x) => x && typeof x === 'object' && Object.keys(x).every((k) => MOVE_KEYS.has(k))) &&
+    m.answers.every((a) => Number.isInteger(a) && a >= 0 && a < 4);
+  return ok ? { moves: m.moves, answers: m.answers, map: m.map } : undefined;
+}
 const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish', 'specs', 'present']);
 function loadProgress(): Progress | null {
   try {
@@ -342,14 +353,17 @@ function loadProgress(): Progress | null {
     if (!raw) return null;
     // Saves from the three-chapter book: its chapters two and three are now three and four.
     const p = (raw.v === 1 ? { ...raw, v: 2, chapter: raw.chapter + 1, walrus: false, foxes: false, crates: 0 } : raw) as Progress;
-    const ok = p.v === 2 && Number.isInteger(p.chapter) && p.chapter > 0 && p.chapter < LEVELS.length &&
+    const ok = p.v === 2 && Number.isInteger(p.chapter) && p.chapter >= 0 && p.chapter < LEVELS.length &&
       Array.isArray(p.inv) && p.inv.every((x) => ITEMS.has(x)) && Number.isInteger(p.fish) && p.fish >= 0 && p.fish < 50 &&
       Number.isInteger(p.stars) && p.stars >= 0 && p.stars <= game.stats.starTotal;
     if (!ok) return null;
+    const mid = validMid(p.mid, p.chapter);
+    // the first chapter is only worth continuing partway through
+    if (p.chapter === 0 && !mid) return null;
     const crates = Number.isInteger(p.crates) ? Math.max(0, Math.min(3, p.crates)) : 0;
     return {
       ...p, puffin: !!p.puffin, bobble: !!p.bobble, splashUsed: !!p.splashUsed, gentle: !!p.gentle, covered: !!p.covered,
-      walrus: !!p.walrus, foxes: !!p.foxes, crates,
+      walrus: !!p.walrus, foxes: !!p.foxes, crates, mid,
     };
   } catch {
     return null;
@@ -372,7 +386,9 @@ if (saved) {
   contBtn.hidden = false;
   startBtn.dataset.i18n = 'startOver';
   startBtn.classList.add('alt');
-  gentleBox.checked = saved.gentle;
+  // Gentle mode as last chosen, which may have changed partway through the chapter
+  const g = saved.mid?.moves.filter((m) => 'g' in m).pop();
+  gentleBox.checked = g && 'g' in g ? g.g : saved.gentle;
   const label = () => {
     const def = LEVELS[saved.chapter];
     document.getElementById('contChapter')!.textContent = tr(def.title, def.titleRu);
@@ -391,13 +407,16 @@ async function run() {
   });
   sound.start();
   let first = 0;
-  if (resume && saved) {
-    game.restore(saved);
-    first = saved.chapter;
+  const resuming = resume && saved ? saved : null;
+  if (resuming) {
+    // the first chapter starts from a fresh game
+    if (resuming.chapter > 0) game.restore(resuming);
+    first = resuming.chapter;
   } else {
     saveProgress(null);
   }
-  game.gentle = gentleBox.checked;
+  // a replayed chapter starts with the Gentle mode it was saved with, and then takes the new choice
+  game.gentle = resuming?.mid ? resuming.gentle : gentleBox.checked;
   title.classList.add('gone');
   sound.rustle(1.2);
   if (LEVELS[first].night) {
@@ -407,7 +426,10 @@ async function run() {
   await book.open();
   document.getElementById('hud')!.hidden = false;
   for (let i = first; i < LEVELS.length; i++) {
-    if (i > 0) saveProgress(game.snapshot(i));
+    const continuing = i === first && resuming?.mid ? resuming : null;
+    const begin = continuing ? { ...continuing, mid: undefined } : game.snapshot(i);
+    if (i > 0 && !continuing) saveProgress(begin);
+    game.onSave = () => saveProgress({ ...begin, mid: { moves: game.moves, answers: ui.answers, map: mapHash(i) } });
     if (i > first) {
       await game.closeChapter();
       sound.pageTurn();
@@ -416,8 +438,9 @@ async function run() {
       tween(1600, (k) => setNight(from + (to - from) * k), easeInOut);
       await book.turnPage();
     }
-    await game.playChapter(i);
+    await game.playChapter(i, continuing ? { mid: continuing.mid!, gentle: gentleBox.checked } : undefined);
   }
+  game.onSave = () => {};
   saveProgress(null);
   await game.closeChapter();
   document.getElementById('hud')!.hidden = true;

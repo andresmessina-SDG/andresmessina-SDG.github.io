@@ -21,8 +21,16 @@ interface Tw {
 
 const list: Tw[] = [];
 let now = performance.now();
+let fast = false;
+
+/** While a save is replayed, every tween jumps straight to its end. */
+export const setFast = (on: boolean) => (fast = on);
 
 export function tween(dur: number, fn: (k: number) => void, ease: Ease = easeInOut, delay = 0): Promise<void> {
+  if (fast) {
+    fn(ease(1));
+    return Promise.resolve();
+  }
   return new Promise((done) => {
     list.push({ start: now + delay, dur: Math.max(1, dur), fn, ease, done });
   });
