@@ -632,7 +632,7 @@ async function run() {
       sound.setNight(LEVELS[i].night);
       const from = night, to = LEVELS[i].night ? 1 : 0;
       tween(1600, (k) => setNight(from + (to - from) * k), easeInOut);
-      await book.turnPage();
+      await book.turnPage(() => sound.fold(0.5));
     }
     const rain = LEVELS[i].season === 'spring';
     snow.setRain(rain);

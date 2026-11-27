@@ -1,7 +1,7 @@
 // The table, the open book, its covers and the page that turns between chapters.
 import * as THREE from 'three';
 import { makeCanvas, ctx2d, paperCanvas, canvasTex, paperMat, mulberry } from './paper';
-import { tween, easeInOut } from './tween';
+import { tween, easeInOut, linear } from './tween';
 import * as A from './art';
 import { tr } from './i18n';
 import { BOOK } from './levels';
@@ -12,6 +12,9 @@ const PAGE_H = 0.24;
 const COVER_W = 12.65;
 const COVER_D = 14.95;
 const COVER_T = 0.08;
+// The turning sheet's grid: columns from the spine to the edge, rows from back to front.
+const TURN_COLS = 40;
+const TURN_ROWS = 12;
 
 function woodCanvas() {
   const r = mulberry(21);
@@ -121,7 +124,10 @@ export class Book {
   left = new THREE.Group();
   private turner = new THREE.Group();
   private turnGeo: THREE.PlaneGeometry;
-  private turnBase: Float32Array;
+  /** Per vertex of the turning sheet: its column (distance from the spine) and row. */
+  private turnCol: Uint8Array;
+  private turnRow: Uint8Array;
+  private turnZ: Float32Array;
   private coverTex: THREE.Texture;
 
   /** Redraw the cover lettering after the language changes. */
@@ -175,15 +181,30 @@ export class Book {
     this.root.add(spine);
     this.root.add(this.left);
 
-    this.turnGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_D, 24, 1);
+    this.turnGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_D, TURN_COLS, TURN_ROWS);
     this.turnGeo.translate(PAGE_W / 2, 0, 0);
     this.turnGeo.rotateX(-Math.PI / 2);
-    this.turnBase = Float32Array.from(this.turnGeo.attributes.position.array as Float32Array);
-    const turnMat = new THREE.MeshStandardMaterial({ map: pageR.map, side: THREE.DoubleSide, roughness: 0.95 });
-    const sheet = new THREE.Mesh(this.turnGeo, turnMat);
-    sheet.castShadow = true;
-    sheet.receiveShadow = true;
-    this.turner.add(sheet);
+    const base = this.turnGeo.attributes.position;
+    this.turnCol = new Uint8Array(base.count);
+    this.turnRow = new Uint8Array(base.count);
+    this.turnZ = new Float32Array(base.count);
+    for (let i = 0; i < base.count; i++) {
+      this.turnCol[i] = Math.round((base.getX(i) / PAGE_W) * TURN_COLS);
+      this.turnRow[i] = Math.round((base.getZ(i) / PAGE_D + 0.5) * TURN_ROWS);
+      this.turnZ[i] = base.getZ(i);
+    }
+    // The sheet's top is this page (right); its underside is the next left-hand page, which it
+    // becomes as it lands. Seen from above after the turn, the underside is mirrored, so flip it back.
+    const backMap = pageL.map!.clone();
+    backMap.repeat.x = -1;
+    backMap.offset.x = 1;
+    const front = new THREE.Mesh(this.turnGeo, new THREE.MeshStandardMaterial({ map: pageR.map, side: THREE.FrontSide, roughness: 0.95 }));
+    const back = new THREE.Mesh(this.turnGeo, new THREE.MeshStandardMaterial({ map: backMap, side: THREE.BackSide, roughness: 0.95 }));
+    for (const m of [front, back]) {
+      m.castShadow = true;
+      m.receiveShadow = true;
+      this.turner.add(m);
+    }
     this.turner.position.y = 0.015;
     this.turner.visible = false;
     this.root.add(this.turner);
@@ -203,25 +224,55 @@ export class Book {
     return tween(1400, (k) => this.setClosed(k), easeInOut);
   }
 
+  /**
+   * Bend the sheet for time k (0..1) of the turn. Each row is laid out along its own length, so the
+   * paper bends but never stretches. The angle grows from the spine outward:
+   *   angle(s) = base + bend * (s / width)^1.6
+   * `base` sweeps the sheet over; `bend` first lifts the edge ahead (the corner peels up), then lets
+   * it trail behind (it floats down last). The front corner, where a hand would hold it, leads and
+   * runs a little ahead in time, so the sheet stays twisted (never a flat board) as it passes upright.
+   */
   private curl(k: number) {
     const pos = this.turnGeo.attributes.position as THREE.BufferAttribute;
-    const lift = Math.sin(Math.PI * k);
+    const base = Math.PI * easeInOut(Math.min(1, Math.max(0, (k - 0.08) / 0.84)));
+    const envelope = Math.sqrt(Math.sin(Math.PI * k));
+    const ds = PAGE_W / TURN_COLS;
+    const xs = new Float32Array((TURN_ROWS + 1) * (TURN_COLS + 1));
+    const ys = new Float32Array(xs.length);
+    for (let r = 0; r <= TURN_ROWS; r++) {
+      const front = (r / TURN_ROWS) * 2 - 1; // -1 at the back edge, 1 at the front
+      const bend = 1.25 * (1 + 0.45 * front) * envelope * Math.sin(2 * Math.PI * (k + 0.07 * front));
+      let x = 0, y = 0;
+      for (let c = 0; c <= TURN_COLS; c++) {
+        const i = r * (TURN_COLS + 1) + c;
+        xs[i] = x;
+        ys[i] = y;
+        const a = Math.min(Math.PI, Math.max(0, base + bend * Math.pow((c + 0.5) / TURN_COLS, 1.6)));
+        x += Math.cos(a) * ds;
+        y += Math.sin(a) * ds;
+      }
+    }
     for (let i = 0; i < pos.count; i++) {
-      const x = this.turnBase[i * 3];
-      const u = x / PAGE_W;
-      pos.setY(i, this.turnBase[i * 3 + 1] + Math.sin(u * Math.PI * 0.9) * 0.9 * lift * u);
+      const j = this.turnRow[i] * (TURN_COLS + 1) + this.turnCol[i];
+      pos.setXYZ(i, xs[j], ys[j], this.turnZ[i]);
     }
     pos.needsUpdate = true;
     this.turnGeo.computeVertexNormals();
+    this.turnGeo.computeBoundingSphere();
   }
 
-  async turnPage() {
+  /** Turn one page from right to left. `onLand` is called as it settles (for a soft paper flop). */
+  async turnPage(onLand?: () => void) {
+    this.curl(0);
     this.turner.visible = true;
-    await tween(1300, (k) => {
-      this.turner.rotation.z = Math.PI * k;
+    let landed = false;
+    await tween(1700, (k) => {
       this.curl(k);
-    }, easeInOut);
+      if (!landed && k > 0.88) {
+        landed = true;
+        onLand?.();
+      }
+    }, linear);
     this.turner.visible = false;
-    this.turner.rotation.z = 0;
   }
 }
