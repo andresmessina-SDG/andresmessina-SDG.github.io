@@ -85,6 +85,8 @@ const T: Record<string, [string, string]> = {
   tabStory: ['Story', 'История'],
   tabSide: ['Side quests', 'Задания'],
   tabBook: ['Scrapbook', 'Альбом'],
+  playPage: ['Play again', 'Сыграть ещё раз'],
+  back: ['Back', 'Назад'],
   bookBlank: ['A page still to fill.', 'Эту страницу ещё предстоит заполнить.'],
   bookNoPhoto: ['Finish this chapter to take its photo.', 'Закончи эту главу, и здесь появится фото.'],
   snap: ['Snap! A photo for your scrapbook.', 'Щёлк! Фото для альбома.'],

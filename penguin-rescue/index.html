@@ -179,6 +179,8 @@
   #journal .sticker.got:nth-child(even) { transform: rotate(6deg); }
   #journal .sticker img { width: 40px; height: 40px; object-fit: contain; }
   #journal .stickers .note { margin: 8px 0 0; font-size: 13.5px; font-style: italic; color: var(--ink-soft); }
+  #journal .stickers .play { margin-top: 10px; }
+  #journal.bookOnly .tabs, #journal.bookOnly .hint, #journal.bookOnly #journalStars { display: none; }
 
   /* the end-of-chapter snapshot: a flash, then a polaroid that drops in and flies to the journal */
   #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 30; }
@@ -476,6 +478,8 @@
     <div class="starts">
       <button id="continue" class="btn" hidden><span data-i18n="cont">Continue</span><small id="contChapter"></small></button>
       <button id="start" class="btn" data-i18n="start">Open the book</button>
+      <button id="scrapbook" class="btn alt" data-i18n="tabBook" hidden>Scrapbook</button>
+      <button id="back" class="btn alt" data-i18n="back" hidden>Back</button>
     </div>
     <p class="rotate" data-i18n="rotate">Tip: turn your phone sideways for a bigger book.</p>
     <p class="help" data-i18n-html="help">Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · F to toss a fish · M for sound</p>

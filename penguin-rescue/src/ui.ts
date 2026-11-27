@@ -77,8 +77,14 @@ export class UI {
   private seen = new Map<string, boolean>();
   /** While a saved chapter is replayed: the answers to give. Nothing is shown meanwhile. */
   replay: number[] | null = null;
+  /** Called when a replay runs out of answers, so the game can go back to normal play. */
+  onReplayDone: () => void = () => {};
   /** Every answer given this chapter, in order, for the save. */
   answers: number[] = [];
+  /** Opened from the title card: the scrapbook alone, with a way to play a finished page again. */
+  private canPlay = false;
+  /** Called with a chapter's index when its scrapbook page is chosen to play again. */
+  onPlay: (chapter: number) => void = () => {};
   /** Supplies the journal's contents when it opens. */
   journalSource: (() => Journal) | null = null;
   private tab: 'story' | 'side' | 'book' = 'story';
@@ -177,7 +183,15 @@ export class UI {
 
   /** A question with buttons; resolves with the chosen index. */
   async ask(who: Speaker, text: string, options: string[]) {
-    if (this.replay) return this.replay.shift() ?? 0;
+    if (this.replay) {
+      if (this.replay.length) {
+        const c = this.replay.shift()!;
+        this.answers.push(c);
+        return c;
+      }
+      // saved while this question was waiting: stop replaying and ask it for real
+      this.onReplayDone();
+    }
     this.open = true;
     this.talk.hidden = false;
     this.choices.innerHTML = '';
@@ -284,9 +298,11 @@ export class UI {
 
   // ---------------------------------------------------------------- the journal
 
-  openJournal(tab?: 'story' | 'side' | 'book') {
+  openJournal(tab?: 'story' | 'side' | 'book', playable = false) {
     if (this.isOpen || !this.journalSource) return;
     if (tab) this.tab = tab;
+    this.canPlay = playable;
+    this.journalEl.classList.toggle('bookOnly', playable);
     this.journalOpen = true;
     this.syncBody();
     this.renderJournal();
@@ -353,7 +369,7 @@ export class UI {
       }
     } else if (this.tab === 'book') {
       // the scrapbook: a taped-in photo and stickers for every chapter
-      for (const pg of J.book) {
+      J.book.forEach((pg, i) => {
         const page = el('section', `page${pg.visited ? '' : ' blank'}`);
         const photo = el('figure', 'photo');
         if (pg.photo) {
@@ -385,9 +401,14 @@ export class UI {
           st.appendChild(sides);
           if (!pg.photo) st.appendChild(el('p', 'note', L.bookNoPhoto));
         } else st.appendChild(el('p', 'note', L.bookBlank));
+        if (this.canPlay && pg.photo) {
+          const play = el('button', 'btn small play', `▶ ${L.playPage}`);
+          play.addEventListener('click', () => this.onPlay(i));
+          st.appendChild(play);
+        }
         page.appendChild(st);
         out.push(page);
-      }
+      });
     } else {
       let lastChapter = '';
       for (const s of J.side) {

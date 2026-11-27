@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2) and the scrapbook (2.3) are built.
+**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3) and chapter select (2.4) are built.
 
 ---
 
@@ -64,6 +64,11 @@ Kids play in short bursts, often 10–15 minutes.
   answers made since the chapter began. Continue rebuilds the chapter and replays them instantly
   and silently, so you resume exactly where you stopped, story scenes included. New chapters
   and mechanics get this for free, as long as their rules don't use randomness.
+- *Rule for new code:* game logic must never read anything that only the render loop updates
+  (such as an object's `visible`), because a replay runs between frames. The night stars broke
+  this once: whether a star could be picked up was read off the picture; now it's `starShowing()`.
+- A save made while a question is waiting replays up to that question and then asks it for
+  real, instead of answering it.
 
 ### 2.3 Give paper stars a purpose — built (scrapbook and snapshots; no unlocks yet)
 Stars are only counted. A collectible that unlocks nothing is easy to ignore.
@@ -74,7 +79,7 @@ Stars are only counted. A collectible that unlocks nothing is easy to ignore.
   taken and pasted into the scrapbook. It's a natural pause and a reward.
 - Maybe later: stars unlock outfits (a hat, a scarf colour) or a bonus page.
 
-### 2.4 Chapter select
+### 2.4 Chapter select — built
 After finishing the book, let players replay any chapter from the scrapbook, with that
 chapter's stars and quests shown. This helps with missed side quests, which the end card
 already lists.
@@ -282,6 +287,8 @@ reuse an existing verb, and does it look like paper?
 | 2026-11-26 | Stay in planning; keep this document as the plan of record | Asked to plan before building |
 | 2026-11-26 | Book Two travels through the seasons, with weather-based mechanics | Asked for chapters in different seasons with different weather and mechanics |
 | 2026-11-26 | Build the Book One improvements first, starting with undo | Agreed; Spring's cracking ice depends on undo |
+| 2026-11-26 | Chapter select lives in the scrapbook on the title card; a replay is its own visit (`?replay=`) and never touches the story save | Keeps the story save simple; replays add stickers and photos only |
+| 2026-11-26 | A replayed chapter starts with the usual kit and the friends helped in *earlier* chapters | That chapter's own quests start fresh, so they can be done again |
 | 2026-11-26 | The scrapbook is stored apart from the save and keeps the best ever (stars, quests) and the latest photo | Survives Start over and the end of the book, so replaying a chapter can still add stickers |
 | 2026-11-26 | No star unlocks (outfits) yet | Open question 5 is still undecided |
 | 2026-11-26 | Mid-chapter saves replay recorded moves instead of saving every story flag | Exact resume anywhere, no restore code per scene, and Book Two's mechanics are covered automatically. Rule: game logic must stay deterministic (randomness only for looks) |
