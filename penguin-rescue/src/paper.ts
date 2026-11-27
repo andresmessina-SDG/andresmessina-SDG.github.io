@@ -240,6 +240,52 @@ export async function loadModel(url: string) {
   return gltf.scene;
 }
 
+/** A picture of each baked figure for the dialogue box: standing, turned a little, lit like the lamp. */
+export function modelPortraits(models: Record<string, THREE.Object3D>, w = 152, h = 192) {
+  const out: Record<string, string> = {};
+  const keys = Object.keys(models);
+  if (!keys.length) return out;
+  const canvas = document.createElement('canvas');
+  let r: THREE.WebGLRenderer;
+  try {
+    r = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
+  } catch {
+    return out; // no second context: the drawn portraits stay
+  }
+  r.setSize(w, h, false);
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  r.toneMappingExposure = 1.05;
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xfff4e6, 0x8a6446, 1.3));
+  const sun = new THREE.DirectionalLight(0xffe2bc, 2.4);
+  sun.position.set(-1.5, 2.5, 3);
+  scene.add(sun);
+  const cam = new THREE.PerspectiveCamera(20, w / h, 0.01, 100);
+  const tan = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+  const look = new THREE.Vector3(0.22, 0.18, 1).normalize();
+  for (const k of keys) {
+    const m = models[k].clone();
+    scene.add(m);
+    const box = new THREE.Box3().setFromObject(m);
+    const size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+    // a long figure lying down (the seal, Grimfin) shows its head end, which faces +x
+    const wide = Math.max(size.y * 1.6, size.x * 0.55);
+    if (size.x > wide) {
+      mid.x = box.max.x - wide / 2;
+      size.x = wide;
+    }
+    const d = Math.max(size.y / 2 / tan, size.x / 2 / (tan * cam.aspect)) * 1.12 + size.z / 2;
+    cam.position.copy(mid).addScaledVector(look, d);
+    cam.lookAt(mid);
+    r.render(scene, cam);
+    out[k] = canvas.toDataURL('image/png');
+    scene.remove(m);
+  }
+  r.dispose();
+  r.forceContextLoss();
+  return out;
+}
+
 /** A model standing in for a cutout: same height, pivot at the base centre, the same userData. */
 function modelCutout(model: THREE.Object3D, height: number) {
   const m = model.clone();

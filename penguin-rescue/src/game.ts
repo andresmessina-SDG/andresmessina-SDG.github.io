@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { tween, wait, setFast, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
-import { makeCutout, useModel, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
+import { makeCutout, useModel, modelPortraits, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
 import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
 import { buildTerrain, LAND_Y, ICE } from './terrain';
 import {
@@ -32,11 +32,11 @@ const artCache = new Map<string, HTMLCanvasElement>();
 const cachedArt = (k: string, make: () => HTMLCanvasElement) => artCache.get(k) ?? artCache.set(k, make()).get(k)!;
 
 /** A speaker whose name follows the chosen language. */
-const sp = (en: string, ru: string, art: HTMLCanvasElement, voice: number): Speaker => ({
+const sp = (en: string, ru: string, portrait: string, voice: number): Speaker => ({
   get name() {
     return tr(en, ru);
   },
-  portrait: art.toDataURL(),
+  portrait,
   voice,
 });
 
@@ -291,18 +291,21 @@ export class Game {
       kit: A.fox(true),
     };
     for (const [k, m] of Object.entries(models)) if (this.art[k]) useModel(this.art[k], m);
+    // dialogue portraits: the baked figure where there is one, else the drawn cutout
+    const pics = modelPortraits(models);
+    const face = (k: string) => pics[k] ?? this.art[k].toDataURL();
     this.S = {
       nar: { name: '', voice: 520 },
-      pip: sp('Pip', 'Пип', this.art.pip, 700),
-      pebble: sp('Pebble', 'Галька', this.art.pebble, 860),
-      tuck: sp('Tuck', 'Тук', this.art.tuck, 620),
-      puffin: sp('Auntie Puffin', 'Тётушка Тупик', this.art.puffin, 560),
-      bobble: sp('Bobble', 'Бобл', this.art.bobble, 960),
-      grim: sp('Grimfin', 'Гримфин', this.art.orca, 80),
-      light: sp('Lighthouse', 'Маяк', this.art.lighthouse, 420),
-      walrus: sp('Grandpa Walrus', 'Дедушка Морж', this.art.walrusSpecs, 160),
-      fox: sp('Mama Fox', 'Мама Лиса', this.art.fox, 760),
-      kit: sp('Fox kit', 'Лисёнок', this.art.kit, 1150),
+      pip: sp('Pip', 'Пип', face('pip'), 700),
+      pebble: sp('Pebble', 'Галька', face('pebble'), 860),
+      tuck: sp('Tuck', 'Тук', face('tuck'), 620),
+      puffin: sp('Auntie Puffin', 'Тётушка Тупик', face('puffin'), 560),
+      bobble: sp('Bobble', 'Бобл', face('bobble'), 960),
+      grim: sp('Grimfin', 'Гримфин', face('orca'), 80),
+      light: sp('Lighthouse', 'Маяк', face('lighthouse'), 420),
+      walrus: sp('Grandpa Walrus', 'Дедушка Морж', face('walrusSpecs'), 160),
+      fox: sp('Mama Fox', 'Мама Лиса', face('fox'), 760),
+      kit: sp('Fox kit', 'Лисёнок', face('kit'), 1150),
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
