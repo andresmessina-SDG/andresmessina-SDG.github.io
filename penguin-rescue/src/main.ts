@@ -8,7 +8,7 @@ import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
 import { loadModel } from './paper';
-import { recordPage } from './scrapbook';
+import { recordPage, loadScrapbook } from './scrapbook';
 import { lang, tr, t, touch, applyDom, setLang, onLang, type Lang } from './i18n';
 
 const params = new URLSearchParams(location.search);
@@ -388,7 +388,35 @@ const saved = loadProgress();
 const startBtn = document.getElementById('start')!;
 const contBtn = document.getElementById('continue')!;
 const gentleBox = document.getElementById('gentle') as HTMLInputElement;
-if (saved) {
+const scrapBtn = document.getElementById('scrapbook')!;
+// Playing one chapter again from the scrapbook (?replay=<chapter id>): the story save is left alone.
+const replayAt = LEVELS.findIndex((l) => l.id === params.get('replay'));
+if (replayAt >= 0) {
+  delete startBtn.dataset.i18n;
+  const label = () => (startBtn.textContent = `▶ ${t('playPage')}: ${tr(LEVELS[replayAt].title, LEVELS[replayAt].titleRu)}`);
+  label();
+  onLang(label);
+  const back = document.getElementById('back')!;
+  back.hidden = false;
+  back.addEventListener('click', leaveReplay);
+} else if (Object.values(loadScrapbook()).some((p) => p?.photo)) {
+  // the scrapbook can be opened from the title card once a chapter has its photo
+  scrapBtn.hidden = false;
+  scrapBtn.addEventListener('click', () => ui.openJournal('book', true));
+}
+/** From a chapter played again, back to the title card for the whole book. */
+function leaveReplay() {
+  const q = new URLSearchParams(location.search);
+  q.delete('replay');
+  location.search = q.toString();
+}
+ui.onPlay = (i) => {
+  const q = new URLSearchParams(location.search);
+  q.set('replay', LEVELS[i].id);
+  q.set('lang', lang);
+  location.search = q.toString();
+};
+if (saved && replayAt < 0) {
   // With a saved game, Continue is the main button and starting again is the quieter one.
   contBtn.hidden = false;
   startBtn.dataset.i18n = 'startOver';
@@ -451,6 +479,17 @@ async function snapshot(i: number) {
 }
 
 // ------------------------------------------------------------------ story
+/** What you'd carry into a chapter played again: the usual kit, and the friends your scrapbook says you helped before it. */
+function replayStart(i: number): Progress {
+  const book = loadScrapbook();
+  const done = new Set(LEVELS.slice(0, i).flatMap((l) => book[l.id]?.sides ?? []));
+  return {
+    v: 2, chapter: i, inv: ['lantern', 'boat'], fish: done.has('yarn') ? 3 : 0, stars: 0,
+    puffin: done.has('yarn'), bobble: done.has('ball'), splashUsed: false, gentle: gentleBox.checked, covered: false,
+    walrus: done.has('specs'), foxes: done.has('kits'), crates: 0,
+  };
+}
+
 async function run() {
   const title = document.getElementById('title')!;
   const resume = await new Promise<boolean>((r) => {
@@ -459,8 +498,12 @@ async function run() {
   });
   sound.start();
   let first = 0;
-  const resuming = resume && saved ? saved : null;
-  if (resuming) {
+  const one = replayAt >= 0;
+  const resuming = resume && saved && !one ? saved : null;
+  if (one) {
+    first = replayAt;
+    if (first > 0) game.restore(replayStart(first));
+  } else if (resuming) {
     // the first chapter starts from a fresh game
     if (resuming.chapter > 0) game.restore(resuming);
     first = resuming.chapter;
@@ -477,11 +520,11 @@ async function run() {
   }
   await book.open();
   document.getElementById('hud')!.hidden = false;
-  for (let i = first; i < LEVELS.length; i++) {
+  for (let i = first; i < (one ? first + 1 : LEVELS.length); i++) {
     const continuing = i === first && resuming?.mid ? resuming : null;
     const begin = continuing ? { ...continuing, mid: undefined } : game.snapshot(i);
-    if (i > 0 && !continuing) saveProgress(begin);
-    game.onSave = () => saveProgress({ ...begin, mid: { moves: game.moves, answers: ui.answers, map: mapHash(i) } });
+    if (i > 0 && !continuing && !one) saveProgress(begin);
+    if (!one) game.onSave = () => saveProgress({ ...begin, mid: { moves: game.moves, answers: ui.answers, map: mapHash(i) } });
     if (i > first) {
       await game.closeChapter();
       sound.pageTurn();
@@ -494,6 +537,16 @@ async function run() {
     await snapshot(i);
   }
   game.onSave = () => {};
+  if (one) {
+    // back to the title card, where the scrapbook now has the new photo
+    await game.closeChapter();
+    document.getElementById('hud')!.hidden = true;
+    const fromNight = night;
+    tween(1400, (k) => setNight(fromNight * (1 - k)), easeInOut);
+    await book.close();
+    leaveReplay();
+    return;
+  }
   saveProgress(null);
   await game.closeChapter();
   document.getElementById('hud')!.hidden = true;

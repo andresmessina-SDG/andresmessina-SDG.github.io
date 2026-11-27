@@ -75,6 +75,13 @@ each chapter with its photo, a gold sticker for each paper star found there, and
 sticker for each side quest finished. The scrapbook is kept apart from the saved game, so
 it survives Start over and finishing the book, and it remembers your best.
 
+**Playing a chapter again.** Once a chapter has its photo, the title card shows a
+Scrapbook button. Each finished page there has **▶ Play again**, which opens the book at
+that chapter alone (`?replay=<chapter id>`): you start with the usual kit (lantern, boat,
+fish if Auntie Puffin was helped) and the friends your scrapbook says you helped in
+earlier chapters. New stars, quests and the new photo go into the scrapbook, then the book
+closes back to the title card. Playing again never touches the saved story.
+
 **Saving.** The game saves itself after every move, in this browser only. A save is
 the state at the start of the chapter (items, fish, paper stars, who you helped,
 Gentle mode) plus every move and answer since. The title card then offers Continue,

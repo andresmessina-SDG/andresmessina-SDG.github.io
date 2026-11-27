@@ -79,6 +79,10 @@ export class UI {
   replay: number[] | null = null;
   /** Every answer given this chapter, in order, for the save. */
   answers: number[] = [];
+  /** Opened from the title card: the scrapbook alone, with a way to play a finished page again. */
+  private canPlay = false;
+  /** Called with a chapter's index when its scrapbook page is chosen to play again. */
+  onPlay: (chapter: number) => void = () => {};
   /** Supplies the journal's contents when it opens. */
   journalSource: (() => Journal) | null = null;
   private tab: 'story' | 'side' | 'book' = 'story';
@@ -284,9 +288,11 @@ export class UI {
 
   // ---------------------------------------------------------------- the journal
 
-  openJournal(tab?: 'story' | 'side' | 'book') {
+  openJournal(tab?: 'story' | 'side' | 'book', playable = false) {
     if (this.isOpen || !this.journalSource) return;
     if (tab) this.tab = tab;
+    this.canPlay = playable;
+    this.journalEl.classList.toggle('bookOnly', playable);
     this.journalOpen = true;
     this.syncBody();
     this.renderJournal();
@@ -353,7 +359,7 @@ export class UI {
       }
     } else if (this.tab === 'book') {
       // the scrapbook: a taped-in photo and stickers for every chapter
-      for (const pg of J.book) {
+      J.book.forEach((pg, i) => {
         const page = el('section', `page${pg.visited ? '' : ' blank'}`);
         const photo = el('figure', 'photo');
         if (pg.photo) {
@@ -385,9 +391,14 @@ export class UI {
           st.appendChild(sides);
           if (!pg.photo) st.appendChild(el('p', 'note', L.bookNoPhoto));
         } else st.appendChild(el('p', 'note', L.bookBlank));
+        if (this.canPlay && pg.photo) {
+          const play = el('button', 'btn small play', `▶ ${L.playPage}`);
+          play.addEventListener('click', () => this.onPlay(i));
+          st.appendChild(play);
+        }
         page.appendChild(st);
         out.push(page);
-      }
+      });
     } else {
       let lastChapter = '';
       for (const s of J.side) {

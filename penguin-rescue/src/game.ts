@@ -450,7 +450,7 @@ export class Game {
     });
     return {
       chapters, side, book, stars: [this.stars, STAR_TOTAL],
-      labels: { stars: t('stars'), locked: t('locked'), lockedHint: t('lockedHint'), stampDone: t('stampDone'), stampMissed: t('stampMissed'), bookBlank: t('bookBlank'), bookNoPhoto: t('bookNoPhoto') },
+      labels: { stars: t('stars'), locked: t('locked'), lockedHint: t('lockedHint'), stampDone: t('stampDone'), stampMissed: t('stampMissed'), bookBlank: t('bookBlank'), bookNoPhoto: t('bookNoPhoto'), playPage: t('playPage') },
     };
   }
 
