@@ -38,6 +38,24 @@ follows you around the open book.
   spyglass, all alone. Invite him from the dock. Side quests: snowberries for
   Auntie Puffin's cake, and Tuck's present, hidden in one of three snowmen.
 
+**Book Two: A Year on the Page** (the button under the title card, or `?book=2`)
+is a second book with its own green cover and its own saved game. Tuck wonders
+what the shore looks like in the other seasons, so the friends turn the page
+into spring. Only spring is drawn so far; summer is still to come.
+
+- **Chapter Six, Spring: The Great Thaw.** Felt-green grass with the last snow
+  melting, flowers popping up and showers of paper rain. Meltwater streams cut
+  across the page: push an ice block into a stream's source and the water draws
+  away like a pull-tab, showing stepping stones. The second stream fills a pond
+  far below, so damming it up at the top of the page drains the pond. Thin ice
+  holds you once and breaks behind you (undo takes it back, and if you get
+  stranded the page offers to fold the ice back). Side quests: Mama Eider's
+  three eggs are hidden under lift-the-flaps, and a hare's burrow is at the
+  bottom of the pond. Grimfin, humming by the lake, owns up that his
+  belly-flop scattered the eggs; you forgive him and he cracks the thick ice
+  so you can cross to the meadow, where Pip and Pebble are waiting for the
+  first flower of spring.
+
 **The journal.** The to-do card in the corner shows what to do on this page,
 with portraits and progress dots for side quests. Click it (or press J) for
 the journal: a Story page with every chapter so far, and a Side quests page

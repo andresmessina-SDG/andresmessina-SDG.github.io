@@ -4,7 +4,7 @@ import { Post } from './fx';
 import { Sound } from './audio';
 import { UI } from './ui';
 import { Game, type Progress, type Mid } from './game';
-import { LEVELS } from './levels';
+import { LEVELS, BOOK } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
 import { loadModel } from './paper';
@@ -16,6 +16,17 @@ const params = new URLSearchParams(location.search);
 const mobile = touch || Math.min(screen.width, screen.height) < 600;
 const adaptive = params.get('quality') !== 'high';
 let maxDpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
+// Book Two has its own title card and ending.
+if (BOOK === 2) {
+  const relabel = (sel: string, k: string) => ((document.querySelector(sel) as HTMLElement).dataset.i18n = k);
+  relabel('#title .kicker', 'kicker2');
+  relabel('#title h1', 'title2');
+  relabel('#title [data-i18n="blurb"]', 'blurb2');
+  relabel('#otherBook', 'toBook1');
+  relabel('#end .kicker', 'endKicker2');
+  relabel('#end h1', 'end2');
+  relabel('#end [data-i18n="endText"]', 'endText2');
+}
 applyDom();
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
@@ -367,7 +378,8 @@ requestAnimationFrame(frame);
 // ------------------------------------------------------------------ saving
 // The game saves itself in this browser only: at the start of every chapter after the first, and
 // after every move, as the list of moves made since the chapter began (Continue replays them).
-const SAVE_KEY = 'penguin-rescue-save';
+// each book keeps its own saved game
+const SAVE_KEY = BOOK === 2 ? 'penguin-rescue-save-2' : 'penguin-rescue-save';
 /** A fingerprint of a chapter's map: moves saved on a different map can't be replayed. */
 const mapHash = (i: number) => [...LEVELS[i].map.join('')].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) | 0, 7);
 const MOVE_KEYS = new Set(['s', 'n', 'w', 'i', 'c', 'f', 'l', 'u', 'g']);
@@ -423,11 +435,22 @@ if (replayAt >= 0) {
   const back = document.getElementById('back')!;
   back.hidden = false;
   back.addEventListener('click', leaveReplay);
-} else if (Object.values(loadScrapbook()).some((p) => p?.photo)) {
+} else if (LEVELS.some((l) => loadScrapbook()[l.id]?.photo)) {
   // the scrapbook can be opened from the title card once a chapter has its photo
   scrapBtn.hidden = false;
   scrapBtn.addEventListener('click', () => ui.openJournal('book', true));
 }
+// The other book: Book Two from Book One's title card, and back again.
+const otherBook = document.getElementById('otherBook')!;
+otherBook.hidden = replayAt >= 0;
+otherBook.addEventListener('click', () => {
+  const q = new URLSearchParams(location.search);
+  q.delete('replay');
+  if (BOOK === 2) q.delete('book');
+  else q.set('book', '2');
+  q.set('lang', lang);
+  location.search = q.toString();
+});
 /** From a chapter played again, back to the title card for the whole book. */
 function leaveReplay() {
   const q = new URLSearchParams(location.search);
@@ -611,6 +634,9 @@ async function run() {
       tween(1600, (k) => setNight(from + (to - from) * k), easeInOut);
       await book.turnPage();
     }
+    const rain = LEVELS[i].season === 'spring';
+    snow.setRain(rain);
+    sound.setRain(rain);
     await game.playChapter(i, continuing ? { mid: continuing.mid!, gentle: gentleBox.checked } : undefined);
     if (playtest) await playtestCard(i);
     await snapshot(i);
