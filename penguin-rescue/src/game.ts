@@ -371,6 +371,25 @@ export class Game {
     return this.player.position;
   }
 
+  /** What the camera should also keep in view: Grimfin and his look-out squares while he is close.
+   *  Only the camera reads this, so it may look at what the render loop shows. */
+  get threats(): THREE.Vector3[] {
+    const L = this.level;
+    const pv = L?.ready && L.def.orca && this.orca.pos && !this.camWide ? L.actors.get('orca') : undefined;
+    if (!pv?.visible) return (this.leaning = false), [];
+    this.threatPts[0] = pv.getWorldPosition(this.threatPts[0] ?? new THREE.Vector3());
+    let n = 1;
+    for (const m of this.gaze) if (m.visible) this.threatPts[n++] = m.position;
+    this.threatPts.length = n;
+    // near: Grimfin or one of his look-out squares within a few squares of the penguin
+    // (lets go a little further out than it leans in, so it doesn't flicker)
+    const me = this.player.position, reach = this.leaning ? 5.5 : 4.5;
+    this.leaning = this.orca.alert || this.threatPts.some((q) => Math.abs(q.x - me.x) + Math.abs(q.z - me.z) <= reach);
+    return this.leaning ? this.threatPts : [];
+  }
+  private threatPts: THREE.Vector3[] = [];
+  private leaning = false;
+
   get stats() {
     const done = SIDE.filter((d) => this.sideStatus(d).state === 'done');
     const missed = SIDE.filter((d) => this.sideStatus(d).state !== 'done').map((d) => tr(...d.title));

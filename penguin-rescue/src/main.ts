@@ -38,6 +38,7 @@ let followDist = 22;
 let camDist = 40;
 // How far the follow view may slide before it would show the table past the book's edges.
 let clampX = 6.5, clampZ0 = -3.2, clampZ1 = 3.6;
+let tanV = 0.27, tanH = 0.4;
 const look = new THREE.Vector3().copy(camTarget);
 
 // Lighting: a warm lamp over the table, a soft bounce, and (at night) cool moonlight.
@@ -100,21 +101,28 @@ function resize() {
   renderer.setSize(w, h, false);
   post.setSize(w, h, dpr);
   camera.aspect = w / h;
-  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const tanH = tanV * camera.aspect;
+  tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  tanH = tanV * camera.aspect;
   // Wide: the open spread, about 26 wide and 16 deep with the scenery. Follow: about 11 by 6.5 cells,
   // or about 7 cells across on a phone held upright, close enough to see the paper figures well.
   wideDist = Math.max(8.2 / tanV, 13.4 / tanH);
   // A phone held sideways is short, so it gets a closer view (about 9 by 5 cells) too.
   const short = h < 500;
   followDist = Math.max((short ? 2.7 : 3.3) / tanV, (camera.aspect < 1 ? 3.6 : short ? 4.4 : 5.4) / tanH);
-  const visW = followDist * tanH, visD = followDist * tanV;
+  setClamps(followDist);
+  camera.updateProjectionMatrix();
+}
+/** How far the view may slide at distance `dist` before it would show the table past the book's edges. */
+function setClamps(dist: number) {
+  const visW = dist * tanH, visD = dist * tanV;
   clampX = Math.max(0, 14.1 - visW);
   clampZ0 = -7.8 + visD;
   clampZ1 = 8.2 - visD;
   if (clampZ0 > clampZ1) clampZ0 = clampZ1 = 0.2;
-  camera.updateProjectionMatrix();
 }
+// When Grimfin is near, the follow view eases back to show him and his look-out squares too.
+const lean = new THREE.Box3();
+let leanDist = 22;
 window.addEventListener('resize', resize);
 resize();
 
@@ -309,16 +317,28 @@ function frame(now: number) {
   const p = game.focusPoint;
   const follow = game.player.visible && !game.camWide;
   if (follow) {
+    const threats = game.threats;
+    let at = p, need = followDist;
+    if (threats.length) {
+      lean.makeEmpty().expandByPoint(p);
+      for (const q of threats) lean.expandByPoint(q);
+      lean.expandByScalar(1.5);
+      at = lean.getCenter(want);
+      need = Math.min(wideDist, Math.max(followDist, (lean.max.x - lean.min.x) / 2 / tanH, (lean.max.z - lean.min.z) / 2 / tanV));
+    }
+    leanDist += (need - leanDist) * (1 - Math.pow(0.25, dt));
+    setClamps(leanDist);
     // keep the view on the book: don't drift past its edges
-    want.set(THREE.MathUtils.clamp(p.x, -clampX, clampX), 0.2, THREE.MathUtils.clamp(p.z, clampZ0, clampZ1));
+    want.set(THREE.MathUtils.clamp(at.x, -clampX, clampX), 0.2, THREE.MathUtils.clamp(at.z, clampZ0, clampZ1));
   } else {
+    leanDist = followDist;
     want.copy(camTarget);
   }
   want.y += game.camLift * 2.2;
   want.z -= game.camLift * 3.2;
   const ease = 1 - Math.pow(0.04, dt);
   look.lerp(want, ease);
-  camDist += ((follow ? followDist : wideDist) - camDist) * ease;
+  camDist += ((follow ? leanDist : wideDist) - camDist) * ease;
   camera.position.copy(look).addScaledVector(camDir, camDist);
   camera.position.x += Math.sin(t * 0.21) * 0.12;
   if (game.shake > 0.005) {

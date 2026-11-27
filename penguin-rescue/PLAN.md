@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3) and chapter select (2.4) are built.
+**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3), chapter select (2.4) and the camera lean (2.5) are built.
 
 ---
 
@@ -84,10 +84,15 @@ After finishing the book, let players replay any chapter from the scrapbook, wit
 chapter's stars and quests shown. This helps with missed side quests, which the end card
 already lists.
 
-### 2.5 Camera that leans toward danger
+### 2.5 Camera that leans toward danger — built
 The closer camera makes the figures lovely but hides some of Grimfin's look-out squares. When
 a threat is near (or, in Book Two, a tide or gust is about to hit), the camera eases
 back and over to show both you and the threat. The rest of the time it stays close.
+- *As built:* `Game.threats` lists Grimfin and his look-out squares while one of them is within
+  4½ squares of the penguin (it lets go past 5½, so it doesn't flicker), or while he has spotted
+  you. The camera frames them all with the penguin, never further out than the whole spread.
+  It is camera-only, so it can't change what happens in a turn. Book Two's tides and gusts can
+  add their own points to the same list.
 
 ### 2.6 Things to check by playtesting (unconfirmed)
 These are guesses until someone, ideally a child, plays:
