@@ -1141,10 +1141,12 @@ export class Game {
       r();
     }));
     // Continuing a save: everything since the chapter began happens again, instantly and silently.
-    const muted = this.sound.muted;
     if (resume) {
       this.replaying = true;
+      this.replayMuted = this.sound.muted;
+      this.replayMoves = resume.mid.moves;
       this.ui.replay = [...resume.mid.answers];
+      this.ui.onReplayDone = () => this.endReplay();
       this.sound.setMuted(true);
       setFast(true);
     }
@@ -1163,13 +1165,8 @@ export class Game {
       try {
         await this.replay(resume.mid.moves);
       } finally {
-        setFast(false);
-        this.sound.setMuted(muted);
-        this.ui.replay = null;
-        this.replaying = false;
+        this.endReplay();
       }
-      this.moves = [...resume.mid.moves];
-      this.ui.answers = [...resume.mid.answers];
       if (resume.gentle !== this.gentle) this.setGentle(resume.gentle);
     }
     this.refreshQuests();
@@ -1479,6 +1476,22 @@ export class Game {
   }
 
   // ---------------------------------------------------------------- saving partway
+
+  private replayMuted = false;
+  private replayMoves: Move[] = [];
+
+  /**
+   * Back to normal play after a replay: at its end, or early when the save was made while a
+   * question was waiting, so that question is asked again instead of answered for you.
+   */
+  private endReplay() {
+    if (!this.replaying) return;
+    setFast(false);
+    this.sound.setMuted(this.replayMuted);
+    this.ui.replay = null;
+    this.replaying = false;
+    this.moves = [...this.replayMoves];
+  }
 
   private log(m: Move) {
     if (!this.replaying) this.moves.push(m);
@@ -1801,7 +1814,7 @@ export class Game {
     const it = L.items.get(k);
     if (it) this.pickup(it);
     const star = L.stars.get(k);
-    if (star && star.visible) this.collectStar(star);
+    if (star && this.starShowing(this.pos)) this.collectStar(star);
     const ch = L.grid[this.pos[1]][this.pos[0]];
     if (L.def.id === 'shore' && ch === 'D') {
       this.keep();
@@ -1834,6 +1847,14 @@ export class Game {
     else this.sound.step(false);
     await tween(160, (k) => (this.hopper.position.y = Math.sin(Math.PI * k) * 0.06), linear);
     await this.orcaTurn();
+  }
+
+  /**
+   * Can the paper star on this cell be seen (and so picked up)? At night only in uncovered lantern
+   * light. Worked out from the rules, not read off the picture, so a replayed save matches.
+   */
+  private starShowing(c: Cell) {
+    return !this.level!.def.night || (!this.lanternCovered && manhattan(c, this.pos) <= 3);
   }
 
   private flyAway(obj: THREE.Object3D) {
@@ -3215,7 +3236,7 @@ export class Game {
     if (L.def.night && L.ready) {
       for (const [k, star] of L.stars) {
         const [x, z] = k.split(',').map(Number);
-        star.visible = !this.lanternCovered && manhattan([x, z], this.pos) <= 3;
+        star.visible = this.starShowing([x, z]);
       }
     }
     // footprints fade

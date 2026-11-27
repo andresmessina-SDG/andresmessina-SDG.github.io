@@ -64,6 +64,11 @@ Kids play in short bursts, often 10–15 minutes.
   answers made since the chapter began. Continue rebuilds the chapter and replays them instantly
   and silently, so you resume exactly where you stopped, story scenes included. New chapters
   and mechanics get this for free, as long as their rules don't use randomness.
+- *Rule for new code:* game logic must never read anything that only the render loop updates
+  (such as an object's `visible`), because a replay runs between frames. The night stars broke
+  this once: whether a star could be picked up was read off the picture; now it's `starShowing()`.
+- A save made while a question is waiting replays up to that question and then asks it for
+  real, instead of answering it.
 
 ### 2.3 Give paper stars a purpose — built (scrapbook and snapshots; no unlocks yet)
 Stars are only counted. A collectible that unlocks nothing is easy to ignore.

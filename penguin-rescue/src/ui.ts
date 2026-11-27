@@ -77,6 +77,8 @@ export class UI {
   private seen = new Map<string, boolean>();
   /** While a saved chapter is replayed: the answers to give. Nothing is shown meanwhile. */
   replay: number[] | null = null;
+  /** Called when a replay runs out of answers, so the game can go back to normal play. */
+  onReplayDone: () => void = () => {};
   /** Every answer given this chapter, in order, for the save. */
   answers: number[] = [];
   /** Opened from the title card: the scrapbook alone, with a way to play a finished page again. */
@@ -181,7 +183,15 @@ export class UI {
 
   /** A question with buttons; resolves with the chosen index. */
   async ask(who: Speaker, text: string, options: string[]) {
-    if (this.replay) return this.replay.shift() ?? 0;
+    if (this.replay) {
+      if (this.replay.length) {
+        const c = this.replay.shift()!;
+        this.answers.push(c);
+        return c;
+      }
+      // saved while this question was waiting: stop replaying and ask it for real
+      this.onReplayDone();
+    }
     this.open = true;
     this.talk.hidden = false;
     this.choices.innerHTML = '';

@@ -189,6 +189,9 @@ const rewindFrom = (delay: number) => {
 };
 undoBtn.addEventListener('pointerdown', () => rewindFrom(450));
 for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) undoBtn.addEventListener(ev, stopRewind);
+// a release anywhere else (or leaving the page) also stops it, so it can't keep rewinding by itself
+window.addEventListener('pointerup', stopRewind);
+window.addEventListener('blur', stopRewind);
 undoBtn.addEventListener('click', (e) => e.detail === 0 && game.undo()); // keyboard Enter/Space on the button
 lanternBtn.addEventListener('click', () => game.toggleLantern());
 waitBtn.addEventListener('click', () => game.waitTurn());
