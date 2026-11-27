@@ -297,6 +297,7 @@
   .btn:focus-visible { outline: 3px solid #f2b441; outline-offset: 2px; }
   .btn.small { font-size: 16px; padding: 8px 16px; }
   .starts { display: flex; flex-wrap: wrap; gap: 10px 12px; justify-content: center; align-items: center; }
+  #otherBook:not([hidden]) { display: block; margin: 14px auto 0; }
   #continue small { display: block; font-size: 13px; font-style: italic; opacity: .9; margin-top: 1px; }
   .btn.alt { background: #6b5a48; box-shadow: 0 2px 0 #4a3d30, 0 6px 14px rgba(0,0,0,.2); font-size: 16px; padding: 8px 16px; }
   .btn.small + .btn.small { background: #6b5a48; box-shadow: 0 2px 0 #4a3d30, 0 6px 14px rgba(0,0,0,.2); }
@@ -426,6 +427,7 @@
     <div class="slot" data-id="specs"><img alt=""><span data-i18n="specs">spectacles</span></div>
     <div class="slot" data-id="bunting"><img alt=""><span data-i18n="bunting">bunting</span><b></b></div>
     <div class="slot" data-id="berries"><img alt=""><span data-i18n="berries">berries</span><b></b></div>
+    <div class="slot" data-id="eggs"><img alt=""><span data-i18n="eggs">eggs</span><b></b></div>
     <div class="slot" data-id="present"><img alt=""><span data-i18n="present">present</span></div>
   </div>
   <div id="actions">
@@ -494,6 +496,7 @@
       <button id="scrapbook" class="btn alt" data-i18n="tabBook" hidden>Scrapbook</button>
       <button id="back" class="btn alt" data-i18n="back" hidden>Back</button>
     </div>
+    <button id="otherBook" class="btn alt small" data-i18n="toBook2">Book Two: A Year on the Page →</button>
     <p class="rotate" data-i18n="rotate">Tip: turn your phone sideways for a bigger book.</p>
     <p class="help" data-i18n-html="help">Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · F to toss a fish · M for sound</p>
   </div>

@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3), chapter select (2.4), the camera lean (2.5) and the `?playtest` counters (2.6) are built; the playtest questions in 2.6 still need a real player.
+**Status:** Book One (five chapters) is finished and live, with every section 2 improvement built (the playtest questions in 2.6 still need a real player). Book Two has started: the book choice, the seasons system and Spring (Chapter Six) are built as the trial chapter. Next: play Spring and adjust it, then Summer. Star unlocks (outfits) are planned in 3.6, not built.
 
 ---
 
@@ -120,6 +120,10 @@ cover, picked on the title screen.
 of the year, since penguins in their book have only ever seen it white. The friends decide to
 find out. They travel through spring, summer, autumn and the first frost, and come home for
 winter. Grimfin, now a friend, comes too: he's clumsy at being nice and keeps getting better.
+He still causes trouble along the way, never meanly: an over-excited splash, a careless
+shortcut. Each time he owns up, says sorry and helps put it right, and the friends forgive
+him. That gives every chapter a small story of doing wrong, apologising and being forgiven,
+and it pays off in Winter, where he belongs.
 
 **The big idea: the book's own paper mechanisms are the mechanics.** Real pop-up books have:
 - **pull-tabs**, which slide something across the page
@@ -176,6 +180,19 @@ reuse an existing verb, and does it look like paper?
   hidden under flaps); a hare who lost its burrow under the melt.
 - **Grimfin:** hums under the ice and politely cracks a path when you ask, once.
 - **Risk:** cracking ice is unforgiving. Undo (2.1) is required before this chapter.
+- *As built (trial):* `?book=2`, map in `levels.ts` (`spring`). Two streams, each with its own
+  ice block; a block can only reach its own stream's source, so there's no wrong dam, and a
+  dam stays put once built (undo can still take it back). The second dam is far up the page
+  and drains the pond in the middle: that's the twist. The "order of dams matters" idea is
+  left for a later chapter. Thin ice is never used by auto-walking when there's another way,
+  and walking stops on each pane. If you're on thin ice with nowhere left to step, the page
+  offers to fold the ice back and puts you on the bank where you stepped on (undo works too).
+  Grimfin's trouble: his spring belly-flop scattered Mama Eider's eggs. He confesses, you
+  answer (forgive, or "that wasn't very careful": both end in forgiveness), and he cracks the
+  thick ice into a thin-ice bridge with a star in a pocket you have to loop through. Mama Eider
+  carries the patience theme ("you can't hurry spring"): her eggs hatch in the ending. The hare
+  (the eider and hare are drawn cutouts for now, not Blender models) goes home when the pond
+  drains. Rain is paper drops that come and go. Five stars.
 
 #### Chapter Seven · Summer · Midnight-Sun Beach
 - **Look and weather:** the sun never sets (a warm, low gold light all chapter), now and then
@@ -246,6 +263,17 @@ reuse an existing verb, and does it look like paper?
 - A mischievous skua bird who steals items, as a light trouble-maker if Book Two needs a
   "villain".
 
+### 3.6 Outfits to collect (planned, not built)
+Paper stars will unlock outfits as well as stickers. The idea, to settle before building:
+- One outfit per season, shown on its scrapbook page: a raincoat and wellies for Spring, a sun
+  hat for Summer, a knitted scarf for Autumn, earmuffs for First Frost, a party hat for Winter.
+- A season's outfit unlocks when you've found enough of its stars (for example, all but one),
+  so it rewards exploring without asking for perfection. Replaying a chapter can still earn it.
+- Pick what to wear from a wardrobe page in the scrapbook; it's only for looks and never changes
+  how the game plays. Kept with the scrapbook, apart from the save, so it's never lost.
+- Needs: outfit cutouts (or Blender models) layered on the hero, a wardrobe page, and saving
+  the choice.
+
 ---
 
 ## 4. Technical plan (what needs building)
@@ -272,19 +300,20 @@ reuse an existing verb, and does it look like paper?
 **Build order:**
 1. Undo, mid-chapter saves and camera lean. These improve Book One right away.
 2. Scrapbook and snapshots, so Book Two's rewards have somewhere to go.
-3. Seasons system plus Spring, as a complete trial chapter to play and adjust.
+3. Seasons system plus Spring, as a complete trial chapter to play and adjust. *(Built.)*
 4. Summer, Autumn, Frost, Winter, each checked and merged on its own.
 
 ---
 
 ## 5. Open questions
 
-1. Book Two with its own cover, or more chapters in Book One? *(Recommended: Book Two.)*
-2. Keep all five mechanics, or swap any for the alternatives in 3.5?
-3. Is Grimfin a friend throughout Book Two, or is there a new gentle trouble-maker (the skua)?
-4. Should we build the Book One improvements (undo, saves, scrapbook) first? *(Recommended.)*
-5. What do stars unlock: only scrapbook stickers, or outfits too?
-6. Are there real young players who could playtest Spring once it's ready?
+1. ~~Book Two with its own cover, or more chapters in Book One?~~ Book Two, with its own cover.
+2. ~~Keep all five mechanics, or swap any for the alternatives in 3.5?~~ Keep all five.
+3. ~~Is Grimfin a friend throughout Book Two, or is there a new gentle trouble-maker?~~ Grimfin,
+   friendly but still causing trouble, with a forgiveness story each time (3.1).
+4. ~~Should we build the Book One improvements first?~~ Yes, done.
+5. ~~What do stars unlock?~~ Stickers, and outfits too, later (3.6).
+6. Are there real young players who could playtest Spring now that it's ready?
 
 ---
 
@@ -301,3 +330,7 @@ reuse an existing verb, and does it look like paper?
 | 2026-11-26 | No star unlocks (outfits) yet | Open question 5 is still undecided |
 | 2026-11-26 | Mid-chapter saves replay recorded moves instead of saving every story flag | Exact resume anywhere, no restore code per scene, and Book Two's mechanics are covered automatically. Rule: game logic must stay deterministic (randomness only for looks) |
 | 2026-11-26 | Undo covers moves only: position, Grimfin, ice blocks, fish. It stops at finding things, conversations and sunk blocks | Collecting is never a mistake, and taking back story scenes or new floes would be fragile; caught-then-undo is the case that matters |
+| 2026-11-27 | Book Two gets its own cover and save (`?book=2`); all five season mechanics stay | Agreed with the recommendations |
+| 2026-11-27 | Grimfin is friendly in Book Two but keeps causing trouble, and each time he says sorry and is forgiven | Asked for: stories of forgiveness and reconciliation after doing something wrong |
+| 2026-11-27 | Stars will unlock outfits too, but not yet: planned in 3.6 | Asked to plan outfit unlocks without building them |
+| 2026-11-27 | Spring's dams can't be reset, and stuck-on-thin-ice offers to fold the ice back | Each block only fits its own stream, so a dam is never wrong; folding back means no trap, even after undo history is cleared |

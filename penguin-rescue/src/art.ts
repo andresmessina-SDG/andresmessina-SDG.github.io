@@ -1340,3 +1340,237 @@ export function scarf() {
   g.stroke();
   return c;
 }
+
+// ---------------------------------------------------------------- Book Two: spring
+
+/** Mama Eider: a round brown duck on a downy nest. */
+export function eider() {
+  const c = makeCanvas(260, 240);
+  const g = ctx2d(c);
+  layer(g, () => ell(g, 130, 212, 104, 26, 0, '#efe6d6'), 1.2);
+  g.fillStyle = 'rgba(160,140,110,0.35)';
+  for (let i = 0; i < 14; i++) ell(g, 40 + i * 13, 206 + (i % 3) * 5, 9, 4, 0.4, 'rgba(160,140,110,0.3)');
+  layer(g, () => {
+    g.fillStyle = '#8a6440';
+    g.beginPath();
+    g.moveTo(34, 190);
+    g.bezierCurveTo(30, 120, 90, 96, 150, 104);
+    g.bezierCurveTo(214, 112, 238, 150, 226, 196);
+    g.closePath();
+    g.fill();
+  }, 1.5);
+  // scalloped feathers
+  g.strokeStyle = 'rgba(60,40,20,0.35)';
+  g.lineWidth = 2.5;
+  for (let row = 0; row < 3; row++) {
+    for (let i = 0; i < 6; i++) {
+      g.beginPath();
+      g.arc(70 + i * 26 + row * 8, 140 + row * 18, 11, 0.1, Math.PI - 0.1);
+      g.stroke();
+    }
+  }
+  layer(g, () => {
+    poly(g, [176, 170, 236, 150, 230, 196], '#6e4e30');
+  });
+  layer(g, () => ell(g, 78, 92, 42, 40, 0, '#9a7450'), 1.3);
+  // a wedge-shaped bill
+  layer(g, () => poly(g, [40, 88, 4, 108, 44, 112], '#6f7a5a'));
+  circ(g, 66, 82, 7, '#141a22');
+  circ(g, 68, 79, 2.4, '#ffffff');
+  circ(g, 60, 104, 7, 'rgba(240,130,130,0.45)');
+  return c;
+}
+
+/** An eider egg: pale olive with a few freckles. */
+export function egg() {
+  const c = makeCanvas(90, 110);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#d9dfc0';
+    g.beginPath();
+    g.moveTo(45, 8);
+    g.bezierCurveTo(80, 10, 86, 70, 80, 82);
+    g.bezierCurveTo(72, 104, 18, 104, 10, 82);
+    g.bezierCurveTo(4, 70, 10, 10, 45, 8);
+    g.fill();
+  });
+  for (const [x, y, r] of [[32, 40, 3], [56, 52, 2.5], [40, 70, 3.5], [62, 30, 2], [26, 62, 2]]) circ(g, x, y, r, 'rgba(120,110,70,0.45)');
+  ell(g, 34, 28, 8, 12, -0.4, 'rgba(255,255,255,0.45)');
+  return c;
+}
+
+/** An eider chick: a fluffy brown ball. */
+export function chick() {
+  const c = makeCanvas(120, 120);
+  const g = ctx2d(c);
+  layer(g, () => ell(g, 62, 78, 40, 34, 0, '#8e7454'));
+  layer(g, () => circ(g, 50, 44, 26, '#9e8462'));
+  poly(g, [28, 44, 10, 52, 30, 54], '#6f7a5a');
+  circ(g, 44, 38, 4.5, '#141a22');
+  circ(g, 45, 36, 1.5, '#ffffff');
+  return c;
+}
+
+/** The hare, still half in her white winter coat. */
+export function hare() {
+  const c = makeCanvas(220, 300);
+  const g = ctx2d(c);
+  const fur = '#b08a62', winter = '#f4f1ea';
+  layer(g, () => {
+    ell(g, 86, 60, 15, 54, -0.12, fur);
+    ell(g, 128, 60, 15, 54, 0.12, fur);
+  });
+  ell(g, 86, 64, 7, 40, -0.12, '#f0c8c8');
+  ell(g, 128, 64, 7, 40, 0.12, '#f0c8c8');
+  circ(g, 80, 14, 9, '#3a2e24');
+  circ(g, 134, 14, 9, '#3a2e24');
+  layer(g, () => ell(g, 110, 220, 66, 70, 0, fur), 1.5);
+  ell(g, 110, 236, 40, 48, 0, winter);
+  layer(g, () => {
+    ell(g, 76, 286, 24, 10, 0, winter);
+    ell(g, 144, 286, 24, 10, 0, winter);
+  });
+  layer(g, () => ell(g, 108, 140, 50, 44, 0, fur), 1.3);
+  ell(g, 108, 158, 26, 20, 0, winter);
+  for (const ex of [88, 128]) {
+    circ(g, ex, 134, 7, '#141a22');
+    circ(g, ex + 2, 131, 2.4, '#ffffff');
+  }
+  ell(g, 108, 152, 7, 5, 0, '#c9727a');
+  circ(g, 78, 154, 8, 'rgba(240,130,130,0.45)');
+  circ(g, 138, 154, 8, 'rgba(240,130,130,0.45)');
+  return c;
+}
+
+/** A paper flap glued at one edge, like a page flap in a lift-the-flap book. */
+export function flap(seed: number) {
+  const r = mulberry(seed);
+  const c = makeCanvas(150, 120);
+  const g = ctx2d(c);
+  const greens = ['#7fae5a', '#8cba62', '#73a454'];
+  layer(g, () => {
+    g.fillStyle = greens[Math.floor(r() * greens.length)];
+    g.beginPath();
+    g.moveTo(10, 110);
+    g.lineTo(10, 30);
+    g.quadraticCurveTo(75, 4, 140, 30);
+    g.lineTo(140, 110);
+    g.closePath();
+    g.fill();
+  });
+  // tufts of paper grass along the top, and a little "lift me" tab
+  g.strokeStyle = 'rgba(40,80,30,0.45)';
+  g.lineWidth = 2.5;
+  g.lineCap = 'round';
+  for (let i = 0; i < 8; i++) {
+    const x = 20 + i * 16;
+    g.beginPath();
+    g.moveTo(x, 34);
+    g.lineTo(x + (r() - 0.5) * 8, 22 - r() * 6);
+    g.stroke();
+  }
+  layer(g, () => {
+    g.fillStyle = '#f2d57a';
+    g.beginPath();
+    g.roundRect(60, 96, 30, 20, 6);
+    g.fill();
+  });
+  fold(g, 12, 108, 138, 108, 0.3);
+  return c;
+}
+
+/** A spring flower on a stem. */
+export function flower(color: string, seed: number) {
+  const r = mulberry(seed);
+  const c = makeCanvas(70, 110);
+  const g = ctx2d(c);
+  g.strokeStyle = '#4f8a3c';
+  g.lineWidth = 4;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(35, 106);
+  g.quadraticCurveTo(30 + r() * 10, 70, 35, 40);
+  g.stroke();
+  layer(g, () => ell(g, 24, 80, 12, 5, -0.6, '#5f9a48'));
+  layer(g, () => {
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * TAU + r();
+      ell(g, 35 + Math.cos(a) * 13, 30 + Math.sin(a) * 13, 11, 7, a, color);
+    }
+    circ(g, 35, 30, 7, '#f4d35e');
+  });
+  return c;
+}
+
+/** The dark way into a burrow, seen from above. */
+export function burrow() {
+  const c = makeCanvas(120, 90);
+  const g = ctx2d(c);
+  ell(g, 60, 48, 52, 36, 0, '#7a5e3e');
+  ell(g, 60, 52, 38, 24, 0, '#2c2016');
+  return c;
+}
+
+/** A few river stones, seen from above. */
+export function stones(seed: number) {
+  const r = mulberry(seed);
+  const c = makeCanvas(160, 160);
+  const g = ctx2d(c);
+  ell(g, 80, 80, 74, 70, 0, '#b9ab90');
+  for (let i = 0; i < 7; i++) {
+    const x = 26 + r() * 108, y = 26 + r() * 108;
+    layer(g, () => ell(g, x, y, 15 + r() * 12, 11 + r() * 9, r() * 3, ['#9aa0a4', '#b3b5ae', '#8c8f8a', '#c2bba8'][i % 4]), 0.8);
+  }
+  return c;
+}
+
+/** Thin ice: pale and glassy, with cracks that grow once you've stood on it. */
+export function thinIce(cracked: boolean) {
+  const c = makeCanvas(160, 160);
+  const g = ctx2d(c);
+  g.fillStyle = 'rgba(178,218,244,0.86)';
+  g.beginPath();
+  g.roundRect(6, 6, 148, 148, 26);
+  g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.7)';
+  g.lineWidth = 4;
+  g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,0.8)';
+  g.lineWidth = 5;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(30, 60); g.lineTo(70, 34);
+  g.moveTo(96, 130); g.lineTo(128, 108);
+  g.stroke();
+  g.strokeStyle = cracked ? 'rgba(30,70,120,0.9)' : 'rgba(50,100,150,0.6)';
+  g.lineWidth = cracked ? 3.5 : 2.5;
+  const lines = cracked
+    ? [[80, 80, 20, 40], [80, 80, 150, 50], [80, 80, 110, 150], [80, 80, 14, 120], [80, 80, 70, 8], [50, 60, 30, 90], [120, 66, 140, 100]]
+    : [[60, 90, 100, 110], [100, 110, 118, 140]];
+  g.beginPath();
+  for (const [x1, y1, x2, y2] of lines) {
+    g.moveTo(x1, y1);
+    g.lineTo((x1 + x2) / 2 + (y2 - y1) * 0.08, (y1 + y2) / 2 - (x2 - x1) * 0.08);
+    g.lineTo(x2, y2);
+  }
+  g.stroke();
+  return c;
+}
+
+/** A strip of running meltwater, with flow marks pointing downstream (drawn left to right). */
+export function stream() {
+  const c = makeCanvas(128, 128);
+  const g = ctx2d(c);
+  g.fillStyle = '#6fb2dc';
+  g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(255,255,255,0.75)';
+  g.lineWidth = 5;
+  g.lineCap = 'round';
+  for (const [x, y] of [[14, 28], [70, 52], [30, 86], [86, 108], [96, 16]]) {
+    g.beginPath();
+    g.moveTo(x, y);
+    g.quadraticCurveTo(x + 14, y - 7, x + 28, y);
+    g.stroke();
+  }
+  return c;
+}

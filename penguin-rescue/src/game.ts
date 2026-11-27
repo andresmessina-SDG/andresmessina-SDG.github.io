@@ -19,7 +19,9 @@ export const COLS = LEVELS[0].map[0].length;
 export const ROWS = LEVELS[0].map.length;
 export const toWorld = (x: number, z: number, y = 0) => new THREE.Vector3(x - (COLS - 1) / 2, y, z - (ROWS - 1) / 2);
 const key = (c: Cell) => `${c[0]},${c[1]}`;
-const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b', '%', '_', '+', 'e', 'X', 'n']);
+const WALK = new Set(['.', 'P', 'S', 'D', 'o', '*', 'b', '%', '_', '+', 'e', 'X', 'n', ':', ';', ',']);
+/** Spring's thin ice (with or without a star on it): it holds you once. */
+const THIN = ':;';
 const SAIL = new Set(['~', 'c', '*', 'G', 'P']);
 const DIRS: Cell[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const SURFACE = -0.3;
@@ -30,6 +32,15 @@ const FOG_PX = 40;
 // Art used over and over (hearts, speech bubbles) is drawn once.
 const artCache = new Map<string, HTMLCanvasElement>();
 const cachedArt = (k: string, make: () => HTMLCanvasElement) => artCache.get(k) ?? artCache.set(k, make()).get(k)!;
+/** Art lying flat on the page, `size` cells across. */
+function makeFlat(art: HTMLCanvasElement, size: number) {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(size, (size * art.height) / art.width).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ map: canvasTex(art), alphaTest: 0.5, roughness: 0.9 }),
+  );
+  m.receiveShadow = true;
+  return m;
+}
 
 /** A speaker whose name follows the chosen language. */
 const sp = (en: string, ru: string, portrait: string, voice: number): Speaker => ({
@@ -40,7 +51,7 @@ const sp = (en: string, ru: string, portrait: string, voice: number): Speaker =>
   voice,
 });
 
-const starsIn = (def: LevelDef) => (def.map.join('').match(/[*%+]/g) ?? []).length;
+const starsIn = (def: LevelDef) => (def.map.join('').match(/[*%+;Z]/g) ?? []).length;
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + starsIn(l), 0);
 
 type Pair = [string, string];
@@ -52,8 +63,8 @@ interface SideDef {
   desc: Pair;
   reward: Pair;
 }
-/** Every side quest in the book, for the tracker, the pop-ups and the journal. */
-const SIDE: SideDef[] = [
+/** Every side quest in both books, for the tracker, the pop-ups and the journal. */
+const ALL_SIDE: SideDef[] = [
   {
     id: 'yarn', chapter: 'shore', giver: 'puffin',
     title: ["Auntie Puffin's yarn", 'Пряжа тётушки Тупик'],
@@ -96,8 +107,21 @@ const SIDE: SideDef[] = [
     desc: ["Pip hid Tuck's present inside a snowman, and can't remember which one.", 'Пип спрятал подарок для Тука в снеговика и забыл, в какого.'],
     reward: ['one very happy Tuck', 'очень счастливый Тук'],
   },
+  {
+    id: 'eggs', chapter: 'spring', giver: 'eider',
+    title: ["Mama Eider's eggs", 'Яйца Мамы Гаги'],
+    desc: ['A big splash sent her three eggs rolling away. They are hiding under the paper flaps.', 'Большой плюх раскатил три её яйца. Они спрятались под бумажными клапанами.'],
+    reward: ['three chicks, hatched in their own time', 'три птенца, которые вылупятся в своё время'],
+  },
+  {
+    id: 'burrow', chapter: 'spring', giver: 'hare',
+    title: ["The hare's burrow", 'Норка зайчихи'],
+    desc: ["The thaw filled the pond, and the hare's burrow is at the bottom of it.", 'Оттепель наполнила пруд, и норка зайчихи оказалась на самом дне.'],
+    reward: ['a dry, cosy burrow', 'сухая уютная норка'],
+  },
 ];
-export const SIDE_TOTAL = SIDE.length;
+/** This book's side quests. */
+const SIDE = ALL_SIDE.filter((d) => LEVELS.some((l) => l.id === d.chapter));
 
 /** What each finished chapter looks like in the journal. */
 const SUMMARY: Record<ChapterId, Pair> = {
@@ -106,6 +130,7 @@ const SUMMARY: Record<ChapterId, Pair> = {
   cove: ['You crept past Grimfin and freed Tuck from his cage.', 'Мимо Гримфина — на цыпочках, и Тук свободен!'],
   fog: ['You woke the sleepy lighthouses and sailed home at dawn.', 'Сонные маяки проснулись, и на рассвете кораблик приплыл домой.'],
   party: ['Everyone came to the party. Even Grimfin.', 'На праздник пришли все. Даже Гримфин.'],
+  spring: ['You dammed the meltwater streams, forgave Grimfin, and found the first flower of spring.', 'Ручьи перекрыты, Гримфин прощён, и первый весенний цветок найден.'],
 };
 
 /**
@@ -165,6 +190,22 @@ interface Turn {
   fish: number;
   splashUsed: boolean;
   checkpoint: Cell | null;
+  /** Spring: the thin ice broken so far, and where you stepped onto it. */
+  broken: string[];
+  iceEntry: Cell | null;
+}
+
+/** A meltwater stream: dam its source and every cell below runs dry, showing stepping stones. */
+interface Stream {
+  dam: Cell;
+  /** The stream below the source, nearest first. */
+  cells: Cell[];
+  dry: boolean;
+  /** Per cell (source first): the running water and the stones under it. */
+  water: THREE.Object3D[];
+  stones: THREE.Object3D[];
+  /** Bumped on every change, so an unfinished animation can tell it's out of date. */
+  v: number;
 }
 
 interface Level {
@@ -192,6 +233,11 @@ interface Level {
   /** The party garland and cake, hidden until they're earned. */
   garland: THREE.Group | null;
   cake: THREE.Group | null;
+  /** Spring: thin ice by cell (faces: whole, cracked), thick ice by cell, and the streams. */
+  thin: Map<string, THREE.Group>;
+  thick: Map<string, THREE.Object3D>;
+  streams: Stream[];
+  flowTex: THREE.Texture | null;
 }
 
 export class Game {
@@ -241,6 +287,16 @@ export class Game {
   private tuckFree = false;
   private gateOpen = false;
   private checkpoint: Cell | null = null;
+  // spring
+  private broken = new Set<string>();
+  private iceEntry: Cell | null = null;
+  private eiderMet = false;
+  eiderHelped = false;
+  private eggsFound = 0;
+  private eggsHome = 0;
+  private hareMet = false;
+  hareHelped = false;
+  private iceCracked = false;
   /** Everything done this chapter, for the save. */
   moves: Move[] = [];
   private replaying = false;
@@ -289,6 +345,8 @@ export class Game {
       walrusSpecs: A.walrus(true),
       fox: A.fox(false),
       kit: A.fox(true),
+      eider: A.eider(),
+      hare: A.hare(),
     };
     for (const [k, m] of Object.entries(models)) if (this.art[k]) useModel(this.art[k], m);
     // dialogue portraits: the baked figure where there is one, else the drawn cutout
@@ -306,6 +364,8 @@ export class Game {
       walrus: sp('Grandpa Walrus', 'Дедушка Морж', face('walrusSpecs'), 160),
       fox: sp('Mama Fox', 'Мама Лиса', face('fox'), 760),
       kit: sp('Fox kit', 'Лисёнок', face('kit'), 1150),
+      eider: sp('Mama Eider', 'Мама Гага', face('eider'), 640),
+      hare: sp('Hare', 'Зайчиха', face('hare'), 1020),
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
@@ -317,6 +377,7 @@ export class Game {
       bunting: A.bunting().toDataURL(),
       berries: A.berryBush(true).toDataURL(),
       present: A.present().toDataURL(),
+      eggs: A.egg().toDataURL(),
     };
     this.refreshInventory();
 
@@ -417,6 +478,8 @@ export class Game {
       case 'crates': done = this.crates >= 3; met = true; progress = [this.crates, 3]; break;
       case 'cake': done = this.cakeDone; met = this.cakeMet; progress = [Math.min(3, this.berries), 3]; break;
       case 'present': done = this.presentFound; met = this.presentMet; break;
+      case 'eggs': done = this.eiderHelped; met = this.eiderMet || this.eggsFound > 0; progress = [this.eggsFound, 3]; break;
+      case 'burrow': done = this.hareHelped; met = this.hareMet; break;
     }
     const at = LEVELS.findIndex((l) => l.id === d.chapter);
     const state = done ? 'done' : at < this.chapterIndex ? 'missed' : met && at === this.chapterIndex ? 'active' : 'locked';
@@ -534,7 +597,7 @@ export class Game {
 
   private footprint(c: Cell) {
     const L = this.level!;
-    if (L.def.night || L.def.mode !== 'walk' || L.grid[c[1]][c[0]] === 'o' || this.isIce(c)) return;
+    if (L.def.night || L.def.mode !== 'walk' || 'o:;,'.includes(L.grid[c[1]][c[0]]) || this.isIce(c)) return;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28).rotateX(-Math.PI / 2), this.printMat.clone());
     m.position.copy(toWorld(c[0], c[1], LAND_Y + 0.004));
     m.rotation.y = (rand() - 0.5) * 0.5;
@@ -685,6 +748,100 @@ export class Game {
     return g;
   }
 
+  /** A paper star standing on a cell, lifted a little off whatever is there. */
+  private paperStar(L: Level, c: Cell, y: number, delay: number) {
+    const pv = this.stand(L, A.star(), 0.46, toWorld(c[0], c[1], y), delay, 4);
+    L.stars.set(key(c), pv);
+    L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
+  }
+
+  /** A pane of thin ice over the water. Its two faces: whole, and cracked (while you stand on it). */
+  private makeThin(L: Level, c: Cell) {
+    const g = new THREE.Group();
+    const inner = new THREE.Group();
+    const geo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
+    const faces = [false, true].map((cracked) => {
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+        map: canvasTex(cachedArt('thin' + cracked, () => A.thinIce(cracked))), transparent: true, alphaTest: 0.1, roughness: 0.25,
+      }));
+      m.receiveShadow = true;
+      m.userData.cell = c;
+      m.visible = !cracked;
+      inner.add(m);
+      L.pick.push(m);
+      return m;
+    });
+    inner.position.y = 0.055;
+    inner.userData.faces = faces;
+    g.add(inner);
+    g.position.copy(toWorld(c[0], c[1]));
+    L.root.add(g);
+    L.thin.set(key(c), inner);
+    return g;
+  }
+
+  /** A lift-the-flap, glued along its back edge. Lifting it swings it up and over. */
+  private makeFlap(L: Level, c: Cell, egg: boolean, delay: number) {
+    const id = `flap:${key(c)}`;
+    const hinge = new THREE.Group();
+    const geo = new THREE.PlaneGeometry(0.86, 0.74).rotateX(-Math.PI / 2).translate(0, 0, 0.37);
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: canvasTex(A.flap(c[0] * 5 + c[1])), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.9 }));
+    m.castShadow = m.receiveShadow = true;
+    hinge.add(m);
+    hinge.position.copy(toWorld(c[0], c[1], LAND_Y + 0.012)).add(new THREE.Vector3(0, 0, -0.37));
+    hinge.userData.act = id;
+    hinge.userData.egg = egg;
+    L.root.add(hinge);
+    L.pick.push(m);
+    L.actors.set(id, hinge);
+    L.actorCell.set(id, c);
+    this.addScale(L, hinge, delay);
+  }
+
+  /** Each stream runs from its source (a dam spot) through every connected stream cell. */
+  private makeStreams(L: Level, dams: Cell[]) {
+    const tex = canvasTex(A.stream(), true);
+    L.flowTex = tex;
+    const waterMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35 });
+    const tile = new THREE.PlaneGeometry(1.02, 1.02).rotateX(-Math.PI / 2);
+    for (const dam of dams) {
+      // walk the stream outward from its source, remembering which way the water flows
+      const order: { c: Cell; dir: Cell }[] = [{ c: dam, dir: [0, 1] }];
+      const seen = new Set([key(dam)]);
+      for (let i = 0; i < order.length; i++) {
+        for (const d of DIRS) {
+          const n: Cell = [order[i].c[0] + d[0], order[i].c[1] + d[1]];
+          if (!this.inBounds(n) || seen.has(key(n)) || L.grid[n[1]][n[0]] !== 's') continue;
+          seen.add(key(n));
+          order.push({ c: n, dir: d });
+        }
+      }
+      const st: Stream = { dam, cells: order.slice(1).map((o) => o.c), dry: false, water: [], stones: [], v: 0 };
+      order.forEach(({ c, dir }, i) => {
+        const delay = 900 + i * 25;
+        const w = new THREE.Mesh(tile, waterMat);
+        w.receiveShadow = true;
+        w.rotation.y = Math.atan2(-dir[1], dir[0]);
+        const wg = new THREE.Group();
+        wg.add(w);
+        wg.position.copy(toWorld(c[0], c[1], 0.03));
+        L.root.add(wg);
+        this.addScale(L, wg, delay);
+        st.water.push(w);
+        const isBurrow = L.def.spring && same(c, L.def.spring.burrow);
+        const stone = makeFlat(isBurrow ? A.burrow() : cachedArt('stones' + (i % 4), () => A.stones(i % 4 + 3)), isBurrow ? 0.8 : 0.92);
+        stone.visible = false;
+        const sg = new THREE.Group();
+        sg.add(stone);
+        sg.position.copy(toWorld(c[0], c[1], 0.045));
+        L.root.add(sg);
+        this.addScale(L, sg, delay);
+        st.stones.push(stone);
+      });
+      L.streams.push(st);
+    }
+  }
+
   private makeFog(L: Level) {
     const W = COLS * FOG_PX, H = ROWS * FOG_PX;
     const c = makeCanvas(W, H);
@@ -759,6 +916,7 @@ export class Game {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
       stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
       rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false, garland: null, cake: null,
+      thin: new Map(), thick: new Map(), streams: [], flowTex: null,
     };
     // Friends you never helped don't turn up later.
     // At the party, the kits have already found the bunting out on the pond island.
@@ -773,7 +931,7 @@ export class Game {
     }));
 
     // The board: two page halves of cut paper that fold out from the spine.
-    const terrain = buildTerrain(L.grid, night, index * 101 + 5, def.water);
+    const terrain = buildTerrain(L.grid, night, index * 101 + 5, def.water, def.season);
     terrain.halves.forEach((hinge, h) => {
       const side = h === 0 ? -1 : 1;
       root.add(hinge);
@@ -997,6 +1155,43 @@ export class Game {
           case 'P':
             L.start = c;
             break;
+          case ':':
+          case ';':
+            this.addScale(L, this.makeThin(L, c), later);
+            if (ch === ';') this.paperStar(L, c, 0.12, later + 60);
+            break;
+          case 'z':
+          case 'Z': {
+            const g = new THREE.Group();
+            const m = new THREE.Mesh(tileGeometry(0.96, 0.1, 0.96), paperMat('#e6f2fb'));
+            m.position.y = 0.05;
+            m.castShadow = m.receiveShadow = true;
+            m.userData.cell = c;
+            g.add(m);
+            g.position.copy(p);
+            root.add(g);
+            L.pick.push(m);
+            L.thick.set(key(c), g);
+            this.addScale(L, g, later);
+            if (ch === 'Z') this.paperStar(L, c, 0.12, later + 60);
+            break;
+          }
+          case 'M':
+            this.actor(L, 'eider', this.art.eider, 0.72, c, later, null);
+            break;
+          case 'h':
+            this.actor(L, 'hare', this.art.hare, 0.8, c, later, 'waddle');
+            break;
+          case 'f':
+          case 'q':
+            this.makeFlap(L, c, ch === 'q', later);
+            break;
+        }
+        // spring: the first flowers, popping up here and there in the grass
+        if (def.season === 'spring' && ch === '.' && rand() < 0.1) {
+          const colors = ['#e58fb0', '#f4f1ea', '#9a7bd0', '#f2b441'];
+          const f = this.stand(L, A.flower(pick(colors), x * 7 + z), 0.36, p.clone().add(new THREE.Vector3((rand() - 0.5) * 0.6, LAND_Y, 0.28 + rand() * 0.1)), later + 200, 3);
+          L.idlers.push({ obj: f.userData.inner, phase: rand() * 6, kind: 'sway' });
         }
       }
     }
@@ -1012,6 +1207,15 @@ export class Game {
           b.goal = it.id;
         }
       }
+    }
+
+    if (def.dams) this.makeStreams(L, def.dams);
+    if (def.spring) {
+      const g = def.spring.grim;
+      const pv = this.actor(L, 'grim', this.art.orca, 1.0, g, 1300, null);
+      pv.position.y = 0;
+      (pv.userData.inner as THREE.Group).position.y = SURFACE;
+      L.idlers.push({ obj: pv.userData.inner, phase: 0, kind: 'float' });
     }
 
     // scenery flats along the back edge of the spread
@@ -1138,6 +1342,8 @@ export class Game {
     this.checkpoint = null;
     this.history = [];
     this.prints = [];
+    this.broken = new Set();
+    this.iceEntry = null;
     const sail = L.def.mode === 'sail';
     this.boatRig.visible = sail;
     this.facing.position.y = sail ? 0.12 : 0;
@@ -1182,6 +1388,7 @@ export class Game {
       cove: () => this.introTwo(),
       fog: () => this.introThree(),
       party: () => this.introParty(),
+      spring: () => this.introSpring(),
     };
     await intro[L.def.id]();
     this.keep();
@@ -1364,6 +1571,29 @@ export class Game {
         }
         break;
     }
+    if (L.def.id === 'spring') {
+      const [a, b] = L.streams.map((st) => st.dry);
+      if (!a) q.push(main('dam', tr('Push the ice block into the top of the stream', 'Затолкай ледяной блок в самое начало ручья')));
+      else if (!b) q.push(main('pond', this.hareMet
+        ? tr('Dam the stream that fills the pond', 'Перекрой ручей, который наполняет пруд')
+        : tr('Find a way past the pond', 'Найди, как пройти мимо пруда')));
+      else if (!this.iceCracked) q.push(main('hum', tr('Find who is humming by the lake', 'Узнай, кто напевает у озера')));
+      else q.push(main('meadow', tr('Cross the thin ice to the meadow →', 'Перейди по тонкому льду на луг →')));
+      if (this.eiderMet || this.eggsFound > 0) {
+        q.push(this.sideQuest('eggs', this.eiderHelped
+          ? tr("Bring back Mama Eider's eggs", 'Верни яйца Маме Гаге')
+          : this.eggsFound > this.eggsHome
+            ? tr('Take the eggs back to Mama Eider', 'Отнеси яйца Маме Гаге')
+            : tr("Look under the flaps for Mama Eider's eggs", 'Поищи яйца Мамы Гаги под клапанами')));
+      }
+      if (this.hareMet) {
+        q.push(this.sideQuest('burrow', this.hareHelped
+          ? tr('Help the hare home', 'Помоги зайчихе вернуться домой')
+          : L.streams[1]?.dry
+            ? tr('Tell the hare her burrow is dry', 'Скажи зайчихе, что норка высохла')
+            : tr("Dry out the hare's burrow under the pond", 'Осуши норку зайчихи под прудом')));
+      }
+    }
     q.push({ id: 'stars', kind: 'stars', optional: true, text: tr(`Paper stars ${this.stars}/${STAR_TOTAL}`, `Бумажные звёздочки ${this.stars}/${STAR_TOTAL}`), done: this.stars === STAR_TOTAL });
     return q;
   }
@@ -1375,11 +1605,12 @@ export class Game {
   }
 
   private refreshInventory() {
-    for (const [id, n] of [['bunting', this.bunting], ['berries', this.berries]] as const) {
+    const eggs = this.eggsFound - this.eggsHome;
+    for (const [id, n] of [['bunting', this.bunting], ['berries', this.berries], ['eggs', eggs]] as const) {
       if (n > 0) this.inv.add(id);
       else this.inv.delete(id);
     }
-    this.ui.setInventory(this.icons, this.inv, { fish: this.fish, bunting: this.bunting, berries: this.berries });
+    this.ui.setInventory(this.icons, this.inv, { fish: this.fish, bunting: this.bunting, berries: this.berries, eggs });
   }
 
   private give(id: string, message: string) {
@@ -1575,6 +1806,8 @@ export class Game {
       fish: this.fish,
       splashUsed: this.bobbleSplashUsed,
       checkpoint: this.checkpoint && [...this.checkpoint],
+      broken: [...this.broken],
+      iceEntry: this.iceEntry && [...this.iceEntry],
     });
     if (this.history.length > 300) this.history.shift();
   }
@@ -1599,7 +1832,7 @@ export class Game {
     if (this.follower) this.follower.position.copy(toWorld(s.pos[0] - 1, s.pos[1], 0.02));
     // blocks: clear every moved block's square first, so two blocks can trade places
     const moved = s.blocks.map(([id, c]) => [L.blocks.get(id), c] as const).filter(([b, c]) => b && !same(b.cell, c));
-    for (const [b] of moved) L.grid[b!.cell[1]][b!.cell[0]] = '.';
+    for (const [b] of moved) L.grid[b!.cell[1]][b!.cell[0]] = this.isDam(b!.cell) ? 's' : '.';
     for (const [b, c] of moved) {
       b!.cell = [...c];
       L.grid[c[1]][c[0]] = 'K';
@@ -1612,6 +1845,9 @@ export class Game {
     this.refreshInventory();
     this.bobbleSplashUsed = s.splashUsed;
     this.checkpoint = s.checkpoint;
+    this.flow(true);
+    this.mendIce(new Set(s.broken));
+    this.iceEntry = s.iceEntry;
     if (L.def.orca && L.actors.has('orca')) {
       this.orca = s.orca;
       const pv = this.orcaPv, inner = this.orcaInner;
@@ -1682,8 +1918,8 @@ export class Game {
     return this.slideFrom(this.pos, d);
   }
 
-  /** Shortest route as a list of cells, using at most maxSlides slides across the ice. */
-  private path(from: Cell, goals: Cell[], maxSlides = Infinity): Cell[] | null {
+  /** Shortest route as a list of cells, using at most maxSlides slides across the ice, and not through `avoid` cells unless they're a goal. */
+  private path(from: Cell, goals: Cell[], maxSlides = Infinity, avoid?: (c: Cell) => boolean): Cell[] | null {
     const gs = new Set(goals.map(key));
     if (gs.has(key(from))) return [];
     const capped = Number.isFinite(maxSlides);
@@ -1697,6 +1933,7 @@ export class Game {
         const cells = this.slideFrom(c, d);
         if (!cells) continue;
         const end = cells[cells.length - 1];
+        if (avoid?.(end) && !gs.has(key(end))) continue;
         const n2 = n + (this.isIce(c) || cells.some((x) => this.isIce(x)) ? 1 : 0);
         if (n2 > maxSlides) continue;
         const k2 = sk(end, n2);
@@ -1725,11 +1962,13 @@ export class Game {
         const goals = act || !this.walkable(target)
           ? DIRS.map((d): Cell => [target[0] + d[0], target[1] + d[1]]).filter((c) => this.walkable(c))
           : [target];
-        let path = this.path(this.pos, goals, this.icy ? 1 : Infinity);
+        // thin ice only when there's no other way, one careful step at a time
+        let path = this.path(this.pos, goals, this.icy ? 1 : Infinity, (c) => this.isThin(c)) ?? this.path(this.pos, goals, this.icy ? 1 : Infinity);
         // too far to reach in one slide: slide that way instead
         if (!path && this.icy) path = this.slideToward(target);
         if (!path) {
           this.sound.bump();
+          if (this.stuck()) return this.ui.toast(tr('Stuck on the ice! Press ⟲ to undo a step.', 'Застрял на льду! Нажми ⟲, чтобы отменить шаг.'));
           if (act?.startsWith('block')) this.ui.toast(tr("You can't reach that side of the ice block.", 'К этой стороне ледяного блока не подойти.'));
           return;
         }
@@ -1740,7 +1979,7 @@ export class Game {
           if (fresh) this.record();
           this.log(fresh ? { s: path[i], n: 1 } : { s: path[i] });
           await this.step(path[i]);
-          if (await this.afterStep()) {
+          if (await this.afterStep() || (this.isThin(this.pos) && i < path.length - 1)) {
             this.pending = null;
             return;
           }
@@ -1777,6 +2016,8 @@ export class Game {
   private cellY(c: Cell) {
     const ch = this.level!.grid[c[1]][c[0]];
     if (ch === 'o' || ch === '%') return 0.11;
+    if (THIN.includes(ch)) return 0.06;
+    if (ch === ',') return 0.05;
     if (this.level!.def.water.includes(ch)) return 0.02;
     if (ch === '=') return 0.5;
     return LAND_Y;
@@ -1796,6 +2037,13 @@ export class Game {
     else if (!this.isIce(old)) this.sound.step(this.level!.grid[c[1]][c[0]] !== 'o');
     this.footprint(old);
     this.pos = c;
+    const fromIce = this.isThin(old);
+    if (fromIce && !same(old, c)) this.breakIce(old);
+    if (this.isThin(c)) {
+      if (!fromIce) this.iceEntry = [...old];
+      this.sound.crack(0.4);
+    }
+    this.crackFaces();
     const lean = -this.facing.scale.x;
     // belly-sliding on the ice: low, fast and leaning forward
     const sliding = this.isIce(c) || this.isIce(old);
@@ -1851,6 +2099,12 @@ export class Game {
       await this.glacierEnd();
       return true;
     }
+    if (L.def.id === 'spring' && ch === 'X') {
+      this.keep();
+      await this.springEnd();
+      return true;
+    }
+    if (await this.stuckOnIce()) return true;
     if (L.def.id === 'party' && ch === 'D' && this.partyStep === 1) {
       this.keep();
       await this.inviteGrimfin();
@@ -1925,7 +2179,7 @@ export class Game {
     this.keep();
     L.stars.delete(key(this.pos));
     const ch = L.grid[this.pos[1]][this.pos[0]];
-    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : this.sail ? '~' : '.';
+    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : ch === ';' ? ':' : this.sail ? '~' : '.';
     this.stars++;
     this.flyAway(obj);
     this.sound.chime([7, 12, 16]);
@@ -1945,7 +2199,14 @@ export class Game {
     if (act.startsWith('kitp:')) return this.ui.say([[this.S.kit, pick([tr('Hee hee!', 'Хи-хи!'), tr('Is it cake time yet?', 'А торт уже скоро?'), tr('We found the bunting with our noses!', 'Мы нашли флажки по запаху!')])]]);
     if (act.startsWith('bush:')) return this.pickBerries(act);
     if (act.startsWith('snowman:')) return this.searchSnowman(act);
+    if (act.startsWith('flap:')) return this.liftFlap(act);
     switch (act) {
+      case 'eider':
+        return this.talkEider();
+      case 'hare':
+        return this.talkHare();
+      case 'grim':
+        return this.talkGrimSpring();
       case 'walrus':
         return this.talkWalrus();
       case 'fox':
@@ -1966,6 +2227,7 @@ export class Game {
         return this.searchIgloo();
       case 'tuck':
         if (this.level!.def.id === 'party') return this.talkTuckParty();
+        if (this.level!.def.id === 'spring') return this.talkSpring('tuck');
         return this.tuckFree ? this.ui.say([[this.S.tuck, tr('Thank you, thank you!', 'Спасибо, спасибо!')]]) : this.freeTuck();
       case 'boat':
         return this.ui.say([[this.S.pebble, tr("That's our boat. Once Tuck is free, we'll paddle over and fetch you both!", 'Это наша лодочка. Как только Тук будет на свободе, мы приплывём за вами обоими!')]]);
@@ -2005,6 +2267,7 @@ export class Game {
       ])]]);
     }
     if (L.def.id === 'party') return this.talkParty(who);
+    if (L.def.id === 'spring') return this.talkSpring(who);
     if (L.def.id !== 'shore') {
       const lines: Line[][] = [
         [[pip, tr('Watch the glowy squares: that is where his spyglass is pointing next.', 'Следи за светящимися квадратиками: туда он посмотрит в подзорную трубу в следующий ход.')]],
@@ -2134,11 +2397,17 @@ export class Game {
     if (!b) return;
     const d: Cell = [b.cell[0] - this.pos[0], b.cell[1] - this.pos[1]];
     if (Math.abs(d[0]) + Math.abs(d[1]) !== 1) return;
+    if (this.isDam(b.cell)) {
+      this.sound.bump();
+      return this.ui.toast(tr('The ice block is snug in the stream. It is staying put.', 'Ледяной блок плотно сидит в ручье. Пусть там и остаётся.'));
+    }
     const t: Cell = [b.cell[0] + d[0], b.cell[1] + d[1]];
     const ch = this.inBounds(t) ? L.grid[t[1]][t[0]] : '#';
     const occupied = [...L.actorCell.entries()].some(([aid, c]) => aid !== id && same(c, t));
-    const intoWater = ch === '~';
-    if (occupied || !(ch === '.' || ch === 'P' || intoWater)) {
+    // spring blocks dam streams at their source; they never sink to make floes
+    const dam = this.isDam(t) && ch === 's';
+    const intoWater = ch === '~' && !L.def.dams;
+    if (occupied || !(ch === '.' || ch === 'P' || intoWater || dam)) {
       this.sound.bump();
       const r = await this.ui.ask(this.S.nar, tr("The ice block won't budge that way. Shove it back to where it started?", 'Туда ледяной блок не сдвинуть. Вернуть его на место?'), [tr('Yes, reset it', 'Да, вернуть'), tr('No', 'Нет')]);
       if (r === 0) await this.resetBlock(b);
@@ -2184,6 +2453,7 @@ export class Game {
       b.cell = t;
       L.grid[t[1]][t[0]] = 'K';
       L.actorCell.set(id, t);
+      if (dam) await this.dammed(L.streams.findIndex((st) => same(st.dam, t)));
     }
     this.busy = false;
   }
@@ -3213,6 +3483,388 @@ export class Game {
     }
   }
 
+  // ---------------------------------------------------------------- Book Two: spring
+
+  private isThin(c: Cell) {
+    return this.inBounds(c) && THIN.includes(this.level!.grid[c[1]][c[0]]);
+  }
+
+  /** A stream's source, where an ice block makes a dam. */
+  private isDam(c: Cell) {
+    return !!this.level?.def.dams?.some((d) => same(d, c));
+  }
+
+  /** You've stepped off this pane of thin ice: it gives way into the water. */
+  private breakIce(c: Cell) {
+    const L = this.level!;
+    const k = key(c);
+    L.grid[c[1]][c[0]] = '~';
+    this.broken.add(k);
+    const inner = L.thin.get(k);
+    if (!inner) return;
+    const v = (inner.userData.v = (inner.userData.v ?? 0) + 1);
+    this.sound.crack(0.8);
+    this.sound.splash(0.3);
+    tween(380, (k2) => {
+      if (inner.userData.v !== v) return;
+      inner.position.y = 0.055 - k2 * 0.16;
+      inner.scale.setScalar(Math.max(0.001, 1 - k2 * 0.5));
+    }, easeIn).then(() => {
+      if (inner.userData.v === v) inner.visible = false;
+    });
+  }
+
+  /** The pane you're standing on shows its cracks. */
+  private crackFaces() {
+    const L = this.level;
+    if (!L) return;
+    for (const [k, inner] of L.thin) {
+      const [whole, cracked] = inner.userData.faces as THREE.Mesh[];
+      const on = k === key(this.pos);
+      whole.visible = !on;
+      cracked.visible = on;
+    }
+  }
+
+  /** Put back every pane of thin ice not in `keep` (for undo, and for folding the ice back). */
+  private mendIce(keep: Set<string>) {
+    const L = this.level!;
+    for (const k of this.broken) {
+      if (keep.has(k)) continue;
+      const [x, z] = k.split(',').map(Number);
+      L.grid[z][x] = L.stars.has(k) ? ';' : ':';
+      const inner = L.thin.get(k);
+      if (!inner) continue;
+      inner.userData.v = (inner.userData.v ?? 0) + 1;
+      inner.visible = true;
+      inner.position.y = 0.055;
+      inner.scale.setScalar(1);
+    }
+    this.broken = new Set(keep);
+    this.crackFaces();
+  }
+
+  /** On thin ice with nowhere left to step? */
+  private stuck() {
+    return this.isThin(this.pos) && DIRS.every(([dx, dz]) => !this.walkable([this.pos[0] + dx, this.pos[1] + dz]));
+  }
+
+  /** Stranded on the ice: offer to fold it back into place (the page can do that). */
+  private async stuckOnIce() {
+    if (!this.stuck()) return false;
+    const L = this.level!;
+    const options = [tr('Fold the ice back', 'Сложить лёд обратно')];
+    if (this.history.length) options.push(tr("I'll undo", 'Я отменю ход'));
+    const r = await this.ui.ask(this.S.nar, tr("Oh no, you're stuck on the thin ice! Shall the page fold the ice back into place?", 'Ой, ты застрял на тонком льду! Пусть страница сложит лёд обратно?'), options);
+    if (r !== 0) return true;
+    this.keep();
+    const back = this.iceEntry ?? L.start;
+    this.mendIce(new Set());
+    this.pos = [...back];
+    this.iceEntry = null;
+    this.player.position.copy(toWorld(back[0], back[1], this.cellY(back)));
+    this.crackFaces();
+    this.sound.fold(0.9);
+    this.sound.rustle(0.6);
+    tween(260, (k) => this.player.scale.setScalar(0.85 + 0.15 * k), easeOutBack);
+    this.ui.toast(tr('Fold, crease, smooth: the ice is whole again.', 'Сгиб, складка, разгладить — и лёд снова целый.'));
+    this.refreshQuests();
+    return true;
+  }
+
+  /** Streams run or stand dry depending on whether an ice block sits in their source. */
+  private flow(instant: boolean) {
+    const L = this.level;
+    if (!L) return;
+    for (const st of L.streams) {
+      const dry = L.grid[st.dam[1]][st.dam[0]] === 'K';
+      if (dry === st.dry) continue;
+      st.dry = dry;
+      const v = ++st.v;
+      for (const c of st.cells) L.grid[c[1]][c[0]] = dry ? ',' : 's';
+      // the source keeps its water: the ice block sits in it
+      st.water.forEach((w, i) => {
+        if (i === 0) return;
+        const stone = st.stones[i];
+        if (instant || !dry) {
+          w.visible = !dry;
+          w.scale.setScalar(1);
+          stone.visible = dry;
+          stone.scale.setScalar(1);
+          return;
+        }
+        // like a pull-tab sliding back: the water draws away downstream and the stones pop up
+        tween(260, (k) => {
+          if (st.v === v) w.scale.set(Math.max(0.001, 1 - k), 1, Math.max(0.001, 1 - k));
+        }, easeIn, i * 28).then(() => {
+          if (st.v !== v) return;
+          w.visible = false;
+          stone.visible = true;
+          stone.scale.setScalar(0.001);
+          tween(300, (k) => {
+            if (st.v === v) stone.scale.setScalar(Math.max(0.001, k));
+          }, easeOutBack);
+        });
+      });
+    }
+  }
+
+  /** An ice block has just dammed stream `i`. */
+  private async dammed(i: number) {
+    this.flow(false);
+    this.sound.splash(0.5);
+    this.sound.chime([0, 4, 7]);
+    this.refreshQuests();
+    if (i === 0) {
+      this.ui.toast(tr('The stream stops! Stepping stones peek out of its bed.', 'Ручей остановился! Из русла выглянули камушки.'));
+      return;
+    }
+    await this.ui.say([[this.S.nar, tr('Glug... glug... GLUG! Far down the stream, the whole pond drained away.', 'Буль... буль... БУЛЬ! Далеко внизу по ручью весь пруд утёк.')]]);
+  }
+
+  private async introSpring() {
+    const { nar, tuck } = this.S;
+    await this.ui.say([
+      [nar, tr('In the very last snow of winter, Tuck wondered out loud what the shore looked like the rest of the year.', 'В самый последний снег зимы Тук вслух задумался: а какой берег в остальное время года?')],
+      [tuck, tr("We've only ever seen it white! Is it green in spring? Is it sunny in summer?", 'Мы видели его только белым! Весной он зелёный? А летом солнечный?')],
+      [nar, tr('So the friends turned the page to find out. The snow was melting into puddles, and rain went pitter-pat on the paper.', 'И друзья перевернули страницу, чтобы узнать. Снег таял и превращался в лужи, а по бумаге стучал дождик.')],
+      [tuck, tr('Pip and Pebble ran ahead to find the first flower of spring. They are waiting in the meadow, way over on the right.', 'Пип и Галька убежали вперёд искать первый весенний цветок. Они ждут на лугу, далеко справа.')],
+      [tuck, tr('That stream is in the way. Push the ice block into the very top of it, where the water starts!', 'Ручей мешает пройти. Затолкай ледяной блок в самое начало ручья, туда, где начинается вода!')],
+      [tuck, tr('And mind the thin ice on the puddles. It holds you once... then CRACK!', 'И осторожно с тонким льдом на лужах. Один раз выдержит... а потом ХРУСЬ!')],
+      [nar, tr('Somewhere by the big lake, somebody was humming. Hmm-hmm-hmm...', 'Где-то у большого озера кто-то напевал. Мм-мм-мм...')],
+    ]);
+  }
+
+  private async talkSpring(who: string) {
+    const { tuck, pip, pebble } = this.S;
+    const L = this.level!;
+    if (who === 'tuck') {
+      return this.ui.say([[tuck, !L.streams[0]?.dry
+        ? tr('Push the ice block into the very top of the stream, where the water starts. That should stop it!', 'Затолкай ледяной блок в самое начало ручья, туда, где начинается вода. Тогда он остановится!')
+        : pick([tr('Splish, splash! I love spring puddles.', 'Шлёп, плюх! Обожаю весенние лужи.'), tr('Everything smells green!', 'Всё пахнет зеленью!')])]]);
+    }
+    return this.ui.say([[who === 'pip' ? pip : pebble, tr("We waited all morning for the first flower to open. You can't hurry a flower!", 'Мы всё утро ждали, когда раскроется первый цветок. Цветок не поторопишь!')]]);
+  }
+
+  private async talkEider() {
+    const { eider } = this.S;
+    const lines: Line[] = [];
+    if (!this.eiderMet) {
+      this.eiderMet = true;
+      lines.push(
+        [eider, tr('Oh, my eggs, my eggs! A great big SPLASH in the night sent all three rolling away down the thaw.', 'Ой, мои яички, мои яички! Ночью кто-то так ПЛЮХНУЛ, что все три укатились по талой воде.')],
+        [eider, tr("They'll be hiding under the paper flaps, I'm sure. Could you lift them and look?", 'Наверняка они спрятались под бумажными клапанами. Приподнимешь их и поищешь?')],
+      );
+    }
+    const carrying = this.eggsFound - this.eggsHome;
+    if (carrying > 0) {
+      this.eggsHome += carrying;
+      this.refreshInventory();
+      this.sound.chime([0, 4, 7, 12]);
+      this.hearts(this.level!.actors.get('eider')!.position, 5);
+      if (this.eggsHome >= 3) {
+        this.eiderHelped = true;
+        lines.push(
+          [eider, tr('All three, safe and warm in the nest! Thank you, little one.', 'Все три в гнёздышке, в тепле и в безопасности! Спасибо тебе, малыш.')],
+          [eider, tr("Now we wait. They'll hatch in their own time. You can't hurry spring.", 'Теперь будем ждать. Они вылупятся в своё время. Весну не поторопишь.')],
+        );
+      } else {
+        lines.push([eider, tr(`Back in the nest, safe and warm! That's ${this.eggsHome} of 3.`, `Снова в гнёздышке, в тепле! Уже ${this.eggsHome} из 3.`)]);
+      }
+    } else if (!lines.length) {
+      lines.push([eider, this.eiderHelped
+        ? tr("Shh... they're nearly ready. Any day now.", 'Тсс... они почти готовы. Со дня на день.')
+        : tr(`${this.eggsHome} of 3 home. Try lifting another flap!`, `Дома ${this.eggsHome} из 3. Приподними ещё какой-нибудь клапан!`)]);
+    }
+    await this.ui.say(lines);
+    this.refreshQuests();
+  }
+
+  private async liftFlap(id: string) {
+    const L = this.level!;
+    const hinge = L.actors.get(id)!;
+    if (hinge.userData.open) return this.ui.say([[this.S.nar, tr('Only grass under this flap now.', 'Под этим клапаном теперь только трава.')]]);
+    hinge.userData.open = true;
+    this.busy = true;
+    this.sound.rustle(0.7);
+    await tween(460, (k) => (hinge.rotation.x = -1.75 * k), easeOutBack);
+    const c = L.actorCell.get(id)!;
+    const found = standee(makeCutout(hinge.userData.egg ? cachedArt('egg', A.egg) : A.flower('#9a7bd0', c[0] + c[1]), 0.32, 4));
+    found.position.copy(toWorld(c[0], c[1], LAND_Y));
+    found.scale.setScalar(0.001);
+    L.root.add(found);
+    await tween(320, (k) => found.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    if (hinge.userData.egg) {
+      this.eggsFound++;
+      this.refreshInventory();
+      this.sound.chime([7, 12, 16]);
+      this.hearts(found.position, 3);
+      this.ui.toast(this.eiderMet
+        ? tr(`An eider egg! ${this.eggsFound}/3`, `Яйцо гаги! ${this.eggsFound}/3`)
+        : tr('An egg! Somebody must be missing it.', 'Яичко! Кто-то, наверное, его ищет.'));
+      await wait(300);
+      this.flyAway(found);
+    } else {
+      this.sound.blip(1100);
+      L.idlers.push({ obj: found.userData.inner, phase: 0, kind: 'sway' });
+      this.ui.toast(tr('No egg here. Just a crocus, waking up.', 'Яйца тут нет. Только крокус просыпается.'));
+    }
+    this.busy = false;
+    this.refreshQuests();
+  }
+
+  private async talkHare() {
+    const { hare } = this.S;
+    const L = this.level!;
+    if (!L.streams[1]?.dry) {
+      const first = !this.hareMet;
+      this.hareMet = true;
+      await this.ui.say(first
+        ? [
+          [hare, tr('Oh dear, oh dear. My burrow is right at the bottom of that pond! The thaw filled it to the brim.', 'Ой-ой-ой. Моя норка на самом дне этого пруда! Оттепель наполнила его до краёв.')],
+          [hare, tr('All that water trickles down the stream from the top of the page. If only somebody could stop it...', 'Вся эта вода стекает по ручью с самого верха страницы. Вот бы кто-нибудь его остановил...')],
+        ]
+        : [[hare, tr('Still soggy. Somebody needs to stop that stream right at the top.', 'Всё ещё сыро. Надо остановить этот ручей на самом верху.')]]);
+      this.refreshQuests();
+      return;
+    }
+    this.hareMet = true;
+    const burrow = L.def.spring!.burrow;
+    if (same(this.pos, burrow)) return this.ui.say([[hare, tr('The pond is gone! Could you hop off my front door, please?', 'Пруд исчез! Не мог бы ты сойти с моего порога?')]]);
+    this.busy = true;
+    await this.ui.say([[hare, tr('The pond is gone, and there is my front door! Thank you, thank you!', 'Пруд исчез, и вот мой порог! Спасибо, спасибо!')]]);
+    const was = L.actorCell.get('hare')!;
+    await this.hopActor('hare', burrow);
+    const pv = L.actors.get('hare')!;
+    this.sound.rustle(0.5);
+    await tween(420, (k) => pv.scale.setScalar(Math.max(0.001, 1 - k)), easeIn);
+    pv.visible = false;
+    L.actors.delete('hare');
+    L.actorCell.delete('hare');
+    L.grid[was[1]][was[0]] = '.';
+    this.hareHelped = true;
+    this.hearts(toWorld(burrow[0], burrow[1], LAND_Y), 6);
+    this.sound.chime([0, 4, 7, 12]);
+    this.ui.toast(tr('The hare is home, snug and dry.', 'Зайчиха дома, в сухой уютной норке.'));
+    this.busy = false;
+    this.refreshQuests();
+  }
+
+  private async talkGrimSpring() {
+    const { grim } = this.S;
+    if (this.iceCracked) {
+      return this.ui.say([[grim, pick([
+        tr('Thank you for giving me another chance.', 'Спасибо, что дал мне ещё один шанс.'),
+        tr("Careful on the thin ice! Step where you haven't stepped before.", 'Осторожно на тонком льду! Наступай туда, где ещё не был.'),
+      ])]]);
+    }
+    this.busy = true;
+    this.sound.chime([-12, -8, -5]);
+    await this.ui.say([
+      [grim, tr("Hmm-hmm-hmm... oh! Hello, little friend! Isn't spring lovely?", 'Мм-мм-мм... ой! Привет, маленький друг! Правда, весна чудесная?')],
+      [grim, tr('Last night I was so happy the ice was melting, I did my biggest belly-flop ever. SPLOOSH!', 'Ночью я так радовался, что лёд тает, что плюхнулся пузом изо всех сил. ПЛЮХ!')],
+      [grim, tr("...and my splash sent things rolling all over the page. Mama Eider's eggs too. I heard her crying all morning.", '...и от моего плюха всё покатилось по странице. И яйца Мамы Гаги тоже. Я всё утро слышал, как она плачет.')],
+      [grim, tr("That was me. I didn't mean to, but I did it, and I'm very sorry.", 'Это был я. Я не хотел, но так получилось, и мне очень стыдно.')],
+    ]);
+    const choice = await this.ui.ask(grim, tr('Can you forgive a clumsy old orca?', 'Простишь неуклюжую старую косатку?'), [tr('Of course I forgive you', 'Конечно, прощаю'), tr("That wasn't very careful", 'Это было неосторожно')]);
+    await this.ui.say(choice === 0
+      ? [[grim, tr('Oh, thank you! That makes my fins feel all warm.', 'Ой, спасибо! От этого у меня даже плавники потеплели.')]]
+      : [
+        [grim, tr("No... it wasn't. Next time I'll look before I leap.", 'Да... это было неосторожно. В следующий раз я сначала посмотрю, а потом прыгну.')],
+        [grim, tr('Thank you for telling me true. And for giving me another chance.', 'Спасибо, что сказал честно. И что даёшь мне ещё один шанс.')],
+      ]);
+    await this.ui.say([[grim, tr('Let me help put things right. That thick ice is too hard for penguin feet, but not for my nose!', 'Давай я помогу всё исправить. Толстый лёд пингвинам не по силам, а моему носу — запросто!')]]);
+    await this.crackThickIce();
+    this.iceCracked = true;
+    await this.ui.say([
+      [grim, tr("There! It's thin now, so tread carefully: it holds you once, then CRACK. Step where you haven't stepped before!", 'Вот! Теперь он тонкий, так что ступай осторожно: один раз выдержит, а потом ХРУСЬ. Наступай туда, где ещё не был!')],
+      this.eiderHelped
+        ? [grim, tr("You found all of Mama Eider's eggs? Oh, I am glad. I'll go and say sorry to her myself.", 'Ты нашёл все яйца Мамы Гаги? Ох, как я рад. Пойду сам попрошу у неё прощения.')]
+        : [grim, tr("And if you find Mama Eider's eggs, I'll go and say sorry to her myself.", 'А если найдёшь яйца Мамы Гаги, я сам попрошу у неё прощения.')],
+    ]);
+    this.busy = false;
+    this.refreshQuests();
+  }
+
+  /** Grimfin noses up under the thick ice, one pane at a time, until it's thin enough to cross. */
+  private async crackThickIce() {
+    const L = this.level!;
+    const pv = L.actors.get('grim')!;
+    const home = pv.position.clone();
+    const cells = [...L.thick.keys()].map((k) => k.split(',').map(Number) as Cell).sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+    for (const c of cells) {
+      const g = L.thick.get(key(c))!;
+      const to = toWorld(c[0], c[1] + 1);
+      const from = pv.position.clone();
+      await tween(320, (k) => pv.position.lerpVectors(from, to, k), easeInOut);
+      this.shake = 0.18;
+      this.sound.crack(1);
+      this.sound.splash(0.35);
+      L.thick.delete(key(c));
+      L.pick = L.pick.filter((o) => o.parent !== g);
+      L.grid[c[1]][c[0]] = L.grid[c[1]][c[0]] === 'Z' ? ';' : ':';
+      tween(260, (k) => g.scale.setScalar(Math.max(0.001, 1 - k)), easeIn).then(() => L.root.remove(g));
+      const thin = this.makeThin(L, c);
+      thin.scale.setScalar(0.001);
+      this.addScale(L, thin, 0);
+      thin.visible = true;
+      await tween(300, (k) => thin.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    }
+    const from = pv.position.clone();
+    await tween(400, (k) => pv.position.lerpVectors(from, home, k), easeInOut);
+  }
+
+  private async springEnd() {
+    const { pip, pebble, tuck, nar } = this.S;
+    const L = this.level!;
+    this.busy = true;
+    if (!L.actors.has('bloom')) {
+      // the first flower of spring, opening at last; and Tuck, puddle-splashing up behind you
+      const at: Cell = [this.pos[0] + 1, this.pos[1] + 1];
+      const bloom = this.stand(L, A.flower('#f2b441', 99), 0.7, toWorld(at[0], at[1], LAND_Y), 0, 4);
+      L.actors.set('bloom', bloom);
+      bloom.rotation.x = 0;
+      bloom.visible = true;
+      bloom.scale.setScalar(0.001);
+      this.sound.chime([0, 4, 7, 12, 16]);
+      await tween(700, (k) => bloom.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+      this.hearts(bloom.position, 8);
+    }
+    const lines: Line[] = [
+      [pip, tr('You made it! Look, look: the very first flower of spring!', 'Ты дошёл! Смотри, смотри: самый первый весенний цветок!')],
+      [pebble, tr("We waited all morning for it to open. You can't hurry a flower, but it was worth the wait.", 'Мы всё утро ждали, когда он раскроется. Цветок не поторопишь, но он того стоил.')],
+    ];
+    if (this.eiderHelped) {
+      lines.push(
+        [nar, tr("And back at her nest, Mama Eider's three eggs went peep... peep... PEEP!", 'А в гнёздышке у Мамы Гаги три яйца сказали: пи... пи... ПИ!')],
+        [nar, tr('When Grimfin swam by to say sorry, she even let him peek at the chicks.', 'А когда Гримфин приплыл попросить прощения, она даже разрешила ему взглянуть на птенцов.')],
+      );
+    }
+    if (this.hareHelped) lines.push([nar, tr('Deep in her dry burrow, the hare had her first good sleep since the thaw.', 'В сухой норке зайчиха наконец-то выспалась впервые с начала оттепели.')]);
+    await this.ui.say(lines);
+    const t = L.actors.get('tuck'), tc: Cell = [this.pos[0] + 1, this.pos[1] + 2];
+    if (t && !same(L.actorCell.get('tuck')!, tc)) {
+      const was = L.actorCell.get('tuck')!;
+      L.grid[was[1]][was[0]] = '.';
+      t.position.copy(toWorld(tc[0], tc[1], LAND_Y));
+      L.actorCell.set('tuck', tc);
+      L.grid[tc[1]][tc[0]] = 't';
+      this.sound.splash(0.3);
+      await tween(360, (k) => t.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    }
+    await this.ui.say([[tuck, tr('Wait for me! Splish, splash, splosh! Spring is green and wet and wonderful.', 'Подождите меня! Шлёп, плюх, хлюп! Весна зелёная, мокрая и чудесная.')]]);
+    const waiting = !this.eiderHelped || !this.hareHelped;
+    const choice = await this.ui.ask(tuck, waiting
+      ? tr('I wonder what summer looks like! Somebody back there still needs help, though. Turn the page anyway?', 'Интересно, какое оно, лето! Но там ещё кому-то нужна помощь. Всё равно перевернём страницу?')
+      : tr('I wonder what summer looks like! Shall we turn the page?', 'Интересно, какое оно, лето! Перевернём страницу?'), [tr('Turn the page', 'Перевернуть страницу'), tr('Not yet', 'Ещё нет')]);
+    if (choice === 0) {
+      await this.ui.say([[nar, tr('And so the friends turned the page, toward summer...', 'И друзья перевернули страницу, навстречу лету...')]]);
+      this.finish?.();
+    } else {
+      this.busy = false;
+    }
+  }
+
   // ---------------------------------------------------------------- per frame
 
   update(t: number) {
@@ -3274,6 +3926,8 @@ export class Game {
     this.lanternLight.intensity = base * this.lanternPower * flicker * (this.lanternCovered ? 0.3 : 1);
     const orca = L.actors.get('orca');
     if (orca) orca.position.y = Math.sin(t * 1.6) * 0.03;
+    // meltwater runs downstream
+    if (L.flowTex) L.flowTex.offset.x = -t * 0.35;
     L.ringMat.opacity = 0.55 + 0.3 * Math.sin(t * 6);
     this.gazeMat.opacity = (this.orca.alert ? 0.5 : 0.32) + 0.12 * Math.sin(t * 5);
     this.markerMat.opacity = 0.55 + 0.2 * Math.sin(t * 4);

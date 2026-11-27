@@ -2,6 +2,7 @@
 // (water, a shadowed rim, snow, and raised snowbanks) with hand-cut, wobbly coastlines.
 import * as THREE from 'three';
 import { makeCanvas, ctx2d, mulberry, paperCanvas } from './paper';
+import type { Season } from './levels';
 
 export const LAND_Y = 0.065;
 const PX = 80; // texture pixels per cell
@@ -115,7 +116,8 @@ export interface Terrain {
   halves: THREE.Group[];
 }
 
-export function buildTerrain(grid: string[][], night: boolean, seed: number, water = '~oHDv%'): Terrain {
+export function buildTerrain(grid: string[][], night: boolean, seed: number, water = '~oHDv%', season: Season = 'winter'): Terrain {
+  const spring = season === 'spring';
   const isLand = (ch: string) => !water.includes(ch);
   const rows = grid.length, cols = grid[0].length;
   const halfCols = cols / 2;
@@ -128,7 +130,9 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
   const grain = paperCanvas(256, seed + 3, 250);
   const pal = night
     ? { snow: '#c4d0e6', rim: '#6c80a6', bank: '#d2dcee', deep: '#1d406e', shallow: '#3f6ca4' }
-    : { snow: '#eef3f8', rim: '#adbdd0', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
+    : spring
+      ? { snow: '#a3c67a', rim: '#8c7754', bank: '#ffffff', deep: '#3f7dab', shallow: '#8dc4d4' }
+      : { snow: '#eef3f8', rim: '#adbdd0', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
   const deep = hex(pal.deep), shallow = hex(pal.shallow);
   const halves: THREE.Group[] = [];
 
@@ -184,21 +188,54 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     const landMask = maskCanvas(W, H, landA);
     const snowDetails = (g: CanvasRenderingContext2D) => {
       const rr = mulberry(seed * 7 + h);
-      // soft drifts and specks
-      for (let k = 0; k < 160; k++) {
-        const x = rr() * W, y = rr() * H, len = 20 + rr() * 50;
-        g.strokeStyle = night ? `rgba(90,110,160,${0.12 + rr() * 0.12})` : `rgba(140,170,205,${0.18 + rr() * 0.16})`;
-        g.lineWidth = 2 + rr() * 2;
-        g.beginPath();
-        g.moveTo(x, y);
-        g.quadraticCurveTo(x + len / 2, y - 10 - rr() * 8, x + len, y);
-        g.stroke();
-      }
-      for (let k = 0; k < 260; k++) {
-        g.fillStyle = `rgba(90,95,110,${0.15 + rr() * 0.25})`;
-        g.beginPath();
-        g.arc(rr() * W, rr() * H, 0.8 + rr() * 1.8, 0, Math.PI * 2);
-        g.fill();
+      if (spring) {
+        // green felt coming through: the last patches of melting snow, tufts of grass, felt specks
+        for (let k = 0; k < 26; k++) {
+          const x = rr() * W, y = rr() * H;
+          g.fillStyle = `rgba(250,252,255,${0.7 + rr() * 0.25})`;
+          g.beginPath();
+          for (let j = 0; j < 9; j++) {
+            const a = (j / 9) * Math.PI * 2, rad = 18 + rr() * 26;
+            const px = x + Math.cos(a) * rad * 1.5, py = y + Math.sin(a) * rad;
+            if (j) g.lineTo(px, py);
+            else g.moveTo(px, py);
+          }
+          g.closePath();
+          g.fill();
+        }
+        g.lineCap = 'round';
+        for (let k = 0; k < 420; k++) {
+          const x = rr() * W, y = rr() * H;
+          g.strokeStyle = `rgba(${60 + rr() * 30},${110 + rr() * 30},${50 + rr() * 20},${0.35 + rr() * 0.3})`;
+          g.lineWidth = 1.5 + rr() * 1.5;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.lineTo(x + (rr() - 0.5) * 6, y - 6 - rr() * 6);
+          g.stroke();
+        }
+        for (let k = 0; k < 300; k++) {
+          g.fillStyle = `rgba(70,90,50,${0.12 + rr() * 0.2})`;
+          g.beginPath();
+          g.arc(rr() * W, rr() * H, 0.8 + rr() * 1.6, 0, Math.PI * 2);
+          g.fill();
+        }
+      } else {
+        // soft drifts and specks
+        for (let k = 0; k < 160; k++) {
+          const x = rr() * W, y = rr() * H, len = 20 + rr() * 50;
+          g.strokeStyle = night ? `rgba(90,110,160,${0.12 + rr() * 0.12})` : `rgba(140,170,205,${0.18 + rr() * 0.16})`;
+          g.lineWidth = 2 + rr() * 2;
+          g.beginPath();
+          g.moveTo(x, y);
+          g.quadraticCurveTo(x + len / 2, y - 10 - rr() * 8, x + len, y);
+          g.stroke();
+        }
+        for (let k = 0; k < 260; k++) {
+          g.fillStyle = `rgba(90,95,110,${0.15 + rr() * 0.25})`;
+          g.beginPath();
+          g.arc(rr() * W, rr() * H, 0.8 + rr() * 1.8, 0, Math.PI * 2);
+          g.fill();
+        }
       }
       // faint printed corner ticks so the walking grid can be read
       g.strokeStyle = night ? 'rgba(40,55,90,0.16)' : 'rgba(120,110,90,0.16)';

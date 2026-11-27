@@ -4,6 +4,7 @@ import { makeCanvas, ctx2d, paperCanvas, canvasTex, paperMat, mulberry } from '.
 import { tween, easeInOut } from './tween';
 import * as A from './art';
 import { tr } from './i18n';
+import { BOOK } from './levels';
 
 export const PAGE_W = 12.35;
 export const PAGE_D = 14.6;
@@ -78,7 +79,8 @@ function coverCanvas() {
   const W = 1100, H = 1300;
   const c = makeCanvas(W, H);
   const g = ctx2d(c);
-  g.fillStyle = '#25395a';
+  const two = BOOK === 2;
+  g.fillStyle = two ? '#2f5a3c' : '#25395a';
   g.fillRect(0, 0, W, H);
   // cloth weave
   for (let y = 0; y < H; y += 3) {
@@ -98,14 +100,19 @@ function coverCanvas() {
   g.fillStyle = gold;
   g.textAlign = 'center';
   g.font = 'italic 64px Georgia, serif';
-  g.fillText(tr('A pop-up adventure', 'Книжка-раскладушка'), W / 2, 230);
+  g.fillText(two ? tr('The Penguin Rescue · Book Two', 'Спасение пингвина · Книга вторая') : tr('A pop-up adventure', 'Книжка-раскладушка'), W / 2, 230);
   g.font = 'bold 128px Georgia, serif';
-  g.fillText(tr('The Penguin', 'Спасение'), W / 2, 390);
-  g.fillText(tr('Rescue', 'пингвина'), W / 2, 520);
-  const p = A.penguin({ scarf: '#c8413b', tuft: true });
+  g.fillText(two ? tr('A Year', 'Год') : tr('The Penguin', 'Спасение'), W / 2, 390);
+  g.fillText(two ? tr('on the Page', 'на странице') : tr('Rescue', 'пингвина'), W / 2, 520);
+  const p = two ? A.penguin({ scarf: '#e2b13c', beanie: '#3f6fb0' }) : A.penguin({ scarf: '#c8413b', tuft: true });
   g.drawImage(p, W / 2 - 165, 590, 330, 426);
+  if (two) {
+    const f = A.flower('#e58fb0', 3);
+    g.drawImage(f, W / 2 + 150, 880, 100, 157);
+    g.drawImage(A.flower('#f2b441', 8), W / 2 - 250, 900, 88, 138);
+  }
   g.font = 'italic 44px Georgia, serif';
-  g.fillText(tr('in which a lantern is raised', 'в которой поднимают фонарик'), W / 2, 1150);
+  g.fillText(two ? tr('in which the seasons turn', 'в которой сменяются времена года') : tr('in which a lantern is raised', 'в которой поднимают фонарик'), W / 2, 1150);
   return c;
 }
 
@@ -137,7 +144,7 @@ export class Book {
     table.receiveShadow = true;
     this.root.add(table);
 
-    const cloth = paperMat('#2a3f62', 0.8);
+    const cloth = paperMat(BOOK === 2 ? '#355f40' : '#2a3f62', 0.8);
     const edge = new THREE.MeshStandardMaterial({ map: canvasTex(edgeCanvas(), true), roughness: 1 });
     const under = paperMat('#efe4cb');
     const pageL = new THREE.MeshStandardMaterial({ map: canvasTex(pageCanvas(-1, 12)), roughness: 0.95 });

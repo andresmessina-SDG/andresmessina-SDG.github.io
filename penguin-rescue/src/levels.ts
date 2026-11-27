@@ -16,14 +16,25 @@
 //   e  the walrus's spectacles (on the ice)                   X  the far side of the glacier
 //   t  Tuck, free      n  a piece of party bunting            r  a snowberry bush
 //   m  a snowman
+// Book Two, spring (chapter six):
+//   s  a meltwater stream: push an ice block into its source (listed in `dams`) and it runs dry
+//   :  thin ice: holds you once, then breaks     ;  a paper star on thin ice
+//   z  thick ice, too hard for penguin feet      Z  a paper star on thick ice
+//   M  Mama Eider     f  a paper flap (lift it)   q  a flap with an eider egg under it
+//   h  the hare       t  Tuck
 import type { Cell, Lane } from './rules';
 
 export type { Cell };
 
-export type ChapterId = 'shore' | 'glacier' | 'cove' | 'fog' | 'party';
+export type ChapterId = 'shore' | 'glacier' | 'cove' | 'fog' | 'party' | 'spring';
+export type Season = 'winter' | 'spring';
 
 export interface LevelDef {
   id: ChapterId;
+  /** Which book the chapter is in. */
+  book: 1 | 2;
+  /** Ground, weather and light. */
+  season: Season;
   title: string;
   titleRu: string;
   night: boolean;
@@ -41,11 +52,17 @@ export interface LevelDef {
   finale?: { orcaRise: Cell; boatTo: Cell; spots: Cell[] };
   /** The party: where Grimfin watches from, and where everyone gathers at the end. */
   party?: { orcaWatch: Cell; orcaDock: Cell; garland: Cell; cake: Cell; gather: Cell[] };
+  /** Stream sources: an ice block pushed onto one dams that stream, and everything below it runs dry. */
+  dams?: Cell[];
+  /** Spring: where Grimfin hums in the water, and where the hare's burrow is under the pond. */
+  spring?: { grim: Cell; burrow: Cell };
 }
 
-export const LEVELS: LevelDef[] = [
+const ALL: LevelDef[] = [
   {
     id: 'shore',
+    book: 1,
+    season: 'winter',
     title: 'Chapter One · The Snowy Shore',
     titleRu: 'Глава первая · Снежный берег',
     night: false,
@@ -71,6 +88,8 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 'glacier',
+    book: 1,
+    season: 'winter',
     title: 'Chapter Two · The Glittering Glacier',
     titleRu: 'Глава вторая · Сверкающий ледник',
     night: false,
@@ -96,6 +115,8 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 'cove',
+    book: 1,
+    season: 'winter',
     title: "Chapter Three · Grimfin's Cove",
     titleRu: 'Глава третья · Бухта Гримфина',
     night: true,
@@ -123,6 +144,8 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 'fog',
+    book: 1,
+    season: 'winter',
     title: 'Chapter Four · The Way Home',
     titleRu: 'Глава четвёртая · Дорога домой',
     night: true,
@@ -149,6 +172,8 @@ export const LEVELS: LevelDef[] = [
   },
   {
     id: 'party',
+    book: 1,
+    season: 'winter',
     title: 'Chapter Five · The Welcome-Home Party',
     titleRu: 'Глава пятая · Праздник в честь возвращения',
     night: false,
@@ -178,4 +203,38 @@ export const LEVELS: LevelDef[] = [
       gather: [[16, 8], [15, 9], [15, 8], [14, 9], [16, 7], [14, 8], [13, 9], [15, 7], [13, 8], [12, 9]],
     },
   },
+  {
+    id: 'spring',
+    book: 2,
+    season: 'spring',
+    title: 'Chapter Six · Spring · The Great Thaw',
+    titleRu: 'Глава шестая · Весна · Большая оттепель',
+    night: false,
+    mode: 'walk',
+    water: '~s:;zZ',
+    map: [
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+      '~Y..^.Ks#.Y...s.Y*Y~~~~~',
+      '~......s.f....s....~~~~~',
+      '~.^..Y.s...YK#sY...~~~~~',
+      '~..t...s......s....~Zz~A',
+      '~......s..M..qsss..zzzX.',
+      '~.P..^.s....Y.sss.#~~~..',
+      '~Y.....s..q...sss..~~~B.',
+      '~..#..Ys.Y...hsssY.~~~.Y',
+      '~..:;:.s...*...s~~~~~~~~',
+      '~.Y....sf..Yq..s~~~~~~~~',
+      '~*..^..s.....Y.s~~~~~~~~',
+      '~....Y.s......#s~~~~~~~~',
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+    ],
+    dams: [[7, 1], [14, 1]],
+    spring: { grim: [19, 7], burrow: [15, 7] },
+  },
 ];
+
+/** The book being read: `?book=2` opens Book Two, which has its own save. */
+export const BOOK: 1 | 2 = new URLSearchParams(location.search).get('book') === '2' ? 2 : 1;
+
+/** This book's chapters, in order. */
+export const LEVELS: LevelDef[] = ALL.filter((l) => l.book === BOOK);
