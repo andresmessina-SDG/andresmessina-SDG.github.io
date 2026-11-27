@@ -61,6 +61,18 @@
   #objective li.q.side::before { border-radius: 50%; }
   #objective li.q img { order: -1; width: 24px; height: 24px; object-fit: contain; flex: none; margin-right: -2px; filter: drop-shadow(0 1px 1px rgba(40,25,10,.3)); }
   #objective li.q.side img + .t, #objective li.q.side .t { font-style: italic; }
+  #playtest { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 40; width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px); display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: var(--paper);
+    border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  #playtest[hidden] { display: none; }
+  #playtest h2 { margin: 0; font-size: 18px; }
+  #playtest .scroll { overflow: auto; }
+  #playtest table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  #playtest th, #playtest td { padding: 4px 6px; text-align: right; border-bottom: 1px solid rgba(58,42,28,.15); }
+  #playtest th:first-child, #playtest td:first-child { text-align: left; }
+  #playtest th { color: var(--ink-soft); font-weight: normal; }
+  @media (max-width: 480px) { #playtest table { font-size: 12px; } #playtest th, #playtest td { padding: 4px 3px; } }
+  #playtest button { align-self: flex-end; font: inherit; padding: 6px 18px; border-radius: 8px; border: 1px solid var(--ink-soft); background: #fff; cursor: pointer; }
   #objective li.stars .t { color: var(--ink-soft); font-size: 13px; }
   #objective li.done .t { color: var(--ink-soft); text-decoration: line-through; }
   #objective li.done::before { content: "✓"; border-color: var(--accent); color: var(--accent); font-size: 12px; line-height: 11px; text-align: center; }
@@ -453,6 +465,7 @@
 
 <div id="flash"></div>
 <figure id="snap" hidden><img alt=""><p></p></figure>
+<div id="playtest" hidden><h2>Playtest</h2><div class="scroll"><table></table></div><button type="button">OK</button></div>
 <div id="banner"></div>
 <div id="toast" role="status"></div>
 

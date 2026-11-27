@@ -246,6 +246,8 @@ export class Game {
   private replaying = false;
   /** Called after each move, so the game can be saved. */
   onSave: () => void = () => {};
+  /** Times Grimfin caught you in this chapter (for ?playtest). */
+  catches = 0;
   /** Moves that can be undone, oldest first. Finding something or a story moment clears it. */
   private history: Turn[] = [];
   busy = true;
@@ -1154,6 +1156,7 @@ export class Game {
     L.ready = true;
     this.camWide = false;
     this.moves = [];
+    this.catches = 0;
     this.ui.answers = [];
     const done = new Promise<void>((r) => (this.finish = () => {
       this.finish = null;
@@ -2342,6 +2345,7 @@ export class Game {
           this.ui.toast(tr('Grimfin spotted you! Hop out of his sight, or he charges next turn!', 'Гримфин тебя заметил! Скорее прячься, или на следующем ходу он бросится!'));
         }
         if (r === 'caught') {
+          this.catches++;
           if (this.bobbleHelped && !this.bobbleSplashUsed) {
             await this.bobbleSave();
             return false;

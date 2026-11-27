@@ -82,6 +82,11 @@ fish if Auntie Puffin was helped) and the friends your scrapbook says you helped
 earlier chapters. New stars, quests and the new photo go into the scrapbook, then the book
 closes back to the title card. Playing again never touches the saved story.
 
+**Playtesting.** Add `?playtest` to the address to count each chapter's moves (steps and
+waits), undos, times caught and minutes played. At the end of every chapter a card shows
+the numbers for all chapters played that way so far, newest first. They are kept in this
+browser only (`penguin-rescue-playtest`) and sent nowhere.
+
 **Saving.** The game saves itself after every move, in this browser only. A save is
 the state at the start of the chapter (items, fish, paper stars, who you helped,
 Gentle mode) plus every move and answer since. The title card then offers Continue,

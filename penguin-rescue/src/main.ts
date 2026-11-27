@@ -308,6 +308,7 @@ function frame(now: number) {
   const dt = Math.min(0.05, raw);
   last = t;
   checkPerf(raw, t);
+  playtestTick(raw, t);
   syncActions();
   // On phones the shadows are redrawn every other frame: the paper hardly moves between them.
   if (!renderer.shadowMap.autoUpdate && frameNo++ % 2 === 0) renderer.shadowMap.needsUpdate = true;
@@ -501,6 +502,58 @@ async function snapshot(i: number) {
   snap.hidden = true;
 }
 
+// ------------------------------------------------------------------ playtest
+// ?playtest: counts moves, undos, catches and time in each chapter and shows them when it ends.
+// Everything stays in this browser.
+const playtest = params.has('playtest');
+const PLAYTEST_KEY = 'penguin-rescue-playtest';
+interface PlayRow { chapter: string; when: string; moves: number; undos: number; catches: number; minutes: number; gentle: boolean }
+interface PlayLog { chapter: number; ms: number; rows: PlayRow[] }
+function loadPlayLog(): PlayLog {
+  try {
+    const v = JSON.parse(localStorage.getItem(PLAYTEST_KEY) ?? '');
+    if (v && Array.isArray(v.rows)) return v;
+  } catch { /* none yet */ }
+  return { chapter: -1, ms: 0, rows: [] };
+}
+const playLog = loadPlayLog();
+let playSaved = 0;
+function savePlayLog() {
+  try { localStorage.setItem(PLAYTEST_KEY, JSON.stringify(playLog)); } catch { /* storage full or blocked */ }
+}
+/** Called every frame: counts the time a chapter is being played. */
+function playtestTick(raw: number, t: number) {
+  if (!playtest || !game.level?.ready || document.hidden) return;
+  playLog.ms += Math.min(raw, 1) * 1000;
+  if (t - playSaved > 5) {
+    playSaved = t;
+    savePlayLog();
+  }
+}
+/** The end of a chapter: add its numbers to the log and show them all until closed. */
+async function playtestCard(i: number) {
+  const m = game.moves;
+  playLog.rows.push({
+    chapter: LEVELS[i].id,
+    when: new Date().toLocaleString(),
+    moves: m.filter((x) => ('s' in x && x.n) || 'w' in x).length,
+    undos: m.filter((x) => 'u' in x).length,
+    catches: game.catches,
+    minutes: Math.round(playLog.ms / 6000) / 10,
+    gentle: game.gentle,
+  });
+  playLog.ms = 0;
+  savePlayLog();
+  const card = document.getElementById('playtest')!;
+  const head = [tr('Chapter', 'Глава'), tr('Moves', 'Ходы'), tr('Undos', 'Отмены'), tr('Caught', 'Поймали'), tr('Minutes', 'Минуты'), tr('Gentle', 'Мягкий')];
+  const esc = (v: unknown) => String(v).replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+  card.querySelector('table')!.innerHTML = `<tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>` +
+    playLog.rows.slice().reverse().map((r) => `<tr title="${esc(r.when)}"><td>${esc(r.chapter)}</td><td>${r.moves}</td><td>${r.undos}</td><td>${r.catches}</td><td>${r.minutes}</td><td>${r.gentle ? '✓' : ''}</td></tr>`).join('');
+  card.hidden = false;
+  await new Promise<void>((r) => card.querySelector('button')!.addEventListener('click', () => r(), { once: true }));
+  card.hidden = true;
+}
+
 // ------------------------------------------------------------------ story
 /** What you'd carry into a chapter played again: the usual kit, and the friends your scrapbook says you helped before it. */
 function replayStart(i: number): Progress {
@@ -548,6 +601,8 @@ async function run() {
     const begin = continuing ? { ...continuing, mid: undefined } : game.snapshot(i);
     if (i > 0 && !continuing && !one) saveProgress(begin);
     if (!one) game.onSave = () => saveProgress({ ...begin, mid: { moves: game.moves, answers: ui.answers, map: mapHash(i) } });
+    if (playtest && !(continuing && playLog.chapter === i)) playLog.ms = 0;
+    playLog.chapter = i;
     if (i > first) {
       await game.closeChapter();
       sound.pageTurn();
@@ -557,6 +612,7 @@ async function run() {
       await book.turnPage();
     }
     await game.playChapter(i, continuing ? { mid: continuing.mid!, gentle: gentleBox.checked } : undefined);
+    if (playtest) await playtestCard(i);
     await snapshot(i);
   }
   game.onSave = () => {};

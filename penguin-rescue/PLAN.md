@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3), chapter select (2.4) and the camera lean (2.5) are built.
+**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2), the scrapbook (2.3), chapter select (2.4), the camera lean (2.5) and the `?playtest` counters (2.6) are built; the playtest questions in 2.6 still need a real player.
 
 ---
 
@@ -104,6 +104,9 @@ These are guesses until someone, ideally a child, plays:
 
 A light way to learn this: a hidden `?playtest` mode that counts moves, undos, catches and time
 per chapter and shows them at the end. It stays on the device and sends nothing.
+- *As built:* `?playtest` counts moves (steps and waits), undos, catches and minutes in each
+  chapter (minutes survive Continue). A card at each chapter's end lists every chapter played
+  that way, newest first; the log is `penguin-rescue-playtest` in localStorage.
 
 ---
 
