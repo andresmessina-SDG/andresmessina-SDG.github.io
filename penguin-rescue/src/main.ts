@@ -8,6 +8,7 @@ import { LEVELS } from './levels';
 import { tween, updateTweens, easeInOut } from './tween';
 import { Snow } from './weather';
 import { loadModel } from './paper';
+import { recordPage } from './scrapbook';
 import { lang, tr, t, touch, applyDom, setLang, onLang, type Lang } from './i18n';
 
 const params = new URLSearchParams(location.search);
@@ -329,6 +330,12 @@ function frame(now: number) {
   snow.update(dt, t, look);
 
   post.render(t, night);
+  if (photoWanted) {
+    // read the picture now, while this frame is still on the canvas
+    const take = photoWanted;
+    photoWanted = null;
+    take(shrink(canvas));
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -398,6 +405,51 @@ if (saved) {
   applyDom();
 }
 
+// ------------------------------------------------------------------ the scrapbook snapshot
+let photoWanted: ((url: string) => void) | null = null;
+const takePhoto = () => new Promise<string>((r) => (photoWanted = r));
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A small 16:10 JPEG of the view, cropped from the middle. */
+function shrink(src: HTMLCanvasElement) {
+  const W = 400, H = 250;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  let sw = src.width, sh = src.height;
+  if (sw / sh > W / H) sw = sh * (W / H);
+  else sh = sw / (W / H);
+  c.getContext('2d')!.drawImage(src, (src.width - sw) / 2, (src.height - sh) / 2, sw, sh, 0, 0, W, H);
+  return c.toDataURL('image/jpeg', 0.75);
+}
+
+/** The end of a chapter: click, flash, and a photo for the scrapbook flies off to the journal. */
+async function snapshot(i: number) {
+  const def = LEVELS[i];
+  await pause(300);
+  const photo = await takePhoto();
+  recordPage(def.id, { ...game.pageNow(), photo });
+  sound.blip(1500);
+  sound.fold(0.8);
+  const flash = document.getElementById('flash')!;
+  flash.classList.remove('go');
+  void flash.offsetWidth; // restart the animation
+  flash.classList.add('go');
+  const snap = document.getElementById('snap')!;
+  snap.querySelector('img')!.src = photo;
+  snap.querySelector('p')!.textContent = tr(def.title, def.titleRu);
+  snap.className = '';
+  snap.hidden = false;
+  await pause(30);
+  snap.classList.add('show');
+  ui.toast(t('snap'));
+  await pause(1900);
+  snap.classList.add('away');
+  sound.rustle(0.4);
+  await pause(850);
+  snap.hidden = true;
+}
+
 // ------------------------------------------------------------------ story
 async function run() {
   const title = document.getElementById('title')!;
@@ -439,6 +491,7 @@ async function run() {
       await book.turnPage();
     }
     await game.playChapter(i, continuing ? { mid: continuing.mid!, gentle: gentleBox.checked } : undefined);
+    await snapshot(i);
   }
   game.onSave = () => {};
   saveProgress(null);
