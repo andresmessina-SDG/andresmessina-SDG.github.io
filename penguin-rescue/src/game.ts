@@ -1215,7 +1215,7 @@ export class Game {
       const pv = this.actor(L, 'grim', this.art.orca, 1.0, g, 1300, null);
       pv.position.y = 0;
       (pv.userData.inner as THREE.Group).position.y = SURFACE;
-      L.idlers.push({ obj: pv.userData.inner, phase: 0, kind: 'float' });
+      L.idlers.push({ obj: pv, phase: 0, kind: 'float' });
     }
 
     // scenery flats along the back edge of the spread
@@ -3544,21 +3544,32 @@ export class Game {
     this.crackFaces();
   }
 
-  /** On thin ice with nowhere left to step? */
+  /** On thin ice with nowhere left to step, or back on the bank with the way across broken? */
   private stuck() {
-    return this.isThin(this.pos) && DIRS.every(([dx, dz]) => !this.walkable([this.pos[0] + dx, this.pos[1] + dz]));
+    if (this.isThin(this.pos)) return DIRS.every(([dx, dz]) => !this.walkable([this.pos[0] + dx, this.pos[1] + dz]));
+    return this.iceCracked && this.broken.size > 0 && !this.path(this.pos, [this.exitCell()]);
+  }
+
+  /** Where the chapter ends (the X on the map). */
+  private exitCell(): Cell {
+    const def = this.level!.def;
+    const z = def.map.findIndex((r) => r.includes('X'));
+    return [def.map[z].indexOf('X'), z];
   }
 
   /** Stranded on the ice: offer to fold it back into place (the page can do that). */
   private async stuckOnIce() {
     if (!this.stuck()) return false;
     const L = this.level!;
+    const onIce = this.isThin(this.pos);
     const options = [tr('Fold the ice back', 'Сложить лёд обратно')];
-    if (this.history.length) options.push(tr("I'll undo", 'Я отменю ход'));
-    const r = await this.ui.ask(this.S.nar, tr("Oh no, you're stuck on the thin ice! Shall the page fold the ice back into place?", 'Ой, ты застрял на тонком льду! Пусть страница сложит лёд обратно?'), options);
+    if (onIce && this.history.length) options.push(tr("I'll undo", 'Я отменю ход'));
+    const r = await this.ui.ask(this.S.nar, onIce
+      ? tr("Oh no, you're stuck on the thin ice! Shall the page fold the ice back into place?", 'Ой, ты застрял на тонком льду! Пусть страница сложит лёд обратно?')
+      : tr("Oh no, the ice bridge is broken! Shall the page fold the ice back into place?", 'Ой, ледяной мостик сломался! Пусть страница сложит лёд обратно?'), options);
     if (r !== 0) return true;
     this.keep();
-    const back = this.iceEntry ?? L.start;
+    const back = onIce ? this.iceEntry ?? L.start : this.pos;
     this.mendIce(new Set());
     this.pos = [...back];
     this.iceEntry = null;
@@ -3730,7 +3741,6 @@ export class Game {
     }
     this.hareMet = true;
     const burrow = L.def.spring!.burrow;
-    if (same(this.pos, burrow)) return this.ui.say([[hare, tr('The pond is gone! Could you hop off my front door, please?', 'Пруд исчез! Не мог бы ты сойти с моего порога?')]]);
     this.busy = true;
     await this.ui.say([[hare, tr('The pond is gone, and there is my front door! Thank you, thank you!', 'Пруд исчез, и вот мой порог! Спасибо, спасибо!')]]);
     const was = L.actorCell.get('hare')!;
@@ -3861,6 +3871,13 @@ export class Game {
       await this.ui.say([[nar, tr('And so the friends turned the page, toward summer...', 'И друзья перевернули страницу, навстречу лету...')]]);
       this.finish?.();
     } else {
+      // the bridge broke behind you: fold it back so you can go and help
+      if (this.broken.size) {
+        this.mendIce(new Set());
+        this.iceEntry = null;
+        this.sound.fold(0.9);
+        this.ui.toast(tr('Fold, crease, smooth: the ice bridge is whole again.', 'Сгиб, складка, разгладить — и ледяной мостик снова целый.'));
+      }
       this.busy = false;
     }
   }
