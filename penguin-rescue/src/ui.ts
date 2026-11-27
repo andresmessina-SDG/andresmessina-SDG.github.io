@@ -65,6 +65,10 @@ export class UI {
   private popQueue: (() => Promise<void>)[] = [];
   private popping = false;
   private seen = new Map<string, boolean>();
+  /** While a saved chapter is replayed: the answers to give. Nothing is shown meanwhile. */
+  replay: number[] | null = null;
+  /** Every answer given this chapter, in order, for the save. */
+  answers: number[] = [];
   /** Supplies the journal's contents when it opens. */
   journalSource: (() => Journal) | null = null;
   private tab: 'story' | 'side' = 'story';
@@ -121,6 +125,7 @@ export class UI {
 
   /** Show a sequence of lines; each waits for a click, tap, Space or Enter. */
   async say(lines: Line[]) {
+    if (this.replay) return;
     this.open = true;
     this.talk.hidden = false;
     this.choices.innerHTML = '';
@@ -162,6 +167,7 @@ export class UI {
 
   /** A question with buttons; resolves with the chosen index. */
   async ask(who: Speaker, text: string, options: string[]) {
+    if (this.replay) return this.replay.shift() ?? 0;
     this.open = true;
     this.talk.hidden = false;
     this.choices.innerHTML = '';
@@ -181,6 +187,7 @@ export class UI {
       });
       (this.choices.firstElementChild as HTMLButtonElement | null)?.focus();
     });
+    this.answers.push(choice);
     this.sound.fold(0.6);
     this.choices.innerHTML = '';
     this.talk.hidden = true;
@@ -238,6 +245,7 @@ export class UI {
   }
 
   private pop(q: Quest, done: boolean) {
+    if (this.replay) return;
     this.popQueue.push(async () => {
       const el = this.popEl;
       el.classList.toggle('done', done);
@@ -380,6 +388,7 @@ export class UI {
   }
 
   toast(text: string) {
+    if (this.replay) return;
     this.toastEl.textContent = text;
     this.toastEl.classList.add('show');
     clearTimeout(this.toastTimer);
@@ -387,6 +396,7 @@ export class UI {
   }
 
   banner(text: string) {
+    if (this.replay) return;
     this.bannerEl.textContent = text;
     this.bannerEl.classList.add('show');
     window.setTimeout(() => this.bannerEl.classList.remove('show'), 3200);

@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1) is built.
+**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1) and mid-chapter saves (2.2) are built.
 
 ---
 
@@ -55,11 +55,15 @@ no undo at all. In a turn-based puzzle game, undo is the single biggest kindness
 - It makes Book Two's one-way mechanics (cracking ice, spreading frost) fair without a solver
   having to forbid every trap.
 
-### 2.2 Save in the middle of a chapter
+### 2.2 Save in the middle of a chapter — built
 Saves only happen at the start of a chapter, so closing the tab mid-chapter loses progress.
 Kids play in short bursts, often 10–15 minutes.
 - Autosave after each completed side quest and each checkpoint, and when the page is hidden.
 - Continue resumes at the last of those points.
+- *As built:* it saves after every move (and when the page is hidden) by recording the moves and
+  answers made since the chapter began. Continue rebuilds the chapter and replays them instantly
+  and silently, so you resume exactly where you stopped, story scenes included. New chapters
+  and mechanics get this for free, as long as their rules don't use randomness.
 
 ### 2.3 Give paper stars a purpose
 Stars are only counted. A collectible that unlocks nothing is easy to ignore.
@@ -278,4 +282,5 @@ reuse an existing verb, and does it look like paper?
 | 2026-11-26 | Stay in planning; keep this document as the plan of record | Asked to plan before building |
 | 2026-11-26 | Book Two travels through the seasons, with weather-based mechanics | Asked for chapters in different seasons with different weather and mechanics |
 | 2026-11-26 | Build the Book One improvements first, starting with undo | Agreed; Spring's cracking ice depends on undo |
+| 2026-11-26 | Mid-chapter saves replay recorded moves instead of saving every story flag | Exact resume anywhere, no restore code per scene, and Book Two's mechanics are covered automatically. Rule: game logic must stay deterministic (randomness only for looks) |
 | 2026-11-26 | Undo covers moves only: position, Grimfin, ice blocks, fish. It stops at finding things, conversations and sunk blocks | Collecting is never a mistake, and taking back story scenes or new floes would be fragile; caught-then-undo is the case that matters |

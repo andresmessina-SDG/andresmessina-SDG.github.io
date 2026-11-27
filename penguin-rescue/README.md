@@ -69,10 +69,13 @@ lighter renderer, and on any device the picture steps down on its own (fewer
 pixels, then no glow) if the frame rate stays under 45. Add `?quality=high` to the
 address to turn that off.
 
-**Saving.** The game saves itself at the start of every chapter after the first (items,
-fish, paper stars, who you helped, Gentle mode), in this browser only. The title
-card then offers Continue, which opens the book at that chapter, or Start over,
-which clears the save. Finishing the book clears it too.
+**Saving.** The game saves itself after every move, in this browser only. A save is
+the state at the start of the chapter (items, fish, paper stars, who you helped,
+Gentle mode) plus every move and answer since. The title card then offers Continue,
+which opens the book at that chapter and replays those moves instantly and silently,
+so you carry on exactly where you stopped, or Start over, which clears the save.
+Finishing the book clears it too. If a chapter's map changes in an update, its moves
+are dropped and Continue starts that chapter afresh.
 
 **Languages.** English and Russian, picked on the title card and remembered.
 The first visit follows the browser's language, and `?lang=ru` or `?lang=en`

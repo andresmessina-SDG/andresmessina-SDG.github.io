@@ -1,6 +1,6 @@
 // The adventure itself: building each chapter's pop-up board, walking and sailing, quests, Grimfin, and the story.
 import * as THREE from 'three';
-import { tween, wait, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
+import { tween, wait, setFast, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
 import { makeCutout, useModel, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
 import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
@@ -106,7 +106,21 @@ const SUMMARY: Record<ChapterId, Pair> = {
   party: ['Everyone came to the party. Even Grimfin.', 'На праздник пришли все. Даже Гримфин.'],
 };
 
-/** A saved game: the state at the start of a chapter. */
+/**
+ * One thing you did in a chapter, for the save: a step (n: it began a new move), waiting a
+ * turn, using something, a fish tossed overboard, the lantern, undo, or Gentle mode switched.
+ */
+export type Move = { s: Cell; n?: 1 } | { w: 1 } | { i: string; c: Cell } | { f: Cell } | { l: 1 } | { u: 1 } | { g: boolean };
+
+/** Partway through a chapter: everything done since it began, to replay on Continue. */
+export interface Mid {
+  moves: Move[];
+  answers: number[];
+  /** Which map the moves were made on, so a changed map starts the chapter afresh. */
+  map: number;
+}
+
+/** A saved game: the state at the start of a chapter, and what has happened in it since. */
 export interface Progress {
   v: 2;
   chapter: number;
@@ -121,6 +135,7 @@ export interface Progress {
   walrus: boolean;
   foxes: boolean;
   crates: number;
+  mid?: Mid;
 }
 
 interface Pop {
@@ -224,6 +239,11 @@ export class Game {
   private tuckFree = false;
   private gateOpen = false;
   private checkpoint: Cell | null = null;
+  /** Everything done this chapter, for the save. */
+  moves: Move[] = [];
+  private replaying = false;
+  /** Called after each move, so the game can be saved. */
+  onSave: () => void = () => {};
   /** Moves that can be undone, oldest first. Finding something or a story moment clears it. */
   private history: Turn[] = [];
   busy = true;
@@ -417,6 +437,7 @@ export class Game {
 
   toggleLantern() {
     if (!this.inv.has('lantern') || !this.level) return;
+    this.log({ l: 1 });
     this.lanternCovered = !this.lanternCovered;
     this.sound.rustle(0.4);
     this.ui.toast(this.lanternCovered
@@ -426,6 +447,7 @@ export class Game {
     this.updateGaze();
     if (this.sail) this.revealAround(this.pos);
     this.refreshQuests();
+    this.save();
   }
 
   // ---------------------------------------------------------------- cute effects
@@ -1054,7 +1076,8 @@ export class Game {
 
   // ---------------------------------------------------------------- chapters
 
-  async playChapter(i: number) {
+  /** `resume`: carry on from a save partway through the chapter, with Gentle mode as now chosen. */
+  async playChapter(i: number, resume?: { mid: Mid; gentle: boolean }) {
     if (this.level) this.scene.remove(this.level.root);
     this.camWide = true;
     this.dawn = 0;
@@ -1084,6 +1107,20 @@ export class Game {
     await this.unfold(L);
     L.ready = true;
     this.camWide = false;
+    this.moves = [];
+    this.ui.answers = [];
+    const done = new Promise<void>((r) => (this.finish = () => {
+      this.finish = null;
+      r();
+    }));
+    // Continuing a save: everything since the chapter began happens again, instantly and silently.
+    const muted = this.sound.muted;
+    if (resume) {
+      this.replaying = true;
+      this.ui.replay = [...resume.mid.answers];
+      this.sound.setMuted(true);
+      setFast(true);
+    }
     await wait(700);
     const intro: Record<ChapterId, () => Promise<void>> = {
       shore: () => this.introOne(),
@@ -1094,9 +1131,22 @@ export class Game {
     };
     await intro[L.def.id]();
     this.keep();
-    this.refreshQuests();
     this.busy = false;
-    await new Promise<void>((r) => (this.finish = r));
+    if (resume) {
+      try {
+        await this.replay(resume.mid.moves);
+      } finally {
+        setFast(false);
+        this.sound.setMuted(muted);
+        this.ui.replay = null;
+        this.replaying = false;
+      }
+      this.moves = [...resume.mid.moves];
+      this.ui.answers = [...resume.mid.answers];
+      if (resume.gentle !== this.gentle) this.setGentle(resume.gentle);
+    }
+    this.refreshQuests();
+    await done;
     this.busy = true;
     this.marker.visible = false;
     this.hideGaze();
@@ -1401,6 +1451,42 @@ export class Game {
     this.go(this.pos);
   }
 
+  // ---------------------------------------------------------------- saving partway
+
+  private log(m: Move) {
+    if (!this.replaying) this.moves.push(m);
+  }
+
+  /** Save now, unless the chapter has just ended or is being replayed. */
+  save() {
+    if (this.finish && !this.replaying) this.onSave();
+  }
+
+  setGentle(on: boolean) {
+    this.gentle = on;
+    this.log({ g: on });
+    this.updateGaze();
+  }
+
+  /** Do a saved chapter's moves again, the same way they happened the first time. */
+  private async replay(moves: Move[]) {
+    for (const m of moves) {
+      if (!this.finish) return; // the chapter already ended
+      if ('s' in m) {
+        if (m.n) this.record();
+        await this.step(m.s);
+        await this.afterStep();
+      } else if ('w' in m) await this.passTurn();
+      else if ('i' in m) {
+        this.face(m.c);
+        await this.interact(m.i);
+      } else if ('f' in m) await this.tossFish(m.f);
+      else if ('l' in m) this.toggleLantern();
+      else if ('u' in m) this.undo();
+      else if ('g' in m) this.gentle = m.g;
+    }
+  }
+
   // ---------------------------------------------------------------- undo
 
   /** Chapters with something to get wrong (Grimfin, ice, ice blocks) show the undo button. */
@@ -1437,6 +1523,7 @@ export class Game {
   undo() {
     const L = this.level;
     if (!L || !this.canUndo) return;
+    this.log({ u: 1 });
     const s = this.history.pop()!;
     this.marker.visible = false;
     this.pos = [...s.pos];
@@ -1478,6 +1565,7 @@ export class Game {
     this.sound.rustle(0.3);
     tween(220, (k) => this.player.scale.setScalar(0.85 + 0.15 * k), easeOutBack);
     this.refreshQuests();
+    this.save();
   }
 
   private go(cell: Cell, act?: string) {
@@ -1565,6 +1653,7 @@ export class Game {
     try {
       for (;;) {
         if (!act && same(target, this.pos)) {
+          this.log({ w: 1 });
           await this.passTurn();
           return;
         }
@@ -1582,7 +1671,9 @@ export class Game {
         let redirected = false;
         const from = this.pos;
         for (let i = 0; i < path.length; i++) {
-          if (i === 0 || !this.midSlide(path, i - 1, from)) this.record();
+          const fresh = i === 0 || !this.midSlide(path, i - 1, from);
+          if (fresh) this.record();
+          this.log(fresh ? { s: path[i], n: 1 } : { s: path[i] });
           await this.step(path[i]);
           if (await this.afterStep()) {
             this.pending = null;
@@ -1600,12 +1691,14 @@ export class Game {
         if (redirected) continue;
         if (act && manhattan(target, this.pos) === 1) {
           this.face(target);
+          this.log({ i: act, c: target });
           await this.interact(act);
         }
         return;
       }
     } finally {
       this.walking = false;
+      this.save();
     }
   }
 
@@ -2349,7 +2442,11 @@ export class Game {
       return;
     }
     this.walking = true;
-    this.tossFish(spots[0]).finally(() => (this.walking = false));
+    this.log({ f: spots[0] });
+    this.tossFish(spots[0]).finally(() => {
+      this.walking = false;
+      this.save();
+    });
   }
 
   private async tossFish(hole: Cell) {
