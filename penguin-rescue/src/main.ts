@@ -163,6 +163,8 @@ window.addEventListener('keydown', (e) => {
     game.toggleLantern();
   } else if (e.key === 'f' || e.key === 'F') {
     game.useFish();
+  } else if (e.key === 'z' || e.key === 'Z') {
+    game.undo();
   }
 });
 const muteBtn = document.getElementById('mute')!;
@@ -176,6 +178,17 @@ document.querySelector<HTMLElement>('#inv .slot[data-id="fish"]')!.addEventListe
 const lanternBtn = document.getElementById('lanternBtn')!;
 const waitBtn = document.getElementById('waitBtn')!;
 const fishBtn = document.getElementById('fishBtn')!;
+const undoBtn = document.getElementById('undoBtn')!;
+// Undo: hold the button to keep rewinding (holding Z repeats by itself).
+let rewind = 0;
+const stopRewind = () => window.clearTimeout(rewind);
+const rewindFrom = (delay: number) => {
+  game.undo();
+  rewind = window.setTimeout(() => rewindFrom(170), delay);
+};
+undoBtn.addEventListener('pointerdown', () => rewindFrom(450));
+for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) undoBtn.addEventListener(ev, stopRewind);
+undoBtn.addEventListener('click', (e) => e.detail === 0 && game.undo()); // keyboard Enter/Space on the button
 lanternBtn.addEventListener('click', () => game.toggleLantern());
 waitBtn.addEventListener('click', () => game.waitTurn());
 fishBtn.addEventListener('click', () => game.useFish());
@@ -189,12 +202,14 @@ let shownTurnBtns = '';
 function syncActions() {
   const L = game.level;
   const turns = !!(L?.def.orca && L.ready);
-  const state = `${turns}${game.fish}`;
+  const state = `${turns}${game.fish}${game.undoable}${game.canUndo}`;
   if (state === shownTurnBtns) return;
   shownTurnBtns = state;
   waitBtn.hidden = !turns;
   fishBtn.hidden = !turns || game.fish <= 0;
   fishBtn.querySelector('b')!.textContent = String(game.fish);
+  undoBtn.hidden = !game.undoable;
+  undoBtn.classList.toggle('off', !game.canUndo);
 }
 
 // The to-do list folds down to what's next: tap it to see everything. Phones start folded.

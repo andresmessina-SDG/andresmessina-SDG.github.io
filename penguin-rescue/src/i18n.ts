@@ -49,12 +49,12 @@ const T: Record<string, [string, string]> = {
   startOver: ['Start over', 'Начать сначала'],
   cont: ['Continue', 'Продолжить'],
   help: [
-    'Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · L to cover the lantern · F to toss a fish · J for the journal · M for sound',
-    'Нажимай, чтобы идти, говорить или толкать · Можно и стрелками или WASD<br>Пробел — дальше или пропустить ход · L — прикрыть фонарик · F — бросить рыбку · J — дневник · M — звук',
+    'Click or tap to walk, talk or push · Arrow keys or WASD work too<br>Space to continue or wait a turn · Z to undo · L to cover the lantern · F to toss a fish · J for the journal · M for sound',
+    'Нажимай, чтобы идти, говорить или толкать · Можно и стрелками или WASD<br>Пробел — дальше или пропустить ход · Z — отменить ход · L — прикрыть фонарик · F — бросить рыбку · J — дневник · M — звук',
   ],
   helpTouch: [
-    'Tap to walk, talk or push · Tap anywhere to read on · Tap the to-do list for your journal<br>⏳ waits a turn · 🏮 covers the lantern · 🐟 tosses a fish',
-    'Нажимай, чтобы идти, говорить или толкать · Нажми куда угодно, чтобы читать дальше · Список дел открывает дневник<br>⏳ — пропустить ход · 🏮 — прикрыть фонарик · 🐟 — бросить рыбку',
+    'Tap to walk, talk or push · Tap anywhere to read on · Tap the to-do list for your journal<br>⏳ waits a turn · ⟲ undoes a move · 🏮 covers the lantern · 🐟 tosses a fish',
+    'Нажимай, чтобы идти, говорить или толкать · Нажми куда угодно, чтобы читать дальше · Список дел открывает дневник<br>⏳ — пропустить ход · ⟲ — отменить ход · 🏮 — прикрыть фонарик · 🐟 — бросить рыбку',
   ],
   rotate: ['Tip: turn your phone sideways for a bigger book.', 'Совет: поверни телефон боком — книжка будет больше.'],
   endKicker: ['and they all waddled happily ever after', 'и жили-ковыляли они долго и счастливо'],
@@ -71,6 +71,7 @@ const T: Record<string, [string, string]> = {
   ball: ['ball', 'мячик'],
   fish: ['fish', 'рыба'],
   wait: ['Wait', 'Ждать'],
+  undo: ['Undo', 'Назад'],
   lanternAct: ['Lantern', 'Фонарик'],
   fishAct: ['Fish', 'Рыбка'],
   // tooltips and screen-reader labels
@@ -96,6 +97,7 @@ const T: Record<string, [string, string]> = {
   'a:mute': ['Sound (M)', 'Звук (M)'],
   'a:fs': ['Fullscreen', 'Во весь экран'],
   'a:wait': ['Wait a turn (Space)', 'Пропустить ход (пробел)'],
+  'a:undo': ['Undo a move (Z, hold to rewind)', 'Отменить ход (Z, удерживай, чтобы отмотать)'],
   'a:lantern': ['Cover or uncover the lantern (L)', 'Прикрыть или открыть фонарик (L)'],
   'a:fish': ['Toss a fish (F)', 'Бросить рыбку (F)'],
   'a:lang': ['Language', 'Язык'],

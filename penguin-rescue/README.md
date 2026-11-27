@@ -51,8 +51,15 @@ kinder Grimfin: he sees one cell less, and always shouts before he grabs.
 
 Controls: click or tap to walk, sail, talk or push; hovering shows where a click goes;
 arrow keys or WASD to step; Space to continue dialogue or wait a turn; L to cover the
-lantern; F to toss a fish; J for the journal; M to mute. In the Grimfin chapters, round buttons in the
+lantern; F to toss a fish; Z to undo; J for the journal; M to mute. In the Grimfin chapters, round buttons in the
 bottom-right corner do the same: wait a turn, cover the lantern, toss a fish.
+
+**Undo.** In chapters with something to get wrong (Grimfin, the glacier ice, ice
+blocks to push), the ⟲ button or Z takes back one move: where you stand, Grimfin,
+the ice blocks and your fish. Hold it to keep rewinding. A slide across the ice
+counts as one move, and a catch by Grimfin can be undone too. Undo can't reach back
+past finding something (an item, a star, a crate), a conversation, or an ice block
+sinking into a stepping-stone.
 
 **Phones and tablets.** Tap to walk, and tap anywhere to read on. The to-do list
 folds down to the next step (tap it to see everything). The top-right button

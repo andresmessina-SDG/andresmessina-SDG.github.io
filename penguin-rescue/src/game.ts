@@ -139,6 +139,17 @@ interface Block {
   goal: string;
 }
 
+/** The board as it stood before one move, for undo. */
+interface Turn {
+  pos: Cell;
+  face: number;
+  orca: OrcaState;
+  blocks: [string, Cell][];
+  fish: number;
+  splashUsed: boolean;
+  checkpoint: Cell | null;
+}
+
 interface Level {
   index: number;
   def: LevelDef;
@@ -213,6 +224,8 @@ export class Game {
   private tuckFree = false;
   private gateOpen = false;
   private checkpoint: Cell | null = null;
+  /** Moves that can be undone, oldest first. Finding something or a story moment clears it. */
+  private history: Turn[] = [];
   busy = true;
   walking = false;
   private pending: { cell: Cell; act?: string } | null = null;
@@ -1049,6 +1062,7 @@ export class Game {
     this.level = L;
     this.pos = [...L.start];
     this.checkpoint = null;
+    this.history = [];
     this.prints = [];
     const sail = L.def.mode === 'sail';
     this.boatRig.visible = sail;
@@ -1079,6 +1093,7 @@ export class Game {
       party: () => this.introParty(),
     };
     await intro[L.def.id]();
+    this.keep();
     this.refreshQuests();
     this.busy = false;
     await new Promise<void>((r) => (this.finish = r));
@@ -1386,6 +1401,85 @@ export class Game {
     this.go(this.pos);
   }
 
+  // ---------------------------------------------------------------- undo
+
+  /** Chapters with something to get wrong (Grimfin, ice, ice blocks) show the undo button. */
+  get undoable() {
+    const L = this.level;
+    return !!(L?.ready && (L.def.orca || this.icy || L.blocks.size));
+  }
+
+  get canUndo() {
+    return this.history.length > 0 && !this.busy && !this.walking && !this.ui.open;
+  }
+
+  private record() {
+    const L = this.level!;
+    const o = this.orca;
+    this.history.push({
+      pos: [...this.pos],
+      face: this.facing.scale.x,
+      orca: { ...o, pos: o.pos && [...o.pos], head: [...o.head] },
+      blocks: [...L.blocks.values()].map((b): [string, Cell] => [b.id, [...b.cell]]),
+      fish: this.fish,
+      splashUsed: this.bobbleSplashUsed,
+      checkpoint: this.checkpoint && [...this.checkpoint],
+    });
+    if (this.history.length > 300) this.history.shift();
+  }
+
+  /** Finding something or a story moment: undo can't reach back past it. */
+  private keep() {
+    this.history = [];
+  }
+
+  /** Step back one move: you, Grimfin, the ice blocks and your fish. */
+  undo() {
+    const L = this.level;
+    if (!L || !this.canUndo) return;
+    const s = this.history.pop()!;
+    this.marker.visible = false;
+    this.pos = [...s.pos];
+    this.player.position.copy(toWorld(s.pos[0], s.pos[1], this.cellY(s.pos)));
+    this.facing.scale.x = s.face;
+    this.hopper.rotation.z = 0;
+    this.hopper.position.y = 0;
+    if (this.follower) this.follower.position.copy(toWorld(s.pos[0] - 1, s.pos[1], 0.02));
+    // blocks: clear every moved block's square first, so two blocks can trade places
+    const moved = s.blocks.map(([id, c]) => [L.blocks.get(id), c] as const).filter(([b, c]) => b && !same(b.cell, c));
+    for (const [b] of moved) L.grid[b!.cell[1]][b!.cell[0]] = '.';
+    for (const [b, c] of moved) {
+      b!.cell = [...c];
+      L.grid[c[1]][c[0]] = 'K';
+      L.actorCell.set(b!.id, b!.cell);
+      b!.obj.position.copy(toWorld(c[0], c[1], LAND_Y));
+    }
+    this.fish = s.fish;
+    if (this.fish > 0) this.inv.add('fish');
+    else this.inv.delete('fish');
+    this.refreshInventory();
+    this.bobbleSplashUsed = s.splashUsed;
+    this.checkpoint = s.checkpoint;
+    if (L.def.orca && L.actors.has('orca')) {
+      this.orca = s.orca;
+      const pv = this.orcaPv, inner = this.orcaInner;
+      inner.rotation.z = s.orca.distracted > 0 ? 0.07 : 0;
+      if (s.orca.pos) {
+        pv.position.copy(toWorld(s.orca.pos[0], s.orca.pos[1], 0));
+        pv.visible = true;
+        inner.position.y = SURFACE;
+        this.faceOrca();
+      } else {
+        inner.position.y = DEEP;
+      }
+      this.updateRings();
+      this.updateGaze();
+    }
+    this.sound.rustle(0.3);
+    tween(220, (k) => this.player.scale.setScalar(0.85 + 0.15 * k), easeOutBack);
+    this.refreshQuests();
+  }
+
   private go(cell: Cell, act?: string) {
     if (this.walking) {
       this.pending = { cell, act };
@@ -1488,6 +1582,7 @@ export class Game {
         let redirected = false;
         const from = this.pos;
         for (let i = 0; i < path.length; i++) {
+          if (i === 0 || !this.midSlide(path, i - 1, from)) this.record();
           await this.step(path[i]);
           if (await this.afterStep()) {
             this.pending = null;
@@ -1589,18 +1684,22 @@ export class Game {
     if (star && star.visible) this.collectStar(star);
     const ch = L.grid[this.pos[1]][this.pos[0]];
     if (L.def.id === 'shore' && ch === 'D') {
+      this.keep();
       await this.atDock();
       return true;
     }
     if (L.def.id === 'glacier' && ch === 'X') {
+      this.keep();
       await this.glacierEnd();
       return true;
     }
     if (L.def.id === 'party' && ch === 'D' && this.partyStep === 1) {
+      this.keep();
       await this.inviteGrimfin();
       return true;
     }
     if (ch === 'G') {
+      this.keep();
       await this.finale();
       return true;
     }
@@ -1610,6 +1709,7 @@ export class Game {
 
   private async passTurn() {
     if (!this.level?.def.orca) return;
+    this.record();
     if (this.sail) this.sound.rustle(0.2);
     else this.sound.step(false);
     await tween(160, (k) => (this.hopper.position.y = Math.sin(Math.PI * k) * 0.06), linear);
@@ -1628,6 +1728,7 @@ export class Game {
 
   private pickup(it: { id: string; name: string; obj: THREE.Group }) {
     const L = this.level!;
+    this.keep();
     L.items.delete(key(this.pos));
     L.grid[this.pos[1]][this.pos[0]] = this.isIce(this.pos) ? '_' : this.sail ? '~' : '.';
     this.flyAway(it.obj);
@@ -1655,6 +1756,7 @@ export class Game {
 
   private collectStar(obj: THREE.Group) {
     const L = this.level!;
+    this.keep();
     L.stars.delete(key(this.pos));
     const ch = L.grid[this.pos[1]][this.pos[0]];
     L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : this.sail ? '~' : '.';
@@ -1671,6 +1773,7 @@ export class Game {
   private interact(act: string) {
     if (act.startsWith('block')) return this.pushBlock(act);
     if (act.startsWith('hole')) return this.tossFish(this.level!.actorCell.get(act)!);
+    this.keep();
     if (act.startsWith('beacon')) return this.wakeLighthouse(act);
     if (act.startsWith('kit:')) return this.findKit(act);
     if (act.startsWith('kitp:')) return this.ui.say([[this.S.kit, pick([tr('Hee hee!', 'Хи-хи!'), tr('Is it cake time yet?', 'А торт уже скоро?'), tr('We found the bunting with our noses!', 'Мы нашли флажки по запаху!')])]]);
@@ -1875,6 +1978,7 @@ export class Game {
       if (r === 0) await this.resetBlock(b);
       return;
     }
+    this.record();
     this.busy = true;
     this.sound.rustle(0.5);
     const from = b.obj.position.clone();
@@ -1883,6 +1987,7 @@ export class Game {
     L.grid[old[1]][old[0]] = '.';
     await Promise.all([tween(240, (k) => b.obj.position.lerpVectors(from, to, k), easeInOut), this.step(old)]);
     if (intoWater) {
+      this.keep(); // the block becomes a new floe, which undo doesn't take back
       this.sound.splash(0.6);
       await tween(420, (k) => {
         b.obj.position.y = LAND_Y - k * 0.5;
@@ -2213,6 +2318,9 @@ export class Game {
     this.updateRings();
     this.updateGaze();
     this.refreshQuests();
+    this.ui.toast(touch
+      ? tr('Oops! Tap ⟲ to take that hop back.', 'Ой! Нажми ⟲, чтобы отменить этот ход.')
+      : tr('Oops! Press Z (or ⟲) to take that hop back.', 'Ой! Нажми Z (или ⟲), чтобы отменить этот ход.'));
     this.busy = false;
   }
 
@@ -2249,6 +2357,7 @@ export class Game {
     if (this.fish <= 0) {
       return this.ui.say([[this.S.nar, this.puffinHelped ? tr('Your bucket is empty. Time your hops with the glowy squares instead.', 'Ведёрко пусто. Придётся прыгать, следя за светящимися квадратиками.') : tr("You haven't got any fish. Time your hops with the glowy squares instead.", 'Рыбы у тебя нет. Придётся прыгать, следя за светящимися квадратиками.')]]);
     }
+    this.record();
     this.busy = true;
     this.fish--;
     if (!this.fish) this.inv.delete('fish');
