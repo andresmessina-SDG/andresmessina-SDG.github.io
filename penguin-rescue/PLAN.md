@@ -191,8 +191,15 @@ reuse an existing verb, and does it look like paper?
   answer (forgive, or "that wasn't very careful": both end in forgiveness), and he cracks the
   thick ice into a thin-ice bridge with a star in a pocket you have to loop through. Mama Eider
   carries the patience theme ("you can't hurry spring"): her eggs hatch in the ending. The hare
-  (the eider and hare are drawn cutouts for now, not Blender models) goes home when the pond
-  drains. Rain is paper drops that come and go. Five stars.
+  (the eider and hare are Blender figures, like the rest of the cast) goes home when the pond
+  drains. Rain is soft streaks that come and go. Five stars.
+- *Look pass (after the first play):* streams, the pond and ice are drawn as cut paper, not square
+  tiles. The terrain already cuts the channels. Each stream adds a running-water layer (a
+  three-frame flipbook of ripples) and a pebbly bed, whose alpha maps hold how far downstream each
+  spot is, so draining is a ragged front moving from the source downstream. Ice is
+  irregular hand-cut plates; thick ice sits on a blue card slab. Snow lingers in the shade of rocks
+  and trees, spring pines keep only a little snow, the flaps are felt turf with a curled corner, and
+  Grimfin has ripple rings round him.
 
 #### Chapter Seven · Summer · Midnight-Sun Beach
 - **Look and weather:** the sun never sets (a warm, low gold light all chapter), now and then

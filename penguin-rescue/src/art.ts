@@ -690,7 +690,8 @@ export function yarn() {
 }
 
 /** A snowy paper pine. */
-export function pine(seed: number) {
+/** A pine of cut card tiers. In spring (`snowy` false) only a little snow is left on the top. */
+export function pine(seed: number, snowy = true) {
   const r = mulberry(seed);
   const c = makeCanvas(200, 300);
   const g = ctx2d(c);
@@ -703,7 +704,8 @@ export function pine(seed: number) {
     const y = 30 + i * 55, w = 46 + i * 22 + r() * 8;
     layer(g, () => {
       poly(g, [100, y - 30, 100 - w, y + 70, 100 + w, y + 70], greens[i % 3]);
-      poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
+      if (snowy) poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
+      else if (i === 0) poly(g, [100, y - 30, 100 - w * 0.3, y + 4, 100, y + 10, 100 + w * 0.3, y + 2], '#f6f9fb');
     }, 1.3);
   }
   return c;
@@ -1442,40 +1444,52 @@ export function hare() {
   return c;
 }
 
-/** A paper flap glued at one edge, like a page flap in a lift-the-flap book. */
+/** A lift-the-flap of felt turf: an irregular cut, a little darker than the grass, with one corner curled up. */
 export function flap(seed: number) {
   const r = mulberry(seed);
-  const c = makeCanvas(150, 120);
+  const c = makeCanvas(160, 140);
   const g = ctx2d(c);
-  const greens = ['#7fae5a', '#8cba62', '#73a454'];
-  layer(g, () => {
-    g.fillStyle = greens[Math.floor(r() * greens.length)];
-    g.beginPath();
-    g.moveTo(10, 110);
-    g.lineTo(10, 30);
-    g.quadraticCurveTo(75, 4, 140, 30);
-    g.lineTo(140, 110);
-    g.closePath();
-    g.fill();
-  });
-  // tufts of paper grass along the top, and a little "lift me" tab
-  g.strokeStyle = 'rgba(40,80,30,0.45)';
-  g.lineWidth = 2.5;
+  const pts: number[] = [];
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * TAU, rad = 1 - r() * 0.12;
+    pts.push(80 + Math.cos(a) * 70 * rad, 70 + Math.sin(a) * 58 * rad);
+  }
+  layer(g, () => poly(g, pts, '#93bf5f'), 1.6);
+  g.strokeStyle = 'rgba(52,84,36,0.8)';
+  g.lineWidth = 3.5;
+  g.beginPath();
+  g.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+  g.closePath();
+  g.stroke();
+  // felt fibres and blades of grass
   g.lineCap = 'round';
-  for (let i = 0; i < 8; i++) {
-    const x = 20 + i * 16;
+  for (let i = 0; i < 70; i++) {
+    const x = 20 + r() * 120, y = 20 + r() * 100;
+    g.strokeStyle = `rgba(${50 + r() * 30},${95 + r() * 30},${40 + r() * 20},0.55)`;
+    g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(x, 34);
-    g.lineTo(x + (r() - 0.5) * 8, 22 - r() * 6);
+    g.moveTo(x, y);
+    g.lineTo(x + (r() - 0.5) * 5, y - 5 - r() * 5);
     g.stroke();
   }
-  layer(g, () => {
-    g.fillStyle = '#f2d57a';
-    g.beginPath();
-    g.roundRect(60, 96, 30, 20, 6);
-    g.fill();
-  });
-  fold(g, 12, 108, 138, 108, 0.3);
+  // a dashed glue line along the back edge, where it's stuck down
+  g.strokeStyle = 'rgba(60,80,40,0.45)';
+  g.setLineDash([6, 5]);
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(26, 30);
+  g.quadraticCurveTo(80, 14, 134, 30);
+  g.stroke();
+  g.setLineDash([]);
+  // the front corner, curled up to show the paler underside: lift here
+  layer(g, () => poly(g, [152, 84, 108, 136, 136, 100], '#f1f4e4'), 1.4);
+  g.strokeStyle = 'rgba(80,100,60,0.5)';
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.moveTo(152, 84);
+  g.lineTo(108, 136);
+  g.stroke();
   return c;
 }
 
@@ -1511,39 +1525,41 @@ export function burrow() {
   return c;
 }
 
-/** A few river stones, seen from above. */
-export function stones(seed: number) {
+
+/** One hand-cut plate of ice (a slightly irregular square, a little wider than a cell so neighbours meet). */
+function icePlate(r: () => number, inset: number) {
+  const pts: number[] = [];
+  const corners = [[inset, inset], [160 - inset, inset], [160 - inset, 160 - inset], [inset, 160 - inset]];
+  corners.forEach(([x, y], i) => {
+    const [nx, ny] = corners[(i + 1) % 4];
+    pts.push(x + (r() - 0.5) * 10, y + (r() - 0.5) * 10);
+    pts.push((x + nx) / 2 + (r() - 0.5) * 12, (y + ny) / 2 + (r() - 0.5) * 12);
+  });
+  return pts;
+}
+
+/** Thin ice: a pale glassy plate, with cracks that grow once you've stood on it. */
+export function thinIce(cracked: boolean, seed = 1) {
   const r = mulberry(seed);
   const c = makeCanvas(160, 160);
   const g = ctx2d(c);
-  ell(g, 80, 80, 74, 70, 0, '#b9ab90');
-  for (let i = 0; i < 7; i++) {
-    const x = 26 + r() * 108, y = 26 + r() * 108;
-    layer(g, () => ell(g, x, y, 15 + r() * 12, 11 + r() * 9, r() * 3, ['#9aa0a4', '#b3b5ae', '#8c8f8a', '#c2bba8'][i % 4]), 0.8);
-  }
-  return c;
-}
-
-/** Thin ice: pale and glassy, with cracks that grow once you've stood on it. */
-export function thinIce(cracked: boolean) {
-  const c = makeCanvas(160, 160);
-  const g = ctx2d(c);
-  g.fillStyle = 'rgba(178,218,244,0.86)';
-  g.beginPath();
-  g.roundRect(6, 6, 148, 148, 26);
-  g.fill();
-  g.strokeStyle = 'rgba(255,255,255,0.7)';
+  const pts = icePlate(r, 4);
+  poly(g, pts, 'rgba(176,216,242,0.84)');
+  g.strokeStyle = 'rgba(255,255,255,0.75)';
   g.lineWidth = 4;
-  g.stroke();
-  g.strokeStyle = 'rgba(255,255,255,0.8)';
-  g.lineWidth = 5;
-  g.lineCap = 'round';
   g.beginPath();
-  g.moveTo(30, 60); g.lineTo(70, 34);
-  g.moveTo(96, 130); g.lineTo(128, 108);
+  g.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+  g.closePath();
   g.stroke();
-  g.strokeStyle = cracked ? 'rgba(30,70,120,0.9)' : 'rgba(50,100,150,0.6)';
-  g.lineWidth = cracked ? 3.5 : 2.5;
+  g.lineCap = 'round';
+  g.lineWidth = 5;
+  g.beginPath();
+  g.moveTo(34, 62); g.lineTo(70, 38);
+  g.moveTo(98, 128); g.lineTo(126, 110);
+  g.stroke();
+  g.strokeStyle = cracked ? 'rgba(30,70,120,0.9)' : 'rgba(50,100,150,0.55)';
+  g.lineWidth = cracked ? 3.5 : 2.2;
   const lines = cracked
     ? [[80, 80, 20, 40], [80, 80, 150, 50], [80, 80, 110, 150], [80, 80, 14, 120], [80, 80, 70, 8], [50, 60, 30, 90], [120, 66, 140, 100]]
     : [[60, 90, 100, 110], [100, 110, 118, 140]];
@@ -1557,20 +1573,25 @@ export function thinIce(cracked: boolean) {
   return c;
 }
 
-/** A strip of running meltwater, with flow marks pointing downstream (drawn left to right). */
-export function stream() {
-  const c = makeCanvas(128, 128);
+/** Thick ice: an opaque white-blue plate with a darker cut edge, too solid to crack underfoot. */
+export function thickIce(seed = 1) {
+  const r = mulberry(seed);
+  const c = makeCanvas(160, 160);
   const g = ctx2d(c);
-  g.fillStyle = '#6fb2dc';
-  g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = 'rgba(255,255,255,0.75)';
-  g.lineWidth = 5;
+  const pts = icePlate(r, 2);
+  poly(g, pts, '#8fb3cf');
+  const top = pts.map((v, i) => v + (i % 2 ? -6 : 0));
+  poly(g, top, '#c9e0f2');
+  g.strokeStyle = 'rgba(255,255,255,0.85)';
+  g.lineWidth = 2;
   g.lineCap = 'round';
-  for (const [x, y] of [[14, 28], [70, 52], [30, 86], [86, 108], [96, 16]]) {
+  for (let i = 0; i < 6; i++) {
+    const x = 30 + r() * 100, y = 30 + r() * 90;
     g.beginPath();
     g.moveTo(x, y);
-    g.quadraticCurveTo(x + 14, y - 7, x + 28, y);
+    g.lineTo(x + 18 + r() * 14, y + (r() - 0.5) * 16);
     g.stroke();
   }
   return c;
 }
+
