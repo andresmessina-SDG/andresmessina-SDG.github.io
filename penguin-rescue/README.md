@@ -41,7 +41,7 @@ follows you around the open book.
 **Book Two: A Year on the Page** (the button under the title card, or `?book=2`)
 is a second book with its own green cover and its own saved game. Tuck wonders
 what the shore looks like in the other seasons, so the friends turn the page
-into spring. Only spring is drawn so far; summer is still to come.
+into spring and summer. Autumn is still to come.
 
 - **Chapter Six, Spring: The Great Thaw.** Felt-green grass with the last snow
   melting, flowers popping up and showers of paper rain. Meltwater streams cut
@@ -55,6 +55,16 @@ into spring. Only spring is drawn so far; summer is still to come.
   belly-flop scattered the eggs; you forgive him and he cracks the thick ice
   so you can cross to the meadow, where Pip and Pebble are waiting for the
   first flower of spring.
+- **Chapter Seven, Summer: Midnight-Sun Beach.** Corrugated-card sand under a
+  low gold sun that never sets. A tide wheel in the corner turns one notch for
+  every move (or wait): sandbars show while the tide is out and the seabed
+  only at its lowest, so some places mean waiting on a dry islet for the
+  water to go. Caught by the tide, a wave carries you gently back to dry sand.
+  Grimfin's biggest wave washes away Pip and Pebble's sandcastle; he says
+  sorry and, at high tide, carries you across the deep channel to Seal Rock
+  for a bucket, and back again. Side quests: a bigger shell for the hermit
+  crab (his flag goes on the new castle) and three pretty shells for Tuck,
+  who shares them as windows.
 
 **The journal.** The to-do card in the corner shows what to do on this page,
 with portraits and progress dots for side quests. Click it (or press J) for

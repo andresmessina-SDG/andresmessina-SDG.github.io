@@ -117,7 +117,7 @@ export interface Terrain {
 }
 
 export function buildTerrain(grid: string[][], night: boolean, seed: number, water = '~oHDv%', season: Season = 'winter'): Terrain {
-  const spring = season === 'spring';
+  const spring = season === 'spring', summer = season === 'summer';
   const isLand = (ch: string) => !water.includes(ch);
   const rows = grid.length, cols = grid[0].length;
   const halfCols = cols / 2;
@@ -132,7 +132,9 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     ? { snow: '#c4d0e6', rim: '#6c80a6', bank: '#d2dcee', deep: '#1d406e', shallow: '#3f6ca4' }
     : spring
       ? { snow: '#a3c67a', rim: '#8c7754', bank: '#ffffff', deep: '#3f7dab', shallow: '#8dc4d4' }
-      : { snow: '#eef3f8', rim: '#adbdd0', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
+      : summer
+        ? { snow: '#ead39c', rim: '#bf9a5c', bank: '#f3e2b8', deep: '#2f7db5', shallow: '#86d1df' }
+        : { snow: '#eef3f8', rim: '#adbdd0', bank: '#ffffff', deep: '#4a8ac2', shallow: '#93c6ea' };
   const deep = hex(pal.deep), shallow = hex(pal.shallow);
   const halves: THREE.Group[] = [];
 
@@ -188,7 +190,24 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     const landMask = maskCanvas(W, H, landA);
     const snowDetails = (g: CanvasRenderingContext2D) => {
       const rr = mulberry(seed * 7 + h);
-      if (spring) {
+      if (summer) {
+        // corrugated card: soft parallel ridges across the sand, with a few grains and specks of shell
+        g.lineCap = 'round';
+        for (let y = -W; y < H + W; y += 11) {
+          g.strokeStyle = `rgba(180,140,80,${0.12 + rr() * 0.06})`;
+          g.lineWidth = 3;
+          g.beginPath();
+          g.moveTo(0, y);
+          g.lineTo(W, y + W * 0.35);
+          g.stroke();
+        }
+        for (let k = 0; k < 360; k++) {
+          g.fillStyle = rr() < 0.5 ? `rgba(150,110,60,${0.15 + rr() * 0.2})` : `rgba(255,250,235,${0.4 + rr() * 0.3})`;
+          g.beginPath();
+          g.arc(rr() * W, rr() * H, 0.8 + rr() * 1.8, 0, Math.PI * 2);
+          g.fill();
+        }
+      } else if (spring) {
         // green felt coming through. The last snow lingers in the shade behind rocks, trees and drifts:
         // soft white patches with a cool blue edge, so they read as snow under the warm lamp.
         for (let z = 0; z < rows; z++) {

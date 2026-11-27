@@ -564,6 +564,42 @@ def hare():
     line("lip2", [(0.0, 0.632), (0.016, 0.622)], 5, 0.0022)
 
 # ======================================================================================
+# Book Two, summer. The hermit crab: side on, facing right, peeking out of a spiral shell that is
+# plainly too small. Orange-red, one big claw, eyes on stalks, walking legs splayed on the sand.
+# ======================================================================================
+def crab():
+    P.begin("crab", 0.5)
+    RED, RED_DK, SHELL, SHELL_DK = '#e0703f', '#a8482a', '#f0dcc0', '#c7a37a'
+    SHELL_PTS = smooth([(-0.34, 0.06), (-0.42, 0.18), (-0.38, 0.32), (-0.26, 0.42), (-0.1, 0.44), (0.02, 0.37),
+                        (0.05, 0.24), (0.0, 0.1), (-0.12, 0.04)])
+    BODY = smooth([(-0.02, 0.12), (0.0, 0.3), (0.12, 0.4), (0.26, 0.38), (0.34, 0.26), (0.3, 0.12), (0.14, 0.07)])
+    # the big claw, low and in front, with a clear notch between its two fingers
+    CLAW = smooth([(0.3, 0.14), (0.4, 0.19), (0.5, 0.21), (0.57, 0.16), (0.48, 0.125), (0.57, 0.085), (0.49, 0.03),
+                   (0.36, 0.06)], n=6)
+    SMALL = smooth([(0.24, 0.08), (0.32, 0.05), (0.36, 0.02), (0.3, 0.0), (0.22, 0.03)], n=6)
+    P.backing([SHELL_PTS, BODY, ellipse(0.44, 0.12, 0.15, 0.1, n=28), SMALL])   # an oval behind the claw: its notch would fold the backing
+    P.easel(-0.2, 0.15, 0.03, 0.18)
+    for i, (x0, x1) in enumerate(((0.04, -0.02), (0.1, 0.08), (0.16, 0.18), (0.22, 0.28))):   # walking legs
+        line(f"leg{i}", [(x0, 0.12), (x1 + 0.04, 0.06), (x1 + 0.02, 0.0)], 1, 0.006, color=RED_DK)
+    card("body", BODY, 2, RED)
+    hatch("body_h", crescent(BODY, -0.03, 0.03), BODY, 2, color=RED_DK)
+    ink("body_ink", BODY, 2, 0.005)
+    for s_, (x, z) in enumerate(((0.16, 0.54), (0.25, 0.56))):   # eyes on stalks
+        line(f"stalk{s_}", [(x - 0.02, 0.38), (x - 0.01, 0.46), (x, z)], 2.5, 0.006, color=RED_DK)
+        card(f"eye{s_}", ellipse(x, z, 0.026, 0.026, n=16), 3, INK, wash=0)
+        card(f"glint{s_}", ellipse(x + 0.008, z + 0.008, 0.008, 0.008, n=10), 3.3, '#ffffff', wash=0)
+    line("smile", [(0.25, 0.25), (0.285, 0.23), (0.32, 0.25)], 2.6, 0.0035)
+    card("cheek", ellipse(0.21, 0.27, 0.022, 0.013, n=14), 2.6, BLUSH, wash=0)
+    card("shell", SHELL_PTS, 3, SHELL)
+    hatch("shell_h", crescent(SHELL_PTS, 0.04, -0.04), SHELL_PTS, 3, angle=30, color=SHELL_DK)
+    spiral = [(-0.17 + 0.15 * (1 - t / 24) * math.cos(t * 0.55), 0.24 + 0.13 * (1 - t / 24) * math.sin(t * 0.55)) for t in range(24)]
+    line("spiral", spiral, 3.2, 0.005, color=SHELL_DK)
+    ink("shell_ink", SHELL_PTS, 3, 0.006)
+    inked("claw", CLAW, 4, RED, w=0.005)
+    line("pincer", [(0.565, 0.12), (0.47, 0.125)], 4.2, 0.004)
+    inked("small", SMALL, 4, RED, w=0.004)
+
+# ======================================================================================
 CAST = {
     "tuck":        lambda: penguin("tuck", 1.0, '#d6a646', '#a8802f', hat=('#7e9dc4', '#5e7da5')),
     "tuckSad":     lambda: penguin("tuckSad", 1.0, '#d6a646', '#a8802f', hat=('#7e9dc4', '#5e7da5'), sad=True),
@@ -579,6 +615,7 @@ CAST = {
     "kit":         lambda: fox(True),
     "eider":       eider,
     "hare":        hare,
+    "crab":        crab,
 }
 
 if __name__ == "__main__":   # importing this file (bake.py does) only defines the cast
