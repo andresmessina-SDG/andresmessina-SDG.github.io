@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { tween, wait, setFast, easeOutBack, easeInOut, easeOut, easeIn, linear, type Ease } from './tween';
 import * as A from './art';
-import { makeCutout, useModel, modelPortraits, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas } from './paper';
+import { makeCutout, useModel, modelPortraits, standee, paperMat, tileGeometry, rand, pick, canvasTex, makeCanvas, ctx2d, paperCanvas, mulberry } from './paper';
 import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
-import { buildTerrain, LAND_Y, ICE } from './terrain';
+import { buildTerrain, cellMask, LAND_Y, ICE } from './terrain';
 import {
   buildPath, orcaStep, sightCells, farLaneBefore, manhattan, same, SAFE_RADIUS,
   type OrcaPath, type OrcaState, type TurnWorld,
@@ -201,9 +201,13 @@ interface Stream {
   /** The stream below the source, nearest first. */
   cells: Cell[];
   dry: boolean;
-  /** Per cell (source first): the running water and the stones under it. */
-  water: THREE.Object3D[];
-  stones: THREE.Object3D[];
+  /** The cut-paper running water (a three-frame flipbook) and the stony bed beneath it. Each layer's
+   *  alpha map runs from the source downstream, so raising or lowering alphaTest drains or fills it. */
+  water: THREE.Mesh;
+  frames: THREE.Texture[];
+  bed: THREE.Mesh;
+  /** The hare's front door, on the pond bed (only shown when dry). */
+  burrow: THREE.Object3D | null;
   /** Bumped on every change, so an unfinished animation can tell it's out of date. */
   v: number;
 }
@@ -235,9 +239,10 @@ interface Level {
   cake: THREE.Group | null;
   /** Spring: thin ice by cell (faces: whole, cracked), thick ice by cell, and the streams. */
   thin: Map<string, THREE.Group>;
+  /** Ripple rings spreading round Grimfin in the spring lake. */
+  ripples: THREE.Mesh[];
   thick: Map<string, THREE.Object3D>;
   streams: Stream[];
-  flowTex: THREE.Texture | null;
 }
 
 export class Game {
@@ -755,15 +760,26 @@ export class Game {
     L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'spin' });
   }
 
+  private thinMats = new Map<string, THREE.Material>();
+  /** Thin-ice materials, one per plate shape and face, shared by every pane. */
+  private thinMat(cracked: boolean, plate: number) {
+    const k = `${cracked}${plate}`;
+    let m = this.thinMats.get(k);
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ map: canvasTex(A.thinIce(cracked, plate + 1)), transparent: true, alphaTest: 0.1, roughness: 0.25 });
+      this.thinMats.set(k, m);
+    }
+    return m;
+  }
+
   /** A pane of thin ice over the water. Its two faces: whole, and cracked (while you stand on it). */
   private makeThin(L: Level, c: Cell) {
     const g = new THREE.Group();
     const inner = new THREE.Group();
-    const geo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
+    const geo = new THREE.PlaneGeometry(1.06, 1.06).rotateX(-Math.PI / 2);
+    const plate = (c[0] * 3 + c[1]) % 4;
     const faces = [false, true].map((cracked) => {
-      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-        map: canvasTex(cachedArt('thin' + cracked, () => A.thinIce(cracked))), transparent: true, alphaTest: 0.1, roughness: 0.25,
-      }));
+      const m = new THREE.Mesh(geo, this.thinMat(cracked, plate));
       m.receiveShadow = true;
       m.userData.cell = c;
       m.visible = !cracked;
@@ -784,8 +800,15 @@ export class Game {
   private makeFlap(L: Level, c: Cell, egg: boolean, delay: number) {
     const id = `flap:${key(c)}`;
     const hinge = new THREE.Group();
-    const geo = new THREE.PlaneGeometry(0.86, 0.74).rotateX(-Math.PI / 2).translate(0, 0, 0.37);
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: canvasTex(A.flap(c[0] * 5 + c[1])), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.9 }));
+    const geo = new THREE.PlaneGeometry(0.9, 0.78, 6, 6).rotateX(-Math.PI / 2).translate(0, 0, 0.39);
+    // curl the front-right corner up off the page, so it reads as something to lift
+    const gp = geo.attributes.position;
+    for (let i = 0; i < gp.count; i++) {
+      const t = Math.max(0, (gp.getX(i) - 0.05) / 0.4 + gp.getZ(i) / 0.78 - 1.2);
+      gp.setY(i, gp.getY(i) + t * t * 0.16);
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: canvasTex(A.flap(c[0] * 5 + c[1])), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.95 }));
     m.castShadow = m.receiveShadow = true;
     hinge.add(m);
     hinge.position.copy(toWorld(c[0], c[1], LAND_Y + 0.012)).add(new THREE.Vector3(0, 0, -0.37));
@@ -798,48 +821,122 @@ export class Game {
     this.addScale(L, hinge, delay);
   }
 
-  /** Each stream runs from its source (a dam spot) through every connected stream cell. */
+  /**
+   * Each stream runs from its source (a dam spot) through every connected stream cell. The terrain
+   * already cuts the channel into the page; on top go two cut-paper layers: running water, and the
+   * stony bed it hides. Their alpha maps hold how far downstream each spot is, for draining.
+   */
   private makeStreams(L: Level, dams: Cell[]) {
-    const tex = canvasTex(A.stream(), true);
-    L.flowTex = tex;
-    const waterMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35 });
-    const tile = new THREE.PlaneGeometry(1.02, 1.02).rotateX(-Math.PI / 2);
-    for (const dam of dams) {
+    const PX = 40;
+    const W = COLS * PX, H = ROWS * PX;
+    dams.forEach((dam, si) => {
       // walk the stream outward from its source, remembering which way the water flows
       const order: { c: Cell; dir: Cell }[] = [{ c: dam, dir: [0, 1] }];
-      const seen = new Set([key(dam)]);
+      const seen = new Map([[key(dam), 0]]);
       for (let i = 0; i < order.length; i++) {
         for (const d of DIRS) {
           const n: Cell = [order[i].c[0] + d[0], order[i].c[1] + d[1]];
           if (!this.inBounds(n) || seen.has(key(n)) || L.grid[n[1]][n[0]] !== 's') continue;
-          seen.add(key(n));
+          seen.set(key(n), order.length);
           order.push({ c: n, dir: d });
         }
       }
-      const st: Stream = { dam, cells: order.slice(1).map((o) => o.c), dry: false, water: [], stones: [], v: 0 };
-      order.forEach(({ c, dir }, i) => {
-        const delay = 900 + i * 25;
-        const w = new THREE.Mesh(tile, waterMat);
-        w.receiveShadow = true;
-        w.rotation.y = Math.atan2(-dir[1], dir[0]);
-        const wg = new THREE.Group();
-        wg.add(w);
-        wg.position.copy(toWorld(c[0], c[1], 0.03));
-        L.root.add(wg);
-        this.addScale(L, wg, delay);
-        st.water.push(w);
-        const isBurrow = L.def.spring && same(c, L.def.spring.burrow);
-        const stone = makeFlat(isBurrow ? A.burrow() : cachedArt('stones' + (i % 4), () => A.stones(i % 4 + 3)), isBurrow ? 0.8 : 0.92);
-        stone.visible = false;
-        const sg = new THREE.Group();
-        sg.add(stone);
-        sg.position.copy(toWorld(c[0], c[1], 0.045));
-        L.root.add(sg);
-        this.addScale(L, sg, delay);
-        st.stones.push(stone);
+      const seed = L.index * 31 + si * 7 + 3;
+      const mask = cellMask(COLS, ROWS, (x, z) => seen.has(`${x},${z}`), PX, seed, 0.56);
+      const r = mulberry(seed);
+      // how far downstream each pixel is (0 at the source, 1 at the far end), with a ragged front
+      const along = (x: number, y: number) => {
+        const i = seen.get(`${Math.floor(x / PX)},${Math.floor(y / PX)}`);
+        return i === undefined ? 1 : Math.min(1, Math.max(0, (i + 0.5) / order.length + (r() - 0.5) * 0.03));
+      };
+      const ramp = (flip: boolean) => {
+        const c = makeCanvas(W, H);
+        const g = ctx2d(c);
+        const img = g.createImageData(W, H);
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const a = along(x, y), v = Math.round(255 * (flip ? 1 - a * 0.92 : 0.06 + a * 0.92));
+            const j = (y * W + x) * 4;
+            img.data[j] = img.data[j + 1] = img.data[j + 2] = v;
+            img.data[j + 3] = 255;
+          }
+        }
+        g.putImageData(img, 0, 0);
+        return canvasTex(c);
+      };
+      const cut = (paint: (g: CanvasRenderingContext2D) => void) => {
+        const c = makeCanvas(W, H);
+        const g = ctx2d(c);
+        paint(g);
+        const m = makeCanvas(W, H);
+        const mi = ctx2d(m).createImageData(W, H);
+        for (let i = 0; i < W * H; i++) mi.data[i * 4 + 3] = mask.alpha[i];
+        ctx2d(m).putImageData(mi, 0, 0);
+        g.globalCompositeOperation = 'multiply';
+        g.fillStyle = g.createPattern(paperCanvas(256, seed, 246), 'repeat')!;
+        g.fillRect(0, 0, W, H);
+        g.globalCompositeOperation = 'destination-in';
+        g.drawImage(m, 0, 0);
+        return c;
+      };
+      // the bed: sandy card scattered with pebbles
+      const bedCanvas = cut((g) => {
+        g.fillStyle = '#bba783';
+        g.fillRect(0, 0, W, H);
+        for (const { c } of order) {
+          for (let k = 0; k < 7; k++) {
+            const x = (c[0] + r()) * PX, y = (c[1] + r()) * PX, rx = 3 + r() * 5;
+            g.fillStyle = 'rgba(70,55,35,0.35)';
+            g.beginPath();
+            g.ellipse(x + 1.5, y + 2, rx, rx * 0.75, 0, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = ['#a3a6a4', '#c4bfae', '#8e918c', '#b5ab95'][k % 4];
+            g.beginPath();
+            g.ellipse(x, y, rx, rx * 0.75, r() * 3, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
       });
-      L.streams.push(st);
-    }
+      // the water: lighter than the lake, with ripple marks that move downstream frame by frame
+      const strokes = order.flatMap(({ c, dir }) => [0, 1].map(() => ({ x: c[0] + 0.2 + r() * 0.6, y: c[1] + 0.2 + r() * 0.6, dir })));
+      const frames = [0, 1, 2].map((f) => canvasTex(cut((g) => {
+        g.fillStyle = '#7fbde0';
+        g.fillRect(0, 0, W, H);
+        g.strokeStyle = 'rgba(255,255,255,0.6)';
+        g.lineWidth = 2.5;
+        g.lineCap = 'round';
+        for (const s of strokes) {
+          const [dx, dz] = s.dir, px = (dx * f) / 3, pz = (dz * f) / 3;
+          const x = (s.x + px) * PX, y = (s.y + pz) * PX;
+          // a soft ripple across the current, bowed downstream
+          g.beginPath();
+          g.moveTo(x - dz * 7 - dx * 2, y - dx * 7 - dz * 2);
+          g.quadraticCurveTo(x + dx * 3, y + dz * 3, x + dz * 7 - dx * 2, y + dx * 7 - dz * 2);
+          g.stroke();
+        }
+      })));
+      const plane = new THREE.PlaneGeometry(COLS, ROWS).rotateX(-Math.PI / 2);
+      const bed = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({ map: canvasTex(bedCanvas), alphaMap: ramp(true), alphaTest: 1.01, roughness: 0.95 }));
+      bed.position.y = 0.02;
+      bed.receiveShadow = true;
+      bed.visible = false;
+      const water = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({ map: frames[0], alphaMap: ramp(false), alphaTest: 0.02, roughness: 0.4 }));
+      water.position.y = 0.028;
+      water.receiveShadow = true;
+      const g = new THREE.Group();
+      g.add(bed, water);
+      L.root.add(g);
+      this.addPop(L, 950 + si * 80, 300, linear, (k) => (g.visible = k > 0.5));
+      let burrow: THREE.Object3D | null = null;
+      const bc = L.def.spring?.burrow;
+      if (bc && seen.has(key(bc))) {
+        burrow = makeFlat(A.burrow(), 0.8);
+        burrow.position.copy(toWorld(bc[0], bc[1], 0.035));
+        burrow.visible = false;
+        g.add(burrow);
+      }
+      L.streams.push({ dam, cells: order.slice(1).map((o) => o.c), dry: false, water, frames, bed, burrow, v: 0 });
+    });
   }
 
   private makeFog(L: Level) {
@@ -916,7 +1013,7 @@ export class Game {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
       stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
       rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false, garland: null, cake: null,
-      thin: new Map(), thick: new Map(), streams: [], flowTex: null,
+      thin: new Map(), thick: new Map(), streams: [], ripples: [],
     };
     // Friends you never helped don't turn up later.
     // At the party, the kits have already found the bunting out on the pond island.
@@ -992,7 +1089,7 @@ export class Game {
             this.obstacle(L, night ? A.iceberg(x * 31 + z) : A.rock(x * 17 + z), night ? 1.25 : 0.85, c, later);
             break;
           case 'Y':
-            this.obstacle(L, A.pine(x * 7 + z * 3), 1.5 + rand() * 0.3, c, later, LAND_Y, 'sway');
+            this.obstacle(L, A.pine(x * 7 + z * 3, def.season !== 'spring'), 1.5 + rand() * 0.3, c, later, LAND_Y, 'sway');
             break;
           case '^':
             this.tent(L, c, night ? '#d3deef' : '#ffffff', later);
@@ -1163,17 +1260,21 @@ export class Game {
           case 'z':
           case 'Z': {
             const g = new THREE.Group();
-            const m = new THREE.Mesh(tileGeometry(0.96, 0.1, 0.96), paperMat('#e6f2fb'));
-            m.position.y = 0.05;
-            m.castShadow = m.receiveShadow = true;
+            const m = makeFlat(cachedArt('thick' + ((x + z) % 3), () => A.thickIce((x + z) % 3 + 1)), 1.08);
+            m.position.y = 0.13;
+            m.castShadow = true;
             m.userData.cell = c;
-            g.add(m);
+            // a slab of blue card under the plate, so its cut edge shows how thick it is
+            const slab = new THREE.Mesh(tileGeometry(0.94, 0.11, 0.94), paperMat('#8fb6d6'));
+            slab.position.y = 0.065;
+            slab.castShadow = slab.receiveShadow = true;
+            g.add(m, slab);
             g.position.copy(p);
             root.add(g);
             L.pick.push(m);
             L.thick.set(key(c), g);
             this.addScale(L, g, later);
-            if (ch === 'Z') this.paperStar(L, c, 0.12, later + 60);
+            if (ch === 'Z') this.paperStar(L, c, 0.16, later + 60);
             break;
           }
           case 'M':
@@ -1216,6 +1317,14 @@ export class Game {
       pv.position.y = 0;
       (pv.userData.inner as THREE.Group).position.y = SURFACE;
       L.idlers.push({ obj: pv, phase: 0, kind: 'float' });
+      for (let i = 0; i < 2; i++) {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.56, 40).rotateX(-Math.PI / 2).scale(1.5, 1, 0.7),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false }));
+        ring.position.copy(toWorld(g[0], g[1], 0.03));
+        ring.userData.phase = i / 2;
+        root.add(ring);
+        L.ripples.push(ring);
+      }
     }
 
     // scenery flats along the back edge of the spread
@@ -1711,6 +1820,7 @@ export class Game {
     else if (same(t.cell, this.pos)) ok = !!this.level.def.orca;
     else ok = this.walkable(t.cell) && !!(this.path(this.pos, [t.cell], this.icy ? 1 : Infinity) ?? (this.icy && this.slideToward(t.cell)));
     this.markerMat.color.set(t.act ? 0xffc94a : ok ? 0xfff3d0 : 0x6d6d78);
+    this.marker.userData.dim = !t.act && !ok;
     this.marker.position.copy(toWorld(t.cell[0], t.cell[1], (this.sail ? 0.57 : this.cellY(t.cell)) + 0.012));
     this.marker.visible = true;
   }
@@ -3593,29 +3703,25 @@ export class Game {
       st.dry = dry;
       const v = ++st.v;
       for (const c of st.cells) L.grid[c[1]][c[0]] = dry ? ',' : 's';
-      // the source keeps its water: the ice block sits in it
-      st.water.forEach((w, i) => {
-        if (i === 0) return;
-        const stone = st.stones[i];
-        if (instant || !dry) {
-          w.visible = !dry;
-          w.scale.setScalar(1);
-          stone.visible = dry;
-          stone.scale.setScalar(1);
-          return;
-        }
-        // like a pull-tab sliding back: the water draws away downstream and the stones pop up
-        tween(260, (k) => {
-          if (st.v === v) w.scale.set(Math.max(0.001, 1 - k), 1, Math.max(0.001, 1 - k));
-        }, easeIn, i * 28).then(() => {
-          if (st.v !== v) return;
-          w.visible = false;
-          stone.visible = true;
-          stone.scale.setScalar(0.001);
-          tween(300, (k) => {
-            if (st.v === v) stone.scale.setScalar(Math.max(0.001, k));
-          }, easeOutBack);
-        });
+      const wm = st.water.material as THREE.MeshStandardMaterial, bm = st.bed.material as THREE.MeshStandardMaterial;
+      if (instant || !dry) {
+        st.water.visible = !dry;
+        wm.alphaTest = 0.02;
+        st.bed.visible = dry;
+        bm.alphaTest = 0.02;
+        if (st.burrow) st.burrow.visible = dry;
+        continue;
+      }
+      // like a pull-tab sliding back: the water draws away downstream and the stony bed shows
+      st.bed.visible = true;
+      tween(1100, (k) => {
+        if (st.v !== v) return;
+        wm.alphaTest = 0.02 + k * 1.0;
+        bm.alphaTest = 1.01 - k * 1.0;
+      }, easeInOut).then(() => {
+        if (st.v !== v) return;
+        st.water.visible = false;
+        if (st.burrow) st.burrow.visible = true;
       });
     }
   }
@@ -3943,11 +4049,18 @@ export class Game {
     this.lanternLight.intensity = base * this.lanternPower * flicker * (this.lanternCovered ? 0.3 : 1);
     const orca = L.actors.get('orca');
     if (orca) orca.position.y = Math.sin(t * 1.6) * 0.03;
-    // meltwater runs downstream
-    if (L.flowTex) L.flowTex.offset.x = -t * 0.35;
+    for (const r of L.ripples) {
+      const k = (t * 0.35 + r.userData.phase) % 1;
+      r.scale.setScalar(0.6 + k * 0.9);
+      (r.material as THREE.MeshBasicMaterial).opacity = 0.45 * (1 - k);
+      r.visible = L.ready;
+    }
+    // meltwater runs downstream, a flipbook of three frames
+    const frame = Math.floor(t * 5) % 3;
+    for (const st of L.streams) (st.water.material as THREE.MeshStandardMaterial).map = st.frames[frame];
     L.ringMat.opacity = 0.55 + 0.3 * Math.sin(t * 6);
     this.gazeMat.opacity = (this.orca.alert ? 0.5 : 0.32) + 0.12 * Math.sin(t * 5);
-    this.markerMat.opacity = 0.55 + 0.2 * Math.sin(t * 4);
+    this.markerMat.opacity = (this.marker.userData.dim ? 0.3 : 0.55) + (this.marker.userData.dim ? 0.08 : 0.2) * Math.sin(t * 4);
     this.shake *= 0.9;
   }
 }

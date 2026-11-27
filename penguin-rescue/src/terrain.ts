@@ -189,19 +189,32 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     const snowDetails = (g: CanvasRenderingContext2D) => {
       const rr = mulberry(seed * 7 + h);
       if (spring) {
-        // green felt coming through: the last patches of melting snow, tufts of grass, felt specks
-        for (let k = 0; k < 26; k++) {
-          const x = rr() * W, y = rr() * H;
-          g.fillStyle = `rgba(250,252,255,${0.7 + rr() * 0.25})`;
-          g.beginPath();
-          for (let j = 0; j < 9; j++) {
-            const a = (j / 9) * Math.PI * 2, rad = 18 + rr() * 26;
-            const px = x + Math.cos(a) * rad * 1.5, py = y + Math.sin(a) * rad;
-            if (j) g.lineTo(px, py);
-            else g.moveTo(px, py);
+        // green felt coming through. The last snow lingers in the shade behind rocks, trees and drifts:
+        // soft white patches with a cool blue edge, so they read as snow under the warm lamp.
+        for (let z = 0; z < rows; z++) {
+          for (let x = h * halfCols; x < (h + 1) * halfCols; x++) {
+            if (!'#Y^I'.includes(grid[z][x]) || rr() < 0.35) continue;
+            const cx = (x - h * halfCols + 0.5 + (rr() - 0.5) * 0.4) * PX, cy = (z - 0.15 + (rr() - 0.5) * 0.3) * PX;
+            const blob = (grow: number) => {
+              g.beginPath();
+              for (let j = 0; j < 10; j++) {
+                const a = (j / 10) * Math.PI * 2, rad = (0.34 + rr() * 0.12) * PX + grow;
+                const px = cx + Math.cos(a) * rad * 1.35, py = cy + Math.sin(a) * rad * 0.8;
+                if (j) g.lineTo(px, py);
+                else g.moveTo(px, py);
+              }
+              g.closePath();
+              g.fill();
+            };
+            g.save();
+            g.shadowColor = 'rgba(120,150,190,0.55)';
+            g.shadowBlur = 14;
+            g.fillStyle = 'rgba(214,228,242,0.9)';
+            blob(6);
+            g.restore();
+            g.fillStyle = '#fbfdff';
+            blob(0);
           }
-          g.closePath();
-          g.fill();
         }
         g.lineCap = 'round';
         for (let k = 0; k < 420; k++) {
@@ -311,4 +324,23 @@ export function buildTerrain(grid: string[][], night: boolean, seed: number, wat
     halves.push(hinge);
   }
   return { halves };
+}
+
+/**
+ * A hand-cut mask around the cells where `test` is true, `px` pixels per cell, over the whole board:
+ * the same blurred-and-wobbled edge as the coastlines. `cut` above 0.5 sits inside the cells' edge.
+ */
+export function cellMask(cols: number, rows: number, test: (x: number, z: number) => boolean, px: number, seed: number, cut = 0.5) {
+  const grid = Array.from({ length: rows }, (_, z) => Array.from({ length: cols }, (_, x) => (test(x, z) ? '1' : '0')));
+  const f = makeField(grid, (ch) => ch === '1');
+  const n1 = valueNoise(seed), n2 = valueNoise(seed + 7);
+  const W = cols * px, H = rows * px;
+  const alpha = new Uint8ClampedArray(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const v = sample(f, (x * LO) / px, (y * LO) / px) + n1(x / (px / 2), y / (px / 2)) * 0.075 + n2(x / (px / 8), y / (px / 8)) * 0.03;
+      if (v > cut) alpha[y * W + x] = 255;
+    }
+  }
+  return { W, H, alpha };
 }

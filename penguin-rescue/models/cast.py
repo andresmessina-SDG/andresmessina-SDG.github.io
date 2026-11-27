@@ -474,6 +474,96 @@ def fox(kit):
         line(f"snout{s}", H([(s * 0.026, 0.742), (s * 0.034, 0.77), (s * 0.04, 0.8)]), 4.8, 0.0024, color='#8d9cb0')
 
 # ======================================================================================
+# Book Two, spring. Mama Eider: a female common eider, side on, facing right, settled on her nest
+# of down. Warm brown, barred all over, with the long sloping wedge of a bill that runs up the
+# forehead. Her nest is a heap of grey-white down.
+# ======================================================================================
+def eider():
+    P.begin("eider", 0.72)
+    BROWN, BROWN_DK, DOWN, DOWN_DK = '#a07a52', '#6f5034', '#efe9df', '#b8ad9c'
+    NEST = smooth([(-0.56, 0.02), (0.0, 0.0), (0.56, 0.02), (0.6, 0.1), (0.5, 0.2), (0.25, 0.25), (-0.25, 0.25),
+                   (-0.5, 0.2), (-0.6, 0.1)])
+    BODY = smooth([(-0.56, 0.4), (-0.42, 0.44), (-0.22, 0.54), (0.02, 0.58), (0.2, 0.55), (0.3, 0.46), (0.33, 0.33),
+                   (0.26, 0.2), (0.0, 0.15), (-0.3, 0.17), (-0.45, 0.25)])
+    WING = smooth([(-0.44, 0.38), (-0.2, 0.48), (0.06, 0.5), (0.2, 0.43), (0.16, 0.3), (-0.12, 0.26), (-0.38, 0.29)])
+    HEAD = smooth([(0.18, 0.52), (0.2, 0.64), (0.27, 0.75), (0.37, 0.77), (0.45, 0.71), (0.47, 0.62), (0.42, 0.54),
+                   (0.33, 0.48)])
+    BILL = smooth([(0.43, 0.72), (0.5, 0.67), (0.62, 0.6), (0.61, 0.565), (0.5, 0.57), (0.44, 0.6)], n=6)
+    P.backing([NEST, BODY, HEAD, BILL])
+    P.easel(-0.25, 0.2, 0.05, 0.25)
+    card("body", BODY, 2, BROWN)
+    hatch("body_h", crescent(BODY, -0.04, 0.05), BODY, 2, angle=70, color=BROWN_DK)
+    for i in range(9):   # the barring that makes her vanish on a nest
+        x = -0.42 + i * 0.085
+        z0 = 0.2 + 0.32 * (1 - abs(x + 0.06) / 0.5) ** 0.5
+        line(f"bar{i}", [(x - 0.02, z0), (x + 0.01, z0 - 0.03), (x + 0.04, z0 - 0.02)], 2.2, 0.0035, color=BROWN_DK)
+    ink("body_ink", BODY, 2, 0.006)
+    card("wing", WING, 3, '#8d6845')
+    for i in range(5):
+        x = -0.36 + i * 0.11
+        line(f"feather{i}", [(x, 0.31 + i * 0.012), (x + 0.07, 0.38 + i * 0.015), (x + 0.12, 0.42 + i * 0.008)], 3.2, 0.003, color=BROWN_DK)
+    ink("wing_ink", WING, 3, 0.0045)
+    card("head", HEAD, 4, BROWN)
+    hatch("head_h", crescent(HEAD, -0.03, 0.03), HEAD, 4, spacing=0.0095, w=0.002, color=BROWN_DK)
+    ink("head_ink", HEAD, 4, 0.005)
+    inked("bill", BILL, 4.5, '#7f8a6a', w=0.004, wash=0.05)
+    line("billline", [(0.47, 0.62), (0.6, 0.58)], 4.6, 0.0022)
+    card("eye", ellipse(0.37, 0.66, 0.022, 0.024, n=20), 5, INK, wash=0)
+    card("glint", ellipse(0.378, 0.672, 0.007, 0.007, n=10), 5.3, '#ffffff', wash=0)
+    card("cheek", ellipse(0.33, 0.6, 0.026, 0.015, n=16), 4.8, BLUSH, wash=0)
+    card("nest", NEST, 6, DOWN, wash=0.06)
+    for i in range(10):   # wisps of down
+        x = -0.48 + i * 0.105
+        z = 0.12 + 0.1 * (1 - abs(x) / 0.6)
+        line(f"down{i}", [(x - 0.03, z), (x, z + 0.03), (x + 0.03, z + 0.005)], 6.2, 0.0025, color=DOWN_DK)
+    ink("nest_ink", NEST, 6, 0.005)
+
+# ======================================================================================
+# The hare: a mountain hare sitting up, front on, halfway between coats: brown on top, still
+# winter white underneath. Long ears with black tips, a split lip, and very long whiskers.
+# ======================================================================================
+def hare():
+    P.begin("hare", 0.8)
+    FUR, SHADE, WINTER, PINK = '#b58d66', '#7f5f42', '#f5f2ec', '#e9c3c3'
+    BODY = smooth(mirror([(0, 0.6), (0.12, 0.59), (0.19, 0.5), (0.23, 0.34), (0.245, 0.18), (0.2, 0.05), (0.11, 0.01), (0, 0.01)]))
+    BELLY = smooth(mirror([(0, 0.47), (0.08, 0.455), (0.135, 0.36), (0.15, 0.2), (0.11, 0.07), (0, 0.05)]))
+    HEAD = smooth(mirror([(0, 0.79), (0.08, 0.785), (0.135, 0.75), (0.158, 0.69), (0.142, 0.63), (0.09, 0.59), (0, 0.58)]))
+    MUZZLE = smooth(mirror([(0, 0.68), (0.045, 0.675), (0.065, 0.645), (0.05, 0.615), (0, 0.605)]))
+    EAR_R = smooth([(0.03, 0.765), (0.04, 0.88), (0.07, 1.02), (0.105, 1.045), (0.125, 0.98), (0.11, 0.85), (0.09, 0.75)])
+    INNER_R = smooth([(0.055, 0.8), (0.065, 0.9), (0.085, 0.99), (0.102, 0.98), (0.1, 0.87), (0.085, 0.79)], n=8)
+    TIP_R = smooth([(0.07, 1.0), (0.08, 1.03), (0.105, 1.045), (0.125, 0.98), (0.12, 0.96), (0.095, 0.985)], n=6)
+    FOOT_R = ellipse(0.09, 0.03, 0.07, 0.03, n=20)
+    P.backing([BODY, HEAD, EAR_R, flipx(EAR_R)])
+    P.easel(-0.1, 0.1, 0.06, 0.2)
+    card("body", BODY, 2, FUR, wash=0.06)
+    hatch("body_h", crescent(BODY, -0.06, 0.04), BODY, 2, color=SHADE)
+    ink("body_ink", BODY, 2, 0.0055)
+    card("belly", BELLY, 2.5, WINTER, wash=0.04)
+    ink("belly_ink", BELLY, 2.5, 0.0035)
+    for s in (-1, 1):
+        sh = FOOT_R if s == 1 else flipx(FOOT_R)
+        inked(f"foot{s}", sh, 2.8, WINTER, w=0.004, wash=0.04)
+        line(f"haunch{s}", [(s * 0.2, 0.32), (s * 0.16, 0.2), (s * 0.17, 0.08)], 2.6, 0.0034)
+        line(f"arm{s}", [(s * 0.06, 0.42), (s * 0.055, 0.3), (s * 0.05, 0.2)], 2.6, 0.003)
+    for s, ear, inner, tip in ((1, EAR_R, INNER_R, TIP_R), (-1, flipx(EAR_R), flipx(INNER_R), flipx(TIP_R))):
+        inked(f"ear{s}", ear, 3, FUR, w=0.0045, wash=0.05)
+        card(f"inner{s}", inner, 3.2, PINK, wash=0.05)
+        card(f"tip{s}", tip, 3.3, '#3b2f27', wash=0)
+    card("head", HEAD, 4, FUR, wash=0.05)
+    hatch("head_h", crescent(HEAD, -0.045, 0.03), HEAD, 4, spacing=0.0095, w=0.002, color=SHADE)
+    ink("head_ink", HEAD, 4, 0.005)
+    inked("muzzle", MUZZLE, 4.3, WINTER, w=0.003, wash=0.03)
+    for s in (-1, 1):
+        card(f"eye{s}", ellipse(s * 0.075, 0.715, 0.02, 0.022, n=20, rot=s * 10), 5, INK, wash=0)
+        card(f"glint{s}", ellipse(s * 0.075 + 0.006, 0.723, 0.006, 0.006, n=10), 5.3, '#ffffff', wash=0)
+        card(f"cheek{s}", ellipse(s * 0.11, 0.655, 0.02, 0.012, n=16), 4.8, BLUSH, wash=0)
+        for i in range(3):
+            line(f"whisk{s}{i}", [(s * 0.05, 0.64 - i * 0.008), (s * 0.15, 0.645 - i * 0.02), (s * 0.22, 0.64 - i * 0.035)], 4.8, 0.0016)
+    inked("nose", smooth([(-0.018, 0.67), (0.018, 0.67), (0.0, 0.652)], n=6), 5, '#c9727a', w=0.0018, wash=0)
+    line("lip", [(0.0, 0.652), (0.0, 0.632), (-0.016, 0.622)], 5, 0.0022)
+    line("lip2", [(0.0, 0.632), (0.016, 0.622)], 5, 0.0022)
+
+# ======================================================================================
 CAST = {
     "tuck":        lambda: penguin("tuck", 1.0, '#d6a646', '#a8802f', hat=('#7e9dc4', '#5e7da5')),
     "tuckSad":     lambda: penguin("tuckSad", 1.0, '#d6a646', '#a8802f', hat=('#7e9dc4', '#5e7da5'), sad=True),
@@ -487,6 +577,8 @@ CAST = {
     "walrusSpecs": lambda: walrus(True),
     "fox":         lambda: fox(False),
     "kit":         lambda: fox(True),
+    "eider":       eider,
+    "hare":        hare,
 }
 
 if __name__ == "__main__":   # importing this file (bake.py does) only defines the cast

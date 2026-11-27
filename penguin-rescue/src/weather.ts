@@ -20,17 +20,20 @@ function flakeTexture() {
   return t;
 }
 
-/** A paper raindrop: a fat little teardrop. */
+/** A raindrop: a thin streak, drawn the same small size near and far so it reads as falling rain. */
 function dropTexture() {
   const c = makeCanvas(64, 64);
   const g = ctx2d(c);
-  g.fillStyle = '#ffffff';
+  const grd = g.createLinearGradient(0, 4, 0, 60);
+  grd.addColorStop(0, 'rgba(255,255,255,0.15)');
+  grd.addColorStop(1, 'rgba(255,255,255,1)');
+  g.strokeStyle = grd;
+  g.lineWidth = 12;
+  g.lineCap = 'round';
   g.beginPath();
-  g.moveTo(32, 4);
-  g.bezierCurveTo(40, 26, 46, 40, 46, 48);
-  g.bezierCurveTo(46, 58, 18, 58, 18, 48);
-  g.bezierCurveTo(18, 40, 24, 26, 32, 4);
-  g.fill();
+  g.moveTo(35, 6);
+  g.lineTo(30, 58);
+  g.stroke();
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -74,7 +77,7 @@ export class Snow {
 
   setNight(k: number) {
     this.night = k;
-    if (this.rain) this.mat.color.set('#c4dcf2');
+    if (this.rain) this.mat.color.set('#dbeaf8');
     else this.mat.color.setRGB(1 - 0.25 * k, 1 - 0.15 * k, 1);
     this.mat.opacity = 0.9 - 0.35 * k;
   }
@@ -83,7 +86,11 @@ export class Snow {
   setRain(on: boolean) {
     this.rain = on;
     this.mat.map = on ? (this.drop ??= dropTexture()) : this.flake;
-    this.mat.size = on ? 0.6 : 0.11;
+    // raindrops keep one size on screen (in pixels); snowflakes shrink with distance
+    this.mat.sizeAttenuation = !on;
+    this.mat.size = on ? 14 : 0.11;
+    // a streak fades in from its top, so keep its faint end rather than cutting it off
+    this.mat.alphaTest = on ? 0.02 : 0.2;
     this.mat.needsUpdate = true;
     this.setNight(this.night);
   }
@@ -91,7 +98,7 @@ export class Snow {
   update(dt: number, t: number, center: THREE.Vector3) {
     const { x: bx, y: by, z: bz } = this.box;
     // showers come and go
-    if (this.rain) this.mat.opacity = 0.75 * Math.min(1, Math.max(0.15, 0.6 + Math.sin(t * 0.21) * 0.7));
+    if (this.rain) this.mat.opacity = 0.6 * Math.min(1, Math.max(0.15, 0.6 + Math.sin(t * 0.21) * 0.7));
     const fall = this.rain ? 9 : 1;
     for (let i = 0; i < this.seed.length; i++) {
       const s = this.seed[i];
