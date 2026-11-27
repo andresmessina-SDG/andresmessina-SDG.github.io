@@ -37,9 +37,19 @@ export interface JournalChapter {
   summary: string;
   steps: Quest[];
 }
+/** One scrapbook page: a chapter's photo and stickers. */
+export interface JournalPage {
+  title: string;
+  photo?: string;
+  stars: [number, number];
+  sides: { icon?: string; title: string; done: boolean }[];
+  /** False for chapters not reached yet: their page is still blank. */
+  visited: boolean;
+}
 export interface Journal {
   chapters: JournalChapter[];
   side: JournalSide[];
+  book: JournalPage[];
   stars: [number, number];
   labels: Record<string, string>;
 }
@@ -71,7 +81,7 @@ export class UI {
   answers: number[] = [];
   /** Supplies the journal's contents when it opens. */
   journalSource: (() => Journal) | null = null;
-  private tab: 'story' | 'side' = 'story';
+  private tab: 'story' | 'side' | 'book' = 'story';
 
   /** True while a line, a question or the journal is showing: the game waits meanwhile. */
   get open() {
@@ -101,7 +111,7 @@ export class UI {
     $('journalClose').addEventListener('click', () => this.closeJournal());
     this.journalEl.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) =>
       b.addEventListener('click', () => {
-        this.tab = b.dataset.tab as 'story' | 'side';
+        this.tab = b.dataset.tab as 'story' | 'side' | 'book';
         this.renderJournal();
       }),
     );
@@ -274,7 +284,7 @@ export class UI {
 
   // ---------------------------------------------------------------- the journal
 
-  openJournal(tab?: 'story' | 'side') {
+  openJournal(tab?: 'story' | 'side' | 'book') {
     if (this.isOpen || !this.journalSource) return;
     if (tab) this.tab = tab;
     this.journalOpen = true;
@@ -340,6 +350,43 @@ export class UI {
           card.appendChild(ul);
         }
         out.push(card);
+      }
+    } else if (this.tab === 'book') {
+      // the scrapbook: a taped-in photo and stickers for every chapter
+      for (const pg of J.book) {
+        const page = el('section', `page${pg.visited ? '' : ' blank'}`);
+        const photo = el('figure', 'photo');
+        if (pg.photo) {
+          const img = el('img') as HTMLImageElement;
+          img.src = pg.photo;
+          img.alt = pg.title;
+          photo.appendChild(img);
+        } else photo.appendChild(el('span', 'nophoto', pg.visited ? '📷' : '?'));
+        photo.appendChild(el('figcaption', '', pg.title));
+        page.appendChild(photo);
+        const st = el('div', 'stickers');
+        if (pg.visited) {
+          const stars = el('div', 'stars');
+          stars.setAttribute('aria-label', `${L.stars} ${pg.stars[0]}/${pg.stars[1]}`);
+          for (let i = 0; i < pg.stars[1]; i++) stars.appendChild(el('i', i < pg.stars[0] ? 'got' : '', '★'));
+          st.appendChild(stars);
+          const sides = el('div', 'sides');
+          for (const s of pg.sides) {
+            const b = el('span', `sticker${s.done ? ' got' : ''}`);
+            b.title = s.title;
+            if (s.done && s.icon) {
+              const img = el('img') as HTMLImageElement;
+              img.src = s.icon;
+              img.alt = s.title;
+              b.appendChild(img);
+            } else b.textContent = '?';
+            sides.appendChild(b);
+          }
+          st.appendChild(sides);
+          if (!pg.photo) st.appendChild(el('p', 'note', L.bookNoPhoto));
+        } else st.appendChild(el('p', 'note', L.bookBlank));
+        page.appendChild(st);
+        out.push(page);
       }
     } else {
       let lastChapter = '';

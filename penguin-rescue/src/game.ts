@@ -10,8 +10,9 @@ import {
   type OrcaPath, type OrcaState, type TurnWorld,
 } from './rules';
 import type { Sound } from './audio';
-import type { UI, Speaker, Line, Quest, Journal, JournalSide } from './ui';
+import type { UI, Speaker, Line, Quest, Journal, JournalSide, JournalPage } from './ui';
 import { tr, t, touch, hops, fishes } from './i18n';
+import { loadScrapbook, type Page } from './scrapbook';
 
 export type { Cell };
 export const COLS = LEVELS[0].map[0].length;
@@ -39,7 +40,8 @@ const sp = (en: string, ru: string, art: HTMLCanvasElement, voice: number): Spea
   voice,
 });
 
-export const STAR_TOTAL = LEVELS.reduce((n, l) => n + (l.map.join('').match(/[*%]/g) ?? []).length, 0);
+const starsIn = (def: LevelDef) => (def.map.join('').match(/[*%+]/g) ?? []).length;
+export const STAR_TOTAL = LEVELS.reduce((n, l) => n + starsIn(l), 0);
 
 type Pair = [string, string];
 interface SideDef {
@@ -405,6 +407,16 @@ export class Game {
   }
 
   /** Everything the journal shows. */
+  /** This chapter's stickers so far: paper stars found here and side quests finished here. */
+  pageNow(): Page {
+    const L = this.level;
+    if (!L) return { stars: 0, sides: [] };
+    return {
+      stars: starsIn(L.def) - L.stars.size,
+      sides: SIDE.filter((d) => d.chapter === L.def.id && this.sideStatus(d).state === 'done').map((d) => d.id),
+    };
+  }
+
   journal(): Journal {
     const cur = this.chapterIndex;
     const chapters = LEVELS.slice(0, cur + 1).map((def, i) => ({
@@ -421,9 +433,24 @@ export class Game {
         chapter: tr(def.title, def.titleRu), state: st.state, progress: st.progress,
       };
     });
+    // the scrapbook: what's pasted in from before, plus what this game has done so far
+    const saved = loadScrapbook();
+    const now = this.pageNow();
+    const book = LEVELS.map((def, i): JournalPage => {
+      const s = saved[def.id];
+      const done = new Set(s?.sides ?? []);
+      if (i <= cur) for (const d of SIDE) if (d.chapter === def.id && this.sideStatus(d).state === 'done') done.add(d.id);
+      return {
+        title: tr(def.title, def.titleRu),
+        photo: s?.photo,
+        stars: [Math.max(s?.stars ?? 0, i === cur ? now.stars : 0), starsIn(def)],
+        sides: SIDE.filter((d) => d.chapter === def.id).map((d) => ({ icon: this.S[d.giver].portrait, title: tr(...d.title), done: done.has(d.id) })),
+        visited: !!s || i <= cur,
+      };
+    });
     return {
-      chapters, side, stars: [this.stars, STAR_TOTAL],
-      labels: { stars: t('stars'), locked: t('locked'), lockedHint: t('lockedHint'), stampDone: t('stampDone'), stampMissed: t('stampMissed') },
+      chapters, side, book, stars: [this.stars, STAR_TOTAL],
+      labels: { stars: t('stars'), locked: t('locked'), lockedHint: t('lockedHint'), stampDone: t('stampDone'), stampMissed: t('stampMissed'), bookBlank: t('bookBlank'), bookNoPhoto: t('bookNoPhoto') },
     };
   }
 

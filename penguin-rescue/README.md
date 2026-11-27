@@ -69,6 +69,12 @@ lighter renderer, and on any device the picture steps down on its own (fewer
 pixels, then no glow) if the frame rate stays under 45. Add `?quality=high` to the
 address to turn that off.
 
+**Scrapbook.** When a chapter ends there's a click and a flash: a photo of the page drops
+in as a polaroid and flies off to the journal. The journal's Scrapbook tab has a page for
+each chapter with its photo, a gold sticker for each paper star found there, and a portrait
+sticker for each side quest finished. The scrapbook is kept apart from the saved game, so
+it survives Start over and finishing the book, and it remembers your best.
+
 **Saving.** The game saves itself after every move, in this browser only. A save is
 the state at the start of the chapter (items, fish, paper stars, who you helped,
 Gentle mode) plus every move and answer since. The title card then offers Continue,

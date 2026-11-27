@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1) and mid-chapter saves (2.2) are built.
+**Status:** building section 2. Book One (five chapters) is finished and live. Undo (2.1), mid-chapter saves (2.2) and the scrapbook (2.3) are built.
 
 ---
 
@@ -65,7 +65,7 @@ Kids play in short bursts, often 10–15 minutes.
   and silently, so you resume exactly where you stopped, story scenes included. New chapters
   and mechanics get this for free, as long as their rules don't use randomness.
 
-### 2.3 Give paper stars a purpose
+### 2.3 Give paper stars a purpose — built (scrapbook and snapshots; no unlocks yet)
 Stars are only counted. A collectible that unlocks nothing is easy to ignore.
 - **A sticker scrapbook** in the journal. Each chapter has a page, and stars and finished side
   quests fill in stickers and little scenes. It suits the paper theme and gives a reason to
@@ -282,5 +282,7 @@ reuse an existing verb, and does it look like paper?
 | 2026-11-26 | Stay in planning; keep this document as the plan of record | Asked to plan before building |
 | 2026-11-26 | Book Two travels through the seasons, with weather-based mechanics | Asked for chapters in different seasons with different weather and mechanics |
 | 2026-11-26 | Build the Book One improvements first, starting with undo | Agreed; Spring's cracking ice depends on undo |
+| 2026-11-26 | The scrapbook is stored apart from the save and keeps the best ever (stars, quests) and the latest photo | Survives Start over and the end of the book, so replaying a chapter can still add stickers |
+| 2026-11-26 | No star unlocks (outfits) yet | Open question 5 is still undecided |
 | 2026-11-26 | Mid-chapter saves replay recorded moves instead of saving every story flag | Exact resume anywhere, no restore code per scene, and Book Two's mechanics are covered automatically. Rule: game logic must stay deterministic (randomness only for looks) |
 | 2026-11-26 | Undo covers moves only: position, Grimfin, ice blocks, fish. It stops at finding things, conversations and sunk blocks | Collecting is never a mistake, and taking back story scenes or new floes would be fragile; caught-then-undo is the case that matters |
