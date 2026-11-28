@@ -27,6 +27,7 @@ export class Sound {
   private water!: GainNode;
   private rain!: GainNode;
   private raining = false;
+  private waving = false;
   private noise!: AudioBuffer;
   private nextT = 0;
   private stepI = 0;
@@ -54,7 +55,7 @@ export class Sound {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
 
     this.wind = this.ambient(420, 0.6, 0.09, 0.07);
-    this.water = this.ambient(380, 1.4, 0.23, 0);
+    this.water = this.ambient(380, 1.4, 0.23, this.waving ? 0.1 : 0);
     this.rain = this.ambient(2600, 0.7, 0.07, this.raining ? 0.05 : 0);
     this.nextT = ctx.currentTime + 0.4;
     setInterval(() => this.schedule(), 60);
@@ -281,6 +282,11 @@ export class Sound {
     const t = this.now;
     if (t < 0) return;
     for (let i = 0; i < 3; i++) this.burst(t + i * 0.045, { type: 'highpass', f: 2600 + i * 700, q: 1.2, vol: 0.32 * vol, dur: 0.06 });
+  }
+  /** Summer: the slow wash of waves on the beach. */
+  setWaves(on: boolean) {
+    this.waving = on;
+    if (this.ctx) this.water.gain.setTargetAtTime(on ? 0.1 : 0, this.ctx.currentTime, 1.5);
   }
   /** Spring rain: a soft hiss that comes and goes. */
   setRain(on: boolean) {

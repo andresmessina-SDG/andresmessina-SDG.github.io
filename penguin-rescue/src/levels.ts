@@ -22,12 +22,18 @@
 //   z  thick ice, too hard for penguin feet      Z  a paper star on thick ice
 //   M  Mama Eider     f  a paper flap (lift it)   q  a flap with an eider egg under it
 //   h  the hare       t  Tuck
+// Book Two, summer (chapter seven). The tide comes and goes (see `tide`):
+//   w  a sandbar: dry except at high tide        u  the seabed: dry only at low tide
+//   l  a pretty shell on a sandbar               i  a pretty shell on the seabed
+//   d  a paper star on a sandbar                 p  a paper star on the seabed
+//   O  the big whelk shell, in a tide pool       J  the bucket, on Seal Rock
+//   C  the sandcastle  x  the hermit crab        D  a jetty (always dry)
 import type { Cell, Lane } from './rules';
 
 export type { Cell };
 
-export type ChapterId = 'shore' | 'glacier' | 'cove' | 'fog' | 'party' | 'spring';
-export type Season = 'winter' | 'spring';
+export type ChapterId = 'shore' | 'glacier' | 'cove' | 'fog' | 'party' | 'spring' | 'summer';
+export type Season = 'winter' | 'spring' | 'summer';
 
 export interface LevelDef {
   id: ChapterId;
@@ -56,6 +62,11 @@ export interface LevelDef {
   dams?: Cell[];
   /** Spring: where Grimfin hums in the water, and where the hare's burrow is under the pond. */
   spring?: { grim: Cell; burrow: Cell };
+  /**
+   * Summer: the tide turns one notch each move (`start` is the first notch, see TIDE in rules.ts).
+   * Grimfin starts in the `cove` by the sandcastle, then waits at `ride` between the two jetties.
+   */
+  tide?: { start: number; cove: Cell; ride: Cell };
 }
 
 const ALL: LevelDef[] = [
@@ -230,6 +241,33 @@ const ALL: LevelDef[] = [
     ],
     dams: [[7, 1], [14, 1]],
     spring: { grim: [19, 7], burrow: [15, 7] },
+  },
+  {
+    id: 'summer',
+    book: 2,
+    season: 'summer',
+    title: 'Chapter Seven · Summer · Midnight-Sun Beach',
+    titleRu: 'Глава седьмая · Лето · Пляж полуночного солнца',
+    night: false,
+    mode: 'walk',
+    water: '~wludpiO',
+    map: [
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+      '~^^...#.~~~~~~~~~~~~~~~~',
+      '~^.....Y~~~~p~~~~~~...~~',
+      '~.......~.l.u~~~~~..#..~',
+      '~.......~.~~~~~~~~...J.~',
+      '~...A.B.~w~~~~~~~~.....~',
+      '~....C..www..dwwD~D...Y~',
+      '~.P.....~~w~~~l~~~.....~',
+      '~...t...~~.~~~.~~~.....~',
+      '~Y......~~w.~~wd~~.#.*.~',
+      '~.....x.~~~iO~~~~~.....~',
+      '~.#.....~~~~~~~~~~~...~~',
+      '~*.....#~~~~~~~~~~~~~~~~',
+      '~~~~~~~~~~~~~~~~~~~~~~~~',
+    ],
+    tide: { start: 7, cove: [8, 5], ride: [17, 6] },
   },
 ];
 

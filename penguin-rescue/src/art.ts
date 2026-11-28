@@ -690,8 +690,8 @@ export function yarn() {
 }
 
 /** A snowy paper pine. */
-/** A pine of cut card tiers. In spring (`snowy` false) only a little snow is left on the top. */
-export function pine(seed: number, snowy = true) {
+/** A pine of cut card tiers: snow on every tier, a little left on top (spring), or none (summer). */
+export function pine(seed: number, snow: 'full' | 'cap' | 'none' = 'full') {
   const r = mulberry(seed);
   const c = makeCanvas(200, 300);
   const g = ctx2d(c);
@@ -704,8 +704,8 @@ export function pine(seed: number, snowy = true) {
     const y = 30 + i * 55, w = 46 + i * 22 + r() * 8;
     layer(g, () => {
       poly(g, [100, y - 30, 100 - w, y + 70, 100 + w, y + 70], greens[i % 3]);
-      if (snowy) poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
-      else if (i === 0) poly(g, [100, y - 30, 100 - w * 0.3, y + 4, 100, y + 10, 100 + w * 0.3, y + 2], '#f6f9fb');
+      if (snow === 'full') poly(g, [100, y - 30, 100 - w * 0.55, y + 22, 100 - w * 0.2, y + 14, 100, y + 26, 100 + w * 0.3, y + 12, 100 + w * 0.6, y + 24], '#f6f9fb');
+      else if (snow === 'cap' && i === 0) poly(g, [100, y - 30, 100 - w * 0.3, y + 4, 100, y + 10, 100 + w * 0.3, y + 2], '#f6f9fb');
     }, 1.3);
   }
   return c;
@@ -1592,6 +1592,212 @@ export function thickIce(seed = 1) {
     g.lineTo(x + 18 + r() * 14, y + (r() - 0.5) * 16);
     g.stroke();
   }
+  return c;
+}
+
+// ---------------------------------------------------------------- Book Two: summer
+
+const SAND = '#e6c98c', SAND_DK = '#c9a865';
+
+/** The sandcastle: built, washed flat by a wave, or rebuilt grander (with the crab's flag and Tuck's shells). */
+export function sandcastle(state: 'built' | 'flat' | 'grand', flag = false, shells = false) {
+  const c = makeCanvas(300, 280);
+  const g = ctx2d(c);
+  if (state === 'flat') {
+    layer(g, () => {
+      g.fillStyle = SAND;
+      g.beginPath();
+      g.moveTo(20, 270);
+      g.bezierCurveTo(60, 200, 240, 196, 282, 270);
+      g.fill();
+    });
+    layer(g, () => poly(g, [190, 268, 194, 226, 216, 222, 222, 268], SAND));   // one sad stump of a tower
+    g.strokeStyle = 'rgba(150,110,60,0.5)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(60, 250); g.quadraticCurveTo(150, 226, 240, 250);
+    g.stroke();
+    return c;
+  }
+  const grand = state === 'grand';
+  const tower = (x: number, w: number, top: number) => {
+    layer(g, () => {
+      g.fillStyle = SAND;
+      g.fillRect(x, top, w, 270 - top);
+      for (let k = 0; k < 3; k++) g.fillRect(x + k * (w / 3) + 2, top - 14, w / 3 - 6, 16);   // crenellations
+    });
+    g.strokeStyle = 'rgba(150,110,60,0.45)';
+    g.lineWidth = 2;
+    for (let y = top + 24; y < 266; y += 22) {
+      g.beginPath(); g.moveTo(x + 4, y); g.lineTo(x + w - 4, y); g.stroke();
+    }
+  };
+  if (grand) tower(14, 56, 110);
+  tower(grand ? 230 : 40, grand ? 56 : 50, grand ? 110 : 130);
+  if (!grand) tower(210, 50, 130);
+  layer(g, () => {
+    g.fillStyle = SAND_DK;
+    g.fillRect(70, 160, 160, 110);
+  }, 1.4);
+  tower(110, 80, grand ? 50 : 80);
+  layer(g, () => {
+    g.fillStyle = '#7a5a3a';
+    g.beginPath();
+    g.moveTo(132, 270); g.lineTo(132, 225); g.arc(150, 225, 18, Math.PI, 0); g.lineTo(168, 270);
+    g.fill();
+  });
+  if (shells) {
+    for (const [x, y, col] of [[150, 120, '#f4a9b8'], [40, 150, '#f6d27a'], [258, 150, '#bfe0f0'], [100, 200, '#f4a9b8'], [200, 200, '#f6d27a']] as const) {
+      layer(g, () => {
+        g.fillStyle = col;
+        g.beginPath();
+        g.moveTo(x, y + 9);
+        g.arc(x, y, 10, Math.PI * 0.9, Math.PI * 0.1);
+        g.closePath();
+        g.fill();
+      }, 0.6);
+    }
+  }
+  if (flag || grand) {
+    g.strokeStyle = '#6b4a2e';
+    g.lineWidth = 4;
+    g.beginPath(); g.moveTo(150, grand ? 36 : 66); g.lineTo(150, grand ? -2 : 28); g.stroke();
+    if (flag) layer(g, () => poly(g, [152, grand ? 0 : 30, 196, grand ? 10 : 40, 152, grand ? 22 : 52], '#d9443a'));
+  }
+  return c;
+}
+
+/** A red paper bucket with a little spade. */
+export function bucket2() {
+  const c = makeCanvas(140, 150);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.strokeStyle = '#6b6f76';
+    g.lineWidth = 5;
+    g.beginPath(); g.arc(70, 50, 44, Math.PI, 0); g.stroke();
+  });
+  layer(g, () => poly(g, [22, 50, 118, 50, 104, 140, 36, 140], '#d9443a'), 1.3);
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  g.fillRect(30, 62, 80, 10);
+  layer(g, () => {
+    g.strokeStyle = '#b08850';
+    g.lineWidth = 6;
+    g.beginPath(); g.moveTo(112, 30); g.lineTo(96, 120); g.stroke();
+    poly(g, [88, 112, 106, 116, 100, 146, 84, 140], '#3f8ac4');
+  });
+  return c;
+}
+
+/** A small pretty shell (a scallop). */
+export function shell(color = '#f4a9b8') {
+  const c = makeCanvas(90, 80);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = color;
+    g.beginPath();
+    g.moveTo(45, 74);
+    g.lineTo(8, 32);
+    g.arc(45, 34, 37, Math.PI, 0);
+    g.closePath();
+    g.fill();
+  });
+  g.strokeStyle = 'rgba(120,60,60,0.35)';
+  g.lineWidth = 2;
+  for (let i = -3; i <= 3; i++) {
+    g.beginPath(); g.moveTo(45, 72); g.lineTo(45 + i * 11, 4 + Math.abs(i) * 4); g.stroke();
+  }
+  return c;
+}
+
+/** The big whelk shell, roomy enough for a growing crab. */
+export function whelk() {
+  const c = makeCanvas(150, 130);
+  const g = ctx2d(c);
+  layer(g, () => {
+    g.fillStyle = '#f2e2c4';
+    g.beginPath();
+    g.moveTo(10, 100);
+    g.bezierCurveTo(10, 30, 90, 10, 140, 40);
+    g.bezierCurveTo(130, 70, 110, 120, 60, 124);
+    g.closePath();
+    g.fill();
+  });
+  g.strokeStyle = '#c7a37a';
+  g.lineWidth = 3;
+  g.beginPath();
+  for (let t = 0; t < 22; t++) {
+    const r = 40 * (1 - t / 22), x = 70 + r * Math.cos(t * 0.6), y = 72 + r * 0.8 * Math.sin(t * 0.6);
+    if (t) g.lineTo(x, y); else g.moveTo(x, y);
+  }
+  g.stroke();
+  ell(g, 40, 98, 16, 12, 0.4, '#e9b9a4');
+  return c;
+}
+
+/** A starfish, flat on the sand. */
+export function starfish(color = '#ef8a5a') {
+  const c = makeCanvas(80, 80);
+  const g = ctx2d(c);
+  const pts: number[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i / 10) * TAU, r = i % 2 ? 12 : 34;
+    pts.push(40 + Math.cos(a) * r, 40 + Math.sin(a) * r);
+  }
+  layer(g, () => poly(g, pts, color), 0.7);
+  for (let i = 0; i < 5; i++) circ(g, 40 + Math.cos(-Math.PI / 2 + (i / 5) * TAU) * 18, 40 + Math.sin(-Math.PI / 2 + (i / 5) * TAU) * 18, 2.5, 'rgba(255,255,255,0.6)');
+  return c;
+}
+
+/** A hermit crab in a too-small shell (the flat cutout, used if its model can't load). */
+export function crab() {
+  const c = makeCanvas(260, 160);
+  const g = ctx2d(c);
+  layer(g, () => ell(g, 80, 92, 64, 56, 0, '#f0dcc0'));
+  layer(g, () => ell(g, 160, 100, 46, 44, 0, '#e0703f'), 1.3);
+  layer(g, () => ell(g, 218, 116, 30, 20, 0, '#e0703f'));
+  for (const x of [148, 172]) {
+    g.strokeStyle = '#a8482a'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(x, 64); g.lineTo(x + 4, 30); g.stroke();
+    circ(g, x + 4, 26, 9, '#141a22');
+  }
+  return c;
+}
+
+/**
+ * The tide wheel: eight notches round a paper disc, one per move. Low tide is sand with a shell,
+ * high tide deep blue waves, and the turns between are paler blue with an arrow up or down, so it
+ * reads by shape as well as colour.
+ */
+export function tideWheel(phases: readonly string[]) {
+  const S = 220, c = makeCanvas(S, S);
+  const g = ctx2d(c);
+  const R = S / 2 - 6, step = TAU / phases.length;
+  phases.forEach((ph, i) => {
+    const a0 = -Math.PI / 2 + i * step - step / 2;
+    g.fillStyle = ph === 'low' ? '#ecd49c' : ph === 'high' ? '#3d7fb4' : '#9fd0ea';
+    g.beginPath(); g.moveTo(S / 2, S / 2); g.arc(S / 2, S / 2, R, a0, a0 + step); g.closePath(); g.fill();
+    g.strokeStyle = '#7a5f3e'; g.lineWidth = 2; g.stroke();
+    const mx = S / 2 + Math.cos(a0 + step / 2) * R * 0.66, my = S / 2 + Math.sin(a0 + step / 2) * R * 0.66;
+    g.save();
+    g.translate(mx, my);
+    g.rotate(a0 + step / 2 + Math.PI / 2);
+    g.lineWidth = 3; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (ph === 'low') {
+      g.fillStyle = '#f4a9b8';
+      g.beginPath(); g.moveTo(0, 8); g.arc(0, 0, 9, Math.PI * 0.9, Math.PI * 0.1); g.closePath(); g.fill();
+    } else if (ph === 'high') {
+      g.strokeStyle = '#ffffff';
+      for (const y of [-5, 5]) { g.beginPath(); g.moveTo(-11, y); g.quadraticCurveTo(-5, y - 6, 0, y); g.quadraticCurveTo(5, y + 6, 11, y); g.stroke(); }
+    } else {
+      g.strokeStyle = '#21507a';
+      const up = ph === 'rising' ? -1 : 1;
+      g.beginPath(); g.moveTo(0, -10 * up); g.lineTo(0, 10 * up); g.moveTo(-7, -3 * up); g.lineTo(0, -10 * up); g.lineTo(7, -3 * up); g.stroke();
+    }
+    g.restore();
+  });
+  g.strokeStyle = '#7a5f3e'; g.lineWidth = 5;
+  g.beginPath(); g.arc(S / 2, S / 2, R, 0, TAU); g.stroke();
+  layer(g, () => circ(g, S / 2, S / 2, 14, '#c8413b'));
   return c;
 }
 

@@ -70,6 +70,14 @@ scene.add(lamp, lamp.target);
 const DAY = { hemiSky: new THREE.Color(0xe7eeff), hemiGround: new THREE.Color(0x8a6446), hemi: 0.55, lamp: 5.2, lampColor: new THREE.Color(0xffc98a), lampPos: new THREE.Vector3(-11, 28, 15), bg: new THREE.Color('#1d140e') };
 const NIGHT = { hemiSky: new THREE.Color(0x5a70b0), hemiGround: new THREE.Color(0x24180f), hemi: 0.42, lamp: 2.6, lampColor: new THREE.Color(0x9db2ff), lampPos: new THREE.Vector3(9, 27, 17), bg: new THREE.Color('#0b0b12') };
 let night = 0;
+/** Daylight follows the season: summer's midnight sun is low, warm and golden. */
+function setSeasonLight(season: string) {
+  const summer = season === 'summer';
+  DAY.lampColor.set(summer ? 0xffb874 : 0xffc98a);
+  DAY.lampPos.set(summer ? -17 : -11, summer ? 21 : 28, summer ? 13 : 15);
+  DAY.hemiSky.set(summer ? 0xfff0dc : 0xe7eeff);
+  setNight(night);
+}
 function setNight(k: number) {
   night = k;
   hemi.color.copy(DAY.hemiSky).lerp(NIGHT.hemiSky, k);
@@ -225,10 +233,11 @@ let shownTurnBtns = '';
 function syncActions() {
   const L = game.level;
   const turns = !!(L?.def.orca && L.ready);
-  const state = `${turns}${game.fish}${game.undoable}${game.canUndo}`;
+  const waits = turns || !!(L?.def.tide && L.ready);
+  const state = `${turns}${waits}${game.fish}${game.undoable}${game.canUndo}`;
   if (state === shownTurnBtns) return;
   shownTurnBtns = state;
-  waitBtn.hidden = !turns;
+  waitBtn.hidden = !waits;
   fishBtn.hidden = !turns || game.fish <= 0;
   fishBtn.querySelector('b')!.textContent = String(game.fish);
   undoBtn.hidden = !game.undoable;
@@ -389,7 +398,7 @@ function validMid(m: Mid | undefined, chapter: number): Mid | undefined {
     m.answers.every((a) => Number.isInteger(a) && a >= 0 && a < 4);
   return ok ? { moves: m.moves, answers: m.answers, map: m.map } : undefined;
 }
-const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish', 'specs', 'present']);
+const ITEMS = new Set(['lantern', 'boat', 'yarn', 'ball', 'fish', 'specs', 'present', 'bucket', 'whelk']);
 function loadProgress(): Progress | null {
   try {
     const raw = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as (Omit<Progress, 'v'> & { v: number }) | null;
@@ -578,14 +587,14 @@ async function playtestCard(i: number) {
 }
 
 // ------------------------------------------------------------------ story
-/** What you'd carry into a chapter played again: the usual kit, and the friends your scrapbook says you helped before it. */
+/** What you'd carry into a chapter played again: the usual kit (Book One's lantern and boat), and the friends your scrapbook says you helped before it. */
 function replayStart(i: number): Progress {
   const book = loadScrapbook();
   const done = new Set(LEVELS.slice(0, i).flatMap((l) => book[l.id]?.sides ?? []));
   return {
-    v: 2, chapter: i, inv: ['lantern', 'boat'], fish: done.has('yarn') ? 3 : 0, stars: 0,
+    v: 2, chapter: i, inv: BOOK === 1 ? ['lantern', 'boat'] : [], fish: BOOK === 1 && done.has('yarn') ? 3 : 0, stars: 0,
     puffin: done.has('yarn'), bobble: done.has('ball'), splashUsed: false, gentle: gentleBox.checked, covered: false,
-    walrus: done.has('specs'), foxes: done.has('kits'), crates: 0,
+    walrus: done.has('specs'), foxes: done.has('kits'), crates: 0, eider: done.has('eggs'), hare: done.has('burrow'),
   };
 }
 
@@ -634,9 +643,12 @@ async function run() {
       tween(1600, (k) => setNight(from + (to - from) * k), easeInOut);
       await book.turnPage(() => sound.fold(0.5));
     }
-    const rain = LEVELS[i].season === 'spring';
-    snow.setRain(rain);
-    sound.setRain(rain);
+    const season = LEVELS[i].season;
+    snow.setRain(season === 'spring');
+    snow.points.visible = season !== 'summer';
+    sound.setRain(season === 'spring');
+    sound.setWaves(season === 'summer');
+    setSeasonLight(season);
     await game.playChapter(i, continuing ? { mid: continuing.mid!, gentle: gentleBox.checked } : undefined);
     if (playtest) await playtestCard(i);
     await snapshot(i);

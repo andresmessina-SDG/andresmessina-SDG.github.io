@@ -6,7 +6,7 @@ import { makeCutout, useModel, modelPortraits, standee, paperMat, tileGeometry, 
 import { LEVELS, type LevelDef, type Cell, type ChapterId } from './levels';
 import { buildTerrain, cellMask, LAND_Y, ICE } from './terrain';
 import {
-  buildPath, orcaStep, sightCells, farLaneBefore, manhattan, same, SAFE_RADIUS,
+  buildPath, orcaStep, sightCells, farLaneBefore, manhattan, same, SAFE_RADIUS, TIDE, tideAt, tideLevel, TIDAL,
   type OrcaPath, type OrcaState, type TurnWorld,
 } from './rules';
 import type { Sound } from './audio';
@@ -51,7 +51,7 @@ const sp = (en: string, ru: string, portrait: string, voice: number): Speaker =>
   voice,
 });
 
-const starsIn = (def: LevelDef) => (def.map.join('').match(/[*%+;Z]/g) ?? []).length;
+const starsIn = (def: LevelDef) => (def.map.join('').match(/[*%+;Zdp]/g) ?? []).length;
 export const STAR_TOTAL = LEVELS.reduce((n, l) => n + starsIn(l), 0);
 
 type Pair = [string, string];
@@ -119,6 +119,18 @@ const ALL_SIDE: SideDef[] = [
     desc: ["The thaw filled the pond, and the hare's burrow is at the bottom of it.", 'Оттепель наполнила пруд, и норка зайчихи оказалась на самом дне.'],
     reward: ['a dry, cosy burrow', 'сухая уютная норка'],
   },
+  {
+    id: 'crab', chapter: 'summer', giver: 'crab',
+    title: ["The hermit crab's new home", 'Новый домик рака-отшельника'],
+    desc: ['His shell pinches: he has grown. A big whelk shell lies in a tide pool, only reachable at low tide.', 'Раковина ему жмёт: он подрос. В приливной луже лежит большая раковина трубача, до неё можно добраться только в отлив.'],
+    reward: ['his old flag, for the top of the sandcastle', 'его старый флажок на верхушку замка'],
+  },
+  {
+    id: 'shells', chapter: 'summer', giver: 'tuck',
+    title: ["Tuck's pretty shells", 'Красивые ракушки Тука'],
+    desc: ['Tuck wants three pretty shells for the castle windows. They wash up on the sandbars and the seabed.', 'Туку нужны три красивые ракушки для окошек замка. Их выносит на отмели и на морское дно.'],
+    reward: ['shell windows, shared with everyone', 'окошки из ракушек — для всех'],
+  },
 ];
 /** This book's side quests. */
 const SIDE = ALL_SIDE.filter((d) => LEVELS.some((l) => l.id === d.chapter));
@@ -131,6 +143,7 @@ const SUMMARY: Record<ChapterId, Pair> = {
   fog: ['You woke the sleepy lighthouses and sailed home at dawn.', 'Сонные маяки проснулись, и на рассвете кораблик приплыл домой.'],
   party: ['Everyone came to the party. Even Grimfin.', 'На праздник пришли все. Даже Гримфин.'],
   spring: ['You dammed the meltwater streams, forgave Grimfin, and found the first flower of spring.', 'Ручьи перекрыты, Гримфин прощён, и первый весенний цветок найден.'],
+  summer: ['Grimfin washed the sandcastle away, said sorry, and helped build it grander than before.', 'Гримфин смыл песочный замок, попросил прощения и помог построить новый — ещё лучше.'],
 };
 
 /**
@@ -162,6 +175,9 @@ export interface Progress {
   walrus: boolean;
   foxes: boolean;
   crates: number;
+  /** Book Two: friends helped in spring, for the homecoming. */
+  eider?: boolean;
+  hare?: boolean;
   mid?: Mid;
 }
 
@@ -193,6 +209,9 @@ interface Turn {
   /** Spring: the thin ice broken so far, and where you stepped onto it. */
   broken: string[];
   iceEntry: Cell | null;
+  /** Summer: how far the tide has turned, and the last spot the tide can't reach. */
+  tide: number;
+  safe: Cell;
 }
 
 /** A meltwater stream: dam its source and every cell below runs dry, showing stepping stones. */
@@ -239,8 +258,10 @@ interface Level {
   cake: THREE.Group | null;
   /** Spring: thin ice by cell (faces: whole, cracked), thick ice by cell, and the streams. */
   thin: Map<string, THREE.Group>;
-  /** Ripple rings spreading round Grimfin in the spring lake. */
+  /** Ripple rings spreading round Grimfin. */
   ripples: THREE.Mesh[];
+  /** Summer: the cut-paper sand the tide covers: sandbars, and the seabed. */
+  tideSand: { bar: THREE.Mesh | null; bed: THREE.Mesh | null; v: number };
   thick: Map<string, THREE.Object3D>;
   streams: Stream[];
 }
@@ -302,6 +323,16 @@ export class Game {
   private hareMet = false;
   hareHelped = false;
   private iceCracked = false;
+  // summer
+  private tideTurn = 0;
+  private safeCell: Cell = [0, 0];
+  private crabMet = false;
+  crabHelped = false;
+  private shellsMet = false;
+  private shellsFound = 0;
+  private shellsGiven = 0;
+  shellsHelped = false;
+  private castleBuilt = false;
   /** Everything done this chapter, for the save. */
   moves: Move[] = [];
   private replaying = false;
@@ -352,6 +383,7 @@ export class Game {
       kit: A.fox(true),
       eider: A.eider(),
       hare: A.hare(),
+      crab: A.crab(),
     };
     for (const [k, m] of Object.entries(models)) if (this.art[k]) useModel(this.art[k], m);
     // dialogue portraits: the baked figure where there is one, else the drawn cutout
@@ -371,6 +403,7 @@ export class Game {
       kit: sp('Fox kit', 'Лисёнок', face('kit'), 1150),
       eider: sp('Mama Eider', 'Мама Гага', face('eider'), 640),
       hare: sp('Hare', 'Зайчиха', face('hare'), 1020),
+      crab: sp('Hermit crab', 'Рак-отшельник', face('crab'), 900),
     };
     this.icons = {
       lantern: A.lantern().toDataURL(),
@@ -383,6 +416,9 @@ export class Game {
       berries: A.berryBush(true).toDataURL(),
       present: A.present().toDataURL(),
       eggs: A.egg().toDataURL(),
+      bucket: A.bucket2().toDataURL(),
+      whelk: A.whelk().toDataURL(),
+      shells: A.shell().toDataURL(),
     };
     this.refreshInventory();
 
@@ -485,6 +521,8 @@ export class Game {
       case 'present': done = this.presentFound; met = this.presentMet; break;
       case 'eggs': done = this.eiderHelped; met = this.eiderMet || this.eggsFound > 0; progress = [this.eggsFound, 3]; break;
       case 'burrow': done = this.hareHelped; met = this.hareMet; break;
+      case 'crab': done = this.crabHelped; met = this.crabMet || this.inv.has('whelk'); break;
+      case 'shells': done = this.shellsHelped; met = this.shellsMet || this.shellsFound > 0; progress = [this.shellsFound, 3]; break;
     }
     const at = LEVELS.findIndex((l) => l.id === d.chapter);
     const state = done ? 'done' : at < this.chapterIndex ? 'missed' : met && at === this.chapterIndex ? 'active' : 'locked';
@@ -602,7 +640,7 @@ export class Game {
 
   private footprint(c: Cell) {
     const L = this.level!;
-    if (L.def.night || L.def.mode !== 'walk' || 'o:;,'.includes(L.grid[c[1]][c[0]]) || this.isIce(c)) return;
+    if (L.def.night || L.def.mode !== 'walk' || 'o:;,'.includes(L.grid[c[1]][c[0]]) || TIDAL[L.grid[c[1]][c[0]]] || this.isIce(c)) return;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28).rotateX(-Math.PI / 2), this.printMat.clone());
     m.position.copy(toWorld(c[0], c[1], LAND_Y + 0.004));
     m.rotation.y = (rand() - 0.5) * 0.5;
@@ -1013,7 +1051,7 @@ export class Game {
       index, def, root, grid: def.map.map((r) => r.split('')), start: [1, 1], pops: [], pick: [], items: new Map(),
       stars: new Map(), actors: new Map(), actorCell: new Map(), blocks: new Map(), beacons: new Map(), idlers: [],
       rings: new Map(), ringMat, shadows: [], fog: null, bigLight: null, ready: false, garland: null, cake: null,
-      thin: new Map(), thick: new Map(), streams: [], ripples: [],
+      thin: new Map(), thick: new Map(), streams: [], ripples: [], tideSand: { bar: null, bed: null, v: 0 },
     };
     // Friends you never helped don't turn up later.
     // At the party, the kits have already found the bunting out on the pond island.
@@ -1089,10 +1127,10 @@ export class Game {
             this.obstacle(L, night ? A.iceberg(x * 31 + z) : A.rock(x * 17 + z), night ? 1.25 : 0.85, c, later);
             break;
           case 'Y':
-            this.obstacle(L, A.pine(x * 7 + z * 3, def.season !== 'spring'), 1.5 + rand() * 0.3, c, later, LAND_Y, 'sway');
+            this.obstacle(L, A.pine(x * 7 + z * 3, def.season === 'spring' ? 'cap' : def.season === 'summer' ? 'none' : 'full'), 1.5 + rand() * 0.3, c, later, LAND_Y, 'sway');
             break;
           case '^':
-            this.tent(L, c, night ? '#d3deef' : '#ffffff', later);
+            this.tent(L, c, night ? '#d3deef' : def.season === 'summer' ? '#f1dcaa' : '#ffffff', later);
             break;
           case 'I':
             this.actor(L, 'igloo', A.igloo(), 0.95, c, later, null);
@@ -1287,6 +1325,44 @@ export class Game {
           case 'q':
             this.makeFlap(L, c, ch === 'q', later);
             break;
+          case 'C': {
+            const pv = this.actor(L, 'castle', A.sandcastle('built'), 1.05, c, later, null);
+            const flat = makeCutout(A.sandcastle('flat'), 1.05);
+            flat.visible = false;
+            pv.add(flat);
+            pv.userData.faces = [pv.userData.inner, flat];
+            L.pick.push(flat.userData.front);
+            break;
+          }
+          case 'x':
+            this.actor(L, 'crab', this.art.crab, 0.42, c, later, 'waddle');
+            break;
+          case 'J':
+          case 'O':
+          case 'l':
+          case 'i': {
+            const [art, h, id, name] = ch === 'J' ? [A.bucket2(), 0.42, 'bucket', tr('the bucket', 'ведёрко')]
+              : ch === 'O' ? [A.whelk(), 0.36, 'whelk', tr('a big whelk shell', 'большая раковина трубача')]
+                : [cachedArt('shell', A.shell), 0.24, 'shell', tr('a pretty shell', 'красивая ракушка')];
+            const pv = this.stand(L, art, h, p.clone().setY(LAND_Y), later, 4);
+            L.items.set(key(c), { id, name, obj: pv });
+            L.idlers.push({ obj: pv.userData.inner, phase: rand() * 6, kind: 'bob' });
+            break;
+          }
+          case 'd':
+          case 'p':
+            this.paperStar(L, c, LAND_Y + 0.02, later);
+            break;
+        }
+        // summer: shells and starfish printed on the sand
+        if (def.season === 'summer' && ch === '.' && rand() < 0.07) {
+          const deco = makeFlat(rand() < 0.5 ? cachedArt('star' + (x % 2), () => A.starfish(x % 2 ? '#ef8a5a' : '#e9b04a')) : cachedArt('shellf', () => A.shell('#f6d9c8')), 0.26);
+          deco.position.copy(p).add(new THREE.Vector3((rand() - 0.5) * 0.5, LAND_Y + 0.004, (rand() - 0.5) * 0.5));
+          deco.rotation.y = rand() * 6;
+          const dg = new THREE.Group();
+          dg.add(deco);
+          root.add(dg);
+          this.addScale(L, dg, later + 150);
         }
         // spring: the first flowers, popping up here and there in the grass
         if (def.season === 'spring' && ch === '.' && rand() < 0.1) {
@@ -1311,8 +1387,9 @@ export class Game {
     }
 
     if (def.dams) this.makeStreams(L, def.dams);
-    if (def.spring) {
-      const g = def.spring.grim;
+    if (def.tide) this.makeTideSand(L);
+    if (def.spring || def.tide) {
+      const g = def.spring?.grim ?? def.tide!.cove;
       const pv = this.actor(L, 'grim', this.art.orca, 1.0, g, 1300, null);
       pv.position.y = 0;
       (pv.userData.inner as THREE.Group).position.y = SURFACE;
@@ -1320,7 +1397,7 @@ export class Game {
       for (let i = 0; i < 2; i++) {
         const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.56, 40).rotateX(-Math.PI / 2).scale(1.5, 1, 0.7),
           new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false }));
-        ring.position.copy(toWorld(g[0], g[1], 0.03));
+        ring.position.y = 0.03;
         ring.userData.phase = i / 2;
         root.add(ring);
         L.ripples.push(ring);
@@ -1453,6 +1530,8 @@ export class Game {
     this.prints = [];
     this.broken = new Set();
     this.iceEntry = null;
+    this.tideTurn = L.def.tide?.start ?? 0;
+    this.safeCell = [...L.start];
     const sail = L.def.mode === 'sail';
     this.boatRig.visible = sail;
     this.facing.position.y = sail ? 0.12 : 0;
@@ -1498,6 +1577,7 @@ export class Game {
       fog: () => this.introThree(),
       party: () => this.introParty(),
       spring: () => this.introSpring(),
+      summer: () => this.introSummer(),
     };
     await intro[L.def.id]();
     this.keep();
@@ -1526,6 +1606,7 @@ export class Game {
     if (orca) orca.visible = false;
     this.hideRings();
     this.hideGaze();
+    this.ui.setTide(null);
     L.ready = false;
     await wait(500);
     await this.fold(L);
@@ -1703,6 +1784,28 @@ export class Game {
             : tr("Dry out the hare's burrow under the pond", 'Осуши норку зайчихи под прудом')));
       }
     }
+    if (L.def.id === 'summer') {
+      if (!this.castleBuilt) {
+        q.push(main('bucket', this.inv.has('bucket')
+          ? tr('Bring the bucket back to the sandcastle', 'Принеси ведёрко к песочному замку')
+          : tr('Fetch the bucket from Seal Rock (Grimfin gives rides at high tide)', 'Достань ведёрко с Тюленьей скалы (в прилив Гримфин подвезёт)')));
+      }
+      q.push({ kind: 'main', text: this.tideText() });
+      if (this.crabMet || this.inv.has('whelk')) {
+        q.push(this.sideQuest('crab', this.crabHelped
+          ? tr('Find the hermit crab a bigger shell', 'Найди раку-отшельнику раковину побольше')
+          : this.inv.has('whelk')
+            ? tr('Take the whelk shell to the hermit crab', 'Отнеси раковину раку-отшельнику')
+            : tr('Find the big whelk shell in the tide pool (low tide)', 'Найди большую раковину в приливной луже (в отлив)')));
+      }
+      if (this.shellsMet || this.shellsFound > 0) {
+        q.push(this.sideQuest('shells', this.shellsHelped
+          ? tr('Find Tuck three pretty shells', 'Найди Туку три красивые ракушки')
+          : this.shellsFound > this.shellsGiven
+            ? tr('Give Tuck the pretty shells', 'Отдай Туку красивые ракушки')
+            : tr('Find pretty shells on the sandbars and seabed', 'Найди красивые ракушки на отмелях и на дне')));
+      }
+    }
     q.push({ id: 'stars', kind: 'stars', optional: true, text: tr(`Paper stars ${this.stars}/${STAR_TOTAL}`, `Бумажные звёздочки ${this.stars}/${STAR_TOTAL}`), done: this.stars === STAR_TOTAL });
     return q;
   }
@@ -1715,11 +1818,12 @@ export class Game {
 
   private refreshInventory() {
     const eggs = this.eggsFound - this.eggsHome;
-    for (const [id, n] of [['bunting', this.bunting], ['berries', this.berries], ['eggs', eggs]] as const) {
+    const shells = this.shellsFound - this.shellsGiven;
+    for (const [id, n] of [['bunting', this.bunting], ['berries', this.berries], ['eggs', eggs], ['shells', shells]] as const) {
       if (n > 0) this.inv.add(id);
       else this.inv.delete(id);
     }
-    this.ui.setInventory(this.icons, this.inv, { fish: this.fish, bunting: this.bunting, berries: this.berries, eggs });
+    this.ui.setInventory(this.icons, this.inv, { fish: this.fish, bunting: this.bunting, berries: this.berries, eggs, shells });
   }
 
   private give(id: string, message: string) {
@@ -1747,6 +1851,7 @@ export class Game {
       puffin: this.puffinHelped, bobble: this.bobbleHelped, splashUsed: this.bobbleSplashUsed,
       gentle: this.gentle, covered: this.lanternCovered,
       walrus: this.walrusHelped, foxes: this.foxHelped, crates: this.crates,
+      eider: this.eiderHelped, hare: this.hareHelped,
     };
   }
 
@@ -1765,6 +1870,8 @@ export class Game {
     this.foxHelped = p.foxes;
     this.kitsFound = p.foxes ? 3 : 0;
     this.crates = p.crates;
+    this.eiderHelped = !!p.eider;
+    this.hareHelped = !!p.hare;
     this.talked = true;
     this.tuckFree = p.chapter > LEVELS.findIndex((l) => l.id === 'cove');
     if (this.inv.has('lantern')) this.holdLantern();
@@ -1898,7 +2005,7 @@ export class Game {
   /** Chapters with something to get wrong (Grimfin, ice, ice blocks) show the undo button. */
   get undoable() {
     const L = this.level;
-    return !!(L?.ready && (L.def.orca || this.icy || L.blocks.size));
+    return !!(L?.ready && (L.def.orca || this.icy || L.blocks.size || L.def.tide));
   }
 
   get canUndo() {
@@ -1918,6 +2025,8 @@ export class Game {
       checkpoint: this.checkpoint && [...this.checkpoint],
       broken: [...this.broken],
       iceEntry: this.iceEntry && [...this.iceEntry],
+      tide: this.tideTurn,
+      safe: [...this.safeCell],
     });
     if (this.history.length > 300) this.history.shift();
   }
@@ -1958,6 +2067,11 @@ export class Game {
     this.flow(true);
     this.mendIce(new Set(s.broken));
     this.iceEntry = s.iceEntry;
+    this.safeCell = s.safe;
+    if (L.def.tide && s.tide !== this.tideTurn) {
+      this.tideTurn = s.tide;
+      this.showTide(true);
+    }
     if (L.def.orca && L.actors.has('orca')) {
       this.orca = s.orca;
       const pv = this.orcaPv, inner = this.orcaInner;
@@ -1995,7 +2109,9 @@ export class Game {
     if (!this.inBounds(c)) return false;
     const ch = this.level!.grid[c[1]][c[0]];
     if (this.sail) return SAIL.has(ch) || (ch === 'g' && this.gateOpen);
-    return WALK.has(ch);
+    const tidal = TIDAL[ch];
+    if (tidal) return tideLevel(this.tideTurn) <= (tidal === 'bar' ? 1 : 0);
+    return WALK.has(ch) || ch === 'J';
   }
 
   /** Slick glacier ice under this cell? */
@@ -2085,6 +2201,11 @@ export class Game {
         let redirected = false;
         const from = this.pos;
         for (let i = 0; i < path.length; i++) {
+          if (!this.walkable(path[i])) {
+            this.sound.bump();
+            if (this.level!.def.tide) this.ui.toast(tr('The tide has come in over that way. Watch the wheel!', 'Туда уже пришла вода. Следи за колесом!'));
+            return;
+          }
           const fresh = i === 0 || !this.midSlide(path, i - 1, from);
           if (fresh) this.record();
           this.log(fresh ? { s: path[i], n: 1 } : { s: path[i] });
@@ -2127,6 +2248,7 @@ export class Game {
     const ch = this.level!.grid[c[1]][c[0]];
     if (ch === 'o' || ch === '%') return 0.11;
     if (THIN.includes(ch)) return 0.06;
+    if (TIDAL[ch]) return 0.045;
     if (ch === ',') return 0.05;
     if (this.level!.def.water.includes(ch)) return 0.02;
     if (ch === '=') return 0.5;
@@ -2225,17 +2347,23 @@ export class Game {
       await this.finale();
       return true;
     }
+    if (L.def.tide) {
+      if (!TIDAL[L.grid[this.pos[1]][this.pos[0]]]) this.safeCell = [...this.pos];
+      return this.tideStep();
+    }
     if (L.def.orca) return this.orcaTurn();
     return false;
   }
 
   private async passTurn() {
-    if (!this.level?.def.orca) return;
+    const L = this.level;
+    if (!L?.def.orca && !L?.def.tide) return;
     this.record();
     if (this.sail) this.sound.rustle(0.2);
     else this.sound.step(false);
     await tween(160, (k) => (this.hopper.position.y = Math.sin(Math.PI * k) * 0.06), linear);
-    await this.orcaTurn();
+    if (L.def.tide) await this.tideStep();
+    else await this.orcaTurn();
   }
 
   /**
@@ -2260,8 +2388,28 @@ export class Game {
     const L = this.level!;
     this.keep();
     L.items.delete(key(this.pos));
-    L.grid[this.pos[1]][this.pos[0]] = this.isIce(this.pos) ? '_' : this.sail ? '~' : '.';
+    const was = L.grid[this.pos[1]][this.pos[0]];
+    L.grid[this.pos[1]][this.pos[0]] = ({ l: 'w', i: 'u', O: 'u' } as Record<string, string>)[was] ?? (this.isIce(this.pos) ? '_' : this.sail ? '~' : '.');
     this.flyAway(it.obj);
+    if (it.id === 'shell') {
+      this.shellsFound++;
+      this.refreshInventory();
+      this.sound.chime([7, 11, 14]);
+      this.hearts(this.player.position, 2);
+      this.ui.toast(this.shellsMet
+        ? tr(`A pretty shell! ${this.shellsFound}/3`, `Красивая ракушка! ${this.shellsFound}/3`)
+        : tr('A pretty shell! Somebody might like these.', 'Красивая ракушка! Кому-нибудь она точно пригодится.'));
+      this.refreshQuests();
+      return;
+    }
+    if (it.id === 'whelk' && !this.crabMet) {
+      this.inv.add('whelk');
+      this.refreshInventory();
+      this.sound.chime();
+      this.ui.toast(tr('A big, empty whelk shell. Somebody might like a roomier home.', 'Большая пустая раковина трубача. Кому-нибудь пригодится домик попросторнее.'));
+      this.refreshQuests();
+      return;
+    }
     if (it.id === 'bunting') {
       this.bunting++;
       this.refreshInventory();
@@ -2289,7 +2437,7 @@ export class Game {
     this.keep();
     L.stars.delete(key(this.pos));
     const ch = L.grid[this.pos[1]][this.pos[0]];
-    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : ch === ';' ? ':' : this.sail ? '~' : '.';
+    L.grid[this.pos[1]][this.pos[0]] = ch === '%' ? 'o' : ch === '+' ? '_' : ch === ';' ? ':' : ch === 'd' ? 'w' : ch === 'p' ? 'u' : this.sail ? '~' : '.';
     this.stars++;
     this.flyAway(obj);
     this.sound.chime([7, 12, 16]);
@@ -2316,7 +2464,11 @@ export class Game {
       case 'hare':
         return this.talkHare();
       case 'grim':
-        return this.talkGrimSpring();
+        return this.level!.def.tide ? this.talkGrimSummer() : this.talkGrimSpring();
+      case 'crab':
+        return this.talkCrab();
+      case 'castle':
+        return this.talkCastle();
       case 'walrus':
         return this.talkWalrus();
       case 'fox':
@@ -2338,6 +2490,7 @@ export class Game {
       case 'tuck':
         if (this.level!.def.id === 'party') return this.talkTuckParty();
         if (this.level!.def.id === 'spring') return this.talkSpring('tuck');
+        if (this.level!.def.id === 'summer') return this.talkSummer('tuck');
         return this.tuckFree ? this.ui.say([[this.S.tuck, tr('Thank you, thank you!', 'Спасибо, спасибо!')]]) : this.freeTuck();
       case 'boat':
         return this.ui.say([[this.S.pebble, tr("That's our boat. Once Tuck is free, we'll paddle over and fetch you both!", 'Это наша лодочка. Как только Тук будет на свободе, мы приплывём за вами обоими!')]]);
@@ -2378,6 +2531,7 @@ export class Game {
     }
     if (L.def.id === 'party') return this.talkParty(who);
     if (L.def.id === 'spring') return this.talkSpring(who);
+    if (L.def.id === 'summer') return this.talkSummer(who);
     if (L.def.id !== 'shore') {
       const lines: Line[][] = [
         [[pip, tr('Watch the glowy squares: that is where his spyglass is pointing next.', 'Следи за светящимися квадратиками: туда он посмотрит в подзорную трубу в следующий ход.')]],
@@ -3988,6 +4142,416 @@ export class Game {
     }
   }
 
+  // ---------------------------------------------------------------- Book Two: summer
+
+  /**
+   * The sand the tide covers, as two cut-paper layers over the water the terrain cuts: the sandbars,
+   * and the lower seabed. Each layer's alpha map holds how far a spot is from the beach, so the sand
+   * shows from the shore outward as the tide goes out, and is covered from the far edge inward.
+   */
+  private makeTideSand(L: Level) {
+    const PX = 40, W = COLS * PX, H = ROWS * PX;
+    const kind = (x: number, z: number) => TIDAL[L.grid[z][x]];
+    // steps from dry land, across the tidal cells
+    const dist = new Map<string, number>();
+    const q: Cell[] = [];
+    for (let z = 0; z < ROWS; z++) {
+      for (let x = 0; x < COLS; x++) {
+        if (kind(x, z) || L.def.water.includes(L.grid[z][x])) continue;
+        for (const [dx, dz] of DIRS) {
+          const n: Cell = [x + dx, z + dz];
+          if (this.inBounds(n) && kind(n[0], n[1]) && !dist.has(key(n))) {
+            dist.set(key(n), 1);
+            q.push(n);
+          }
+        }
+      }
+    }
+    for (let i = 0; i < q.length; i++) {
+      for (const [dx, dz] of DIRS) {
+        const n: Cell = [q[i][0] + dx, q[i][1] + dz];
+        if (this.inBounds(n) && kind(n[0], n[1]) && !dist.has(key(n))) {
+          dist.set(key(n), dist.get(key(q[i]))! + 1);
+          q.push(n);
+        }
+      }
+    }
+    const far = Math.max(1, ...dist.values());
+    const r = mulberry(L.index * 17 + 5);
+    const layer = (which: 'bar' | 'bed', seed: number, color: string, y: number, paint: (g: CanvasRenderingContext2D) => void) => {
+      const cells = (x: number, z: number) => (which === 'bar' ? !!kind(x, z) : kind(x, z) === 'bed');
+      const mask = cellMask(COLS, ROWS, cells, PX, seed, 0.56);
+      const c = makeCanvas(W, H);
+      const g = ctx2d(c);
+      g.fillStyle = color;
+      g.fillRect(0, 0, W, H);
+      paint(g);
+      g.globalCompositeOperation = 'multiply';
+      g.fillStyle = g.createPattern(paperCanvas(256, seed, 246), 'repeat')!;
+      g.fillRect(0, 0, W, H);
+      const img = g.getImageData(0, 0, W, H);
+      for (let i = 0; i < W * H; i++) img.data[i * 4 + 3] = mask.alpha[i];
+      g.putImageData(img, 0, 0);
+      // the alpha map: near the beach high (shows first, covered last), far out low
+      const a = makeCanvas(W, H);
+      const ag = ctx2d(a);
+      const ai = ag.createImageData(W, H);
+      for (let yy = 0; yy < H; yy++) {
+        for (let xx = 0; xx < W; xx++) {
+          const d = dist.get(`${Math.floor(xx / PX)},${Math.floor(yy / PX)}`) ?? far;
+          const v = Math.round(255 * (1 - 0.9 * Math.min(1, (d - 0.5) / far + (r() - 0.5) * 0.04)));
+          const j = (yy * W + xx) * 4;
+          ai.data[j] = ai.data[j + 1] = ai.data[j + 2] = v;
+          ai.data[j + 3] = 255;
+        }
+      }
+      ag.putImageData(ai, 0, 0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(COLS, ROWS).rotateX(-Math.PI / 2),
+        new THREE.MeshStandardMaterial({ map: canvasTex(c), alphaMap: canvasTex(a), alphaTest: 0.02, roughness: 0.9 }));
+      m.position.y = y;
+      m.receiveShadow = true;
+      const grp = new THREE.Group();
+      grp.add(m);
+      L.root.add(grp);
+      this.addPop(L, 950, 300, linear, (k) => (grp.visible = k > 0.5));
+      return m;
+    };
+    const ripples = (g: CanvasRenderingContext2D, col: string) => {
+      g.strokeStyle = col;
+      g.lineWidth = 2.5;
+      g.lineCap = 'round';
+      for (const [k, d] of dist) {
+        const [x, z] = k.split(',').map(Number);
+        for (let j = 0; j < 3; j++) {
+          const yy = (z + 0.2 + j * 0.3) * PX + (r() - 0.5) * 4, xx = x * PX;
+          g.beginPath();
+          g.moveTo(xx + 4, yy);
+          g.quadraticCurveTo(xx + PX / 2, yy - 5, xx + PX - 4, yy);
+          g.stroke();
+        }
+        if (d && r() < 0.25) {   // a pebble or a strand of seaweed
+          g.fillStyle = r() < 0.5 ? 'rgba(120,110,95,0.6)' : 'rgba(60,110,70,0.6)';
+          g.beginPath();
+          g.ellipse((x + r()) * PX, (z + r()) * PX, 4, 3, r() * 3, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+    };
+    L.tideSand.bar = layer('bar', L.index * 13 + 1, '#dcc189', 0.03, (g) => ripples(g, 'rgba(160,125,70,0.4)'));
+    L.tideSand.bed = layer('bed', L.index * 13 + 2, '#bfa071', 0.036, (g) => ripples(g, 'rgba(120,90,55,0.45)'));
+  }
+
+  /** Show the sand and what's on it as far as the tide allows. */
+  private showTide(instant: boolean) {
+    const L = this.level;
+    if (!L?.def.tide) return;
+    const level = tideLevel(this.tideTurn);
+    const v = ++L.tideSand.v;
+    for (const [m, dry] of [[L.tideSand.bar, level <= 1], [L.tideSand.bed, level === 0]] as const) {
+      if (!m) continue;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      const to = dry ? 0.02 : 1.01;
+      if (instant) {
+        mat.alphaTest = to;
+        m.visible = dry;
+        continue;
+      }
+      if (dry) m.visible = true;
+      const from = mat.alphaTest;
+      tween(700, (k) => {
+        if (L.tideSand.v === v) mat.alphaTest = from + (to - from) * k;
+      }, easeInOut).then(() => {
+        if (L.tideSand.v === v) m.visible = dry;
+      });
+    }
+    // shells and stars out on the flats only show while their sand is dry
+    for (const map of [L.items, L.stars] as Map<string, THREE.Object3D | { obj: THREE.Object3D }>[]) {
+      for (const [k, it] of map) {
+        const [x, z] = k.split(',').map(Number);
+        const t = TIDAL[L.def.map[z][x]];
+        if (!t) continue;
+        const obj = 'obj' in it ? it.obj : it;
+        obj.visible = level <= (t === 'bar' ? 1 : 0);
+      }
+    }
+    this.ui.setTide(this.tideTurn, cachedArt('tideWheel', () => A.tideWheel(TIDE)).toDataURL(), this.tideLabel());
+  }
+
+  private tideName(turn: number) {
+    return ({
+      low: tr('Low tide', 'Отлив'),
+      rising: tr('Tide coming in', 'Прилив идёт'),
+      high: tr('High tide', 'Полная вода'),
+      falling: tr('Tide going out', 'Вода уходит'),
+    })[tideAt(turn)];
+  }
+
+  private tideLabel() {
+    return this.tideName(this.tideTurn);
+  }
+
+  /** For the tracker: now, and what the next move brings. */
+  private tideText() {
+    return tr(`${this.tideName(this.tideTurn)} · next: ${this.tideName(this.tideTurn + 1).toLowerCase()}`,
+      `${this.tideName(this.tideTurn)} · дальше: ${this.tideName(this.tideTurn + 1).toLowerCase()}`);
+  }
+
+  /** One move has passed: the tide turns a notch. Returns true if a wave carried you back. */
+  private async tideStep() {
+    const before = tideLevel(this.tideTurn);
+    this.tideTurn++;
+    if (tideLevel(this.tideTurn) !== before) this.sound.splash(0.25);
+    this.showTide(false);
+    this.refreshQuests();
+    if (this.walkable(this.pos)) return false;
+    // the water came in over you: a wave carries you gently back to dry sand
+    this.busy = true;
+    this.sound.splash(0.7);
+    const from = this.player.position.clone(), to = toWorld(this.safeCell[0], this.safeCell[1], this.cellY(this.safeCell));
+    await tween(700, (k) => {
+      this.player.position.lerpVectors(from, to, k);
+      this.player.position.y += Math.sin(Math.PI * k) * 0.5;
+      this.hopper.rotation.z = Math.sin(Math.PI * k * 2) * 0.3;
+    }, easeInOut);
+    this.hopper.rotation.z = 0;
+    this.pos = [...this.safeCell];
+    this.ui.toast(tr('Whoosh! A wave carried you back to dry sand. Watch the tide wheel!', 'Шшух! Волна вынесла тебя обратно на сухой песок. Следи за колесом прилива!'));
+    this.busy = false;
+    return true;
+  }
+
+  private async introSummer() {
+    const { nar, pip, pebble, tuck, grim } = this.S;
+    const L = this.level!;
+    this.showTide(true);
+    await this.ui.say([
+      [nar, tr('Over the page it was summer, and the sun never set. It just rolled along the edge of the sky, gold all night long.', 'А за страницей было лето, и солнце совсем не садилось. Оно катилось по краю неба, золотое всю ночь.')],
+      [tuck, tr("It's warm! And the sand is all wavy, like cardboard.", 'Тепло! А песок весь волнистый, как картон.')],
+      [pebble, tr('Look what we built while we waited for you: the finest sandcastle on the page!', 'Смотри, что мы построили, пока тебя ждали: лучший песочный замок на всей странице!')],
+      [pip, tr('It has three towers. THREE.', 'У него три башни. ТРИ.')],
+    ]);
+    this.sound.splash(0.5);
+    await this.ui.say([[grim, tr('Hello, friends! Summer at last! Watch my biggest wave, just for you!', 'Привет, друзья! Наконец-то лето! Смотрите, какую волну я сделаю — специально для вас!')]]);
+    await this.bigWave();
+    await this.ui.say([
+      [pebble, tr('Our castle...', 'Наш замок...')],
+      [tuck, tr("It's all flat.", 'Он совсем плоский.')],
+      [grim, tr("Oh no. I did it again, didn't I? I only wanted to show you my wave. I'm so sorry.", 'Ой-ой. Я опять, да? Я просто хотел показать вам волну. Мне очень жаль.')],
+    ]);
+    const r = await this.ui.ask(grim, tr('Will you forgive me?', 'Простите меня?'), [tr('Of course, Grimfin', 'Конечно, Гримфин'), tr('You knocked it right down', 'Ты же всё смыл')]);
+    await this.ui.say(r === 0
+      ? [[grim, tr('You are the kindest friends an orca ever had.', 'Вы самые добрые друзья, какие только бывают у косатки.')]]
+      : [
+        [grim, tr("I did. I'll think before I splash next time.", 'Смыл. В следующий раз я сначала подумаю, а потом плюхну.')],
+        [pebble, tr("We know you didn't mean it. Saying sorry is a good start.", 'Мы знаем, что ты не нарочно. Попросить прощения — хорошее начало.')],
+      ]);
+    await this.ui.say([
+      [grim, tr('Let me help build it again, bigger and better! The best bucket on the page is on Seal Rock, across the deep channel.', 'Давайте я помогу построить замок заново, ещё больше и лучше! Самое лучшее ведёрко на странице лежит на Тюленьей скале, за глубокой протокой.')],
+      [grim, tr('At high tide I can swim right up to the jetty and carry you over. Meet me there!', 'В прилив я могу подплыть к самой пристани и перевезти тебя. Жду там!')],
+      [pebble, tr('Watch the tide wheel in the corner. The sandbars only show when the tide is out, and the seabed only at the very lowest.', 'Следи за колесом прилива в углу. Отмели видно, только когда вода уходит, а дно — только в самый отлив.')],
+      [nar, touch
+        ? tr('Every hop turns the tide one notch. Tap where you stand, or the ⏳ button, to wait for it.', 'Каждый прыжок поворачивает прилив на одну зарубку. Чтобы подождать, нажми на себя или на кнопку ⏳.')
+        : tr('Every hop turns the tide one notch. Click where you stand, press Space or the ⏳ button to wait for it.', 'Каждый прыжок поворачивает прилив на одну зарубку. Чтобы подождать, нажми на себя, на пробел или на кнопку ⏳.')],
+    ]);
+    // off to wait between the jetties
+    await this.grimSwim(L.def.tide!.ride);
+  }
+
+  /** Grimfin's big summer wave rolls up the beach and flattens the sandcastle. */
+  private async bigWave() {
+    const L = this.level!;
+    const from = L.actors.get('grim')!.position.clone(), to = L.actors.get('castle')!.position.clone();
+    const wave = standee(makeCutout(A.wave(false), 0.9, 4));
+    wave.position.copy(from);
+    wave.scale.setScalar(0.3);
+    L.root.add(wave);
+    this.sound.splash(0.8);
+    await tween(900, (k) => {
+      wave.position.lerpVectors(from, to, k);
+      wave.scale.setScalar(0.3 + Math.sin(Math.PI * Math.min(1, k * 1.2)) * 1.6 + k * 0.4);
+    }, easeIn);
+    this.shake = 0.3;
+    this.sound.splash(1);
+    const pv = L.actors.get('castle')!;
+    const [built, flat] = pv.userData.faces as THREE.Group[];
+    built.visible = false;
+    flat.visible = true;
+    await tween(400, (k) => wave.scale.setScalar(Math.max(0.001, 2.3 * (1 - k))), easeIn);
+    L.root.remove(wave);
+  }
+
+  /** Grimfin dives, and comes up somewhere else. */
+  private async grimSwim(c: Cell) {
+    const L = this.level!;
+    const pv = L.actors.get('grim')!;
+    const inner = pv.userData.inner as THREE.Group;
+    this.sound.splash(0.4);
+    await tween(300, (k) => (inner.position.y = SURFACE + (DEEP - SURFACE) * k), easeIn);
+    pv.position.copy(toWorld(c[0], c[1], 0));
+    L.actorCell.set('grim', c);
+    this.sound.splash(0.4);
+    await tween(400, (k) => (inner.position.y = DEEP + (SURFACE - DEEP) * k), easeOutBack);
+  }
+
+  /** At high tide, Grimfin carries you across the deep channel between the two jetties. */
+  private async talkGrimSummer() {
+    const { grim } = this.S;
+    const L = this.level!;
+    const ride = L.actorCell.get('grim')!;
+    if (tideLevel(this.tideTurn) < 2) {
+      return this.ui.say([[grim, tr("The water's too shallow for me to come close. Come back at high tide! Watch the wheel, or wait a few turns.", 'Тут слишком мелко, мне не подплыть. Приходи в полную воду! Следи за колесом или подожди несколько ходов.')]]);
+    }
+    const across: Cell = [ride[0] + (ride[0] - this.pos[0]), ride[1] + (ride[1] - this.pos[1])];
+    const toRock = across[0] > ride[0];
+    const r = await this.ui.ask(grim, toRock ? tr('Hop on! Off to Seal Rock?', 'Залезай! Плывём к Тюленьей скале?') : tr('Hop on! Back to the beach?', 'Залезай! Обратно на пляж?'),
+      [tr('Yes please!', 'Да, пожалуйста!'), tr('Not yet', 'Ещё нет')]);
+    if (r !== 0) return;
+    this.busy = true;
+    this.sound.splash(0.5);
+    const a = this.player.position.clone(), mid = toWorld(ride[0], ride[1], 0.35), b = toWorld(across[0], across[1], this.cellY(across));
+    await tween(500, (k) => this.player.position.lerpVectors(a, mid, k), easeOut);
+    const pv = L.actors.get('grim')!;
+    const g0 = pv.position.clone();
+    await tween(700, (k) => {
+      pv.position.x = g0.x + Math.sin(Math.PI * k) * 0.15 * Math.sign(b.x - a.x);
+      this.player.position.x = mid.x + Math.sin(Math.PI * k) * 0.15 * Math.sign(b.x - a.x);
+    }, easeInOut);
+    await tween(500, (k) => {
+      this.player.position.lerpVectors(mid, b, k);
+      this.player.position.y += Math.sin(Math.PI * k) * 0.3;
+    }, easeIn);
+    pv.position.copy(g0);
+    this.face(across);
+    this.pos = across;
+    this.safeCell = [...across];
+    this.busy = false;
+    this.ui.toast(toRock ? tr('Seal Rock! Grimfin will wait here for the next high tide.', 'Тюленья скала! Гримфин подождёт здесь до следующей полной воды.') : tr('Back on the mainland!', 'Снова на большой земле!'));
+    await this.tideStep();
+  }
+
+  private async talkCrab() {
+    const { crab } = this.S;
+    if (this.crabHelped) return this.ui.say([[crab, tr('Room to wiggle! Thank you, thank you.', 'Есть где развернуться! Спасибо, спасибо.')]]);
+    if (this.inv.has('whelk')) {
+      this.crabMet = true;
+      this.inv.delete('whelk');
+      this.crabHelped = true;
+      this.refreshInventory();
+      this.sound.chime([0, 4, 7, 12]);
+      this.hearts(this.level!.actors.get('crab')!.position, 5);
+      await this.ui.say([
+        [crab, tr('Is that... a whelk shell? A big roomy one? Oh, it fits perfectly!', 'Это... раковина трубача? Большая и просторная? Ой, она мне как раз!')],
+        [crab, tr("Here, take my old flag for your sandcastle. I won't need it in my grand new home.", 'Вот, возьми мой старый флажок для песочного замка. В новом просторном домике он мне не нужен.')],
+      ]);
+      this.ui.toast(tr("The crab's flag will fly on top of the new sandcastle!", 'Флажок рака будет развеваться на верхушке нового замка!'));
+      this.refreshQuests();
+      return;
+    }
+    if (!this.crabMet) {
+      this.crabMet = true;
+      await this.ui.say([
+        [crab, tr("Ow, ow! This shell pinches. I've grown out of it!", 'Ой-ой! Эта раковина мне жмёт. Я из неё вырос!')],
+        [crab, tr('There\'s a big roomy whelk shell in the tide pool out on the flats. But you can only reach it when the tide is all the way out.', 'В приливной луже на отмели лежит большая просторная раковина трубача. Но добраться до неё можно, только когда вода уйдёт совсем.')],
+      ]);
+      this.refreshQuests();
+      return;
+    }
+    return this.ui.say([[crab, tr('The tide pool, at the very lowest tide. Pinch, pinch!', 'Приливная лужа, в самый отлив. Щип, щип!')]]);
+  }
+
+  private async talkSummer(who: string) {
+    const { tuck, pip, pebble } = this.S;
+    if (who !== 'tuck') {
+      if (this.inv.has('bucket')) return this.rebuildCastle();
+      if (this.castleBuilt) return this.summerEnd();
+      return this.ui.say([[who === 'pip' ? pip : pebble, who === 'pip'
+        ? tr('Grimfin can carry you to Seal Rock at high tide. Bring back that bucket!', 'В полную воду Гримфин отвезёт тебя на Тюленью скалу. Принеси ведёрко!')
+        : tr("Don't be sad for us. We'll build an even better one!", 'Не грусти за нас. Мы построим замок ещё лучше!')]]);
+    }
+    const carrying = this.shellsFound - this.shellsGiven;
+    if (this.shellsHelped) return this.ui.say([[tuck, tr('One shell window for everybody!', 'По окошку из ракушки для каждого!')]]);
+    const lines: Line[] = [];
+    if (!this.shellsMet) {
+      this.shellsMet = true;
+      lines.push([tuck, tr("I'm collecting pretty shells for the new castle's windows! Can you find three? They wash up on the sandbars and the seabed.", 'Я собираю красивые ракушки для окошек нового замка! Найдёшь три? Их выносит на отмели и на дно.')]);
+    }
+    if (carrying > 0) {
+      this.shellsGiven += carrying;
+      this.refreshInventory();
+      this.sound.chime([0, 4, 7]);
+      if (this.shellsGiven >= 3) {
+        this.shellsHelped = true;
+        this.hearts(this.level!.actors.get('tuck')!.position, 6);
+        lines.push([tuck, tr("Three! They're too pretty to keep to myself. I'll share them: one window for everybody!", 'Три! Они слишком красивые, чтобы оставить их себе. Поделюсь со всеми: каждому по окошку!')]);
+      } else {
+        lines.push([tuck, tr(`Ooh, pretty! That's ${this.shellsGiven} of 3.`, `Ух, красота! Уже ${this.shellsGiven} из 3.`)]);
+      }
+    } else if (!lines.length) {
+      lines.push([tuck, tr(`${this.shellsGiven} of 3 shells. Look out on the flats when the tide is low!`, `Ракушек ${this.shellsGiven} из 3. Поищи на отмелях в отлив!`)]);
+    }
+    await this.ui.say(lines);
+    this.refreshQuests();
+  }
+
+  private async talkCastle() {
+    if (this.inv.has('bucket')) return this.rebuildCastle();
+    if (this.castleBuilt) return this.summerEnd();
+    return this.ui.say([[this.S.nar, tr('A flat, sad heap of sand, waiting for a bucket.', 'Плоская грустная кучка песка ждёт ведёрко.')]]);
+  }
+
+  /** Everyone scoops: the sandcastle goes up again, grander than before. */
+  private async rebuildCastle() {
+    const { pebble, pip, tuck, grim, nar } = this.S;
+    const L = this.level!;
+    this.busy = true;
+    this.inv.delete('bucket');
+    this.refreshInventory();
+    this.castleBuilt = true;
+    await this.ui.say([[pebble, tr('The bucket from Seal Rock! Everybody, scoop!', 'Ведёрко с Тюленьей скалы! Все копаем!')]]);
+    const pv = L.actors.get('castle')!;
+    const [, flat] = pv.userData.faces as THREE.Group[];
+    for (let i = 0; i < 3; i++) {
+      this.sound.rustle(0.6);
+      this.shake = 0.08;
+      await tween(260, (k) => flat.scale.set(1, 1 + Math.sin(Math.PI * k) * 0.15, 1), linear);
+    }
+    flat.visible = false;
+    const grand = makeCutout(A.sandcastle('grand', this.crabHelped, this.shellsHelped), 1.35);
+    grand.scale.setScalar(0.001);
+    pv.add(grand);
+    this.sound.chime([0, 4, 7, 12, 16]);
+    await tween(700, (k) => grand.scale.setScalar(Math.max(0.001, k)), easeOutBack);
+    this.confetti(pv.position.clone().setY(1.2));
+    this.hearts(pv.position, 8);
+    const lines: Line[] = [[pip, tr("FOUR towers! It's even better than before!", 'ЧЕТЫРЕ башни! Он даже лучше прежнего!')]];
+    if (this.crabHelped) lines.push([nar, tr("And on top, the hermit crab's little red flag flapped in the warm wind.", 'А на верхушке трепетал на тёплом ветру красный флажок рака-отшельника.')]);
+    if (this.shellsHelped) lines.push([tuck, tr('And a shell window for everybody!', 'И окошко из ракушки — каждому!')]);
+    await this.ui.say(lines);
+    await this.grimSwim(L.def.tide!.cove);
+    await this.ui.say([
+      [grim, tr("Oh, it's wonderful! I'll be extra careful with my waves from now on.", 'Ой, какая красота! Теперь я буду очень осторожен со своими волнами.')],
+      [pebble, tr('Thank you for helping, Grimfin. Would you like to be the castle guard?', 'Спасибо, что помог, Гримфин. Хочешь быть стражем замка?')],
+      [grim, tr('Me? A guard? Oh, hooray!', 'Я? Стражем? Ура!')],
+    ]);
+    this.refreshQuests();
+    await this.summerEnd();
+  }
+
+  private async summerEnd() {
+    const { tuck, nar } = this.S;
+    this.busy = true;
+    const waiting = !this.crabHelped || !this.shellsHelped;
+    const choice = await this.ui.ask(tuck, waiting
+      ? tr('What a summer! I wonder what autumn looks like. Somebody might still need us here, though. Turn the page anyway?', 'Вот это лето! Интересно, какая она, осень. Но здесь ещё кому-то может быть нужна помощь. Всё равно перевернём страницу?')
+      : tr('What a summer! I wonder what autumn looks like. Shall we turn the page?', 'Вот это лето! Интересно, какая она, осень. Перевернём страницу?'), [tr('Turn the page', 'Перевернуть страницу'), tr('Not yet', 'Ещё нет')]);
+    if (choice === 0) {
+      await this.ui.say([[nar, tr('And so the friends turned the page, toward autumn...', 'И друзья перевернули страницу, навстречу осени...')]]);
+      this.finish?.();
+    } else {
+      this.busy = false;
+    }
+  }
+
   // ---------------------------------------------------------------- per frame
 
   update(t: number) {
@@ -4049,7 +4613,9 @@ export class Game {
     this.lanternLight.intensity = base * this.lanternPower * flicker * (this.lanternCovered ? 0.3 : 1);
     const orca = L.actors.get('orca');
     if (orca) orca.position.y = Math.sin(t * 1.6) * 0.03;
+    const grimPv = L.actors.get('grim');
     for (const r of L.ripples) {
+      if (grimPv) r.position.set(grimPv.position.x, 0.03, grimPv.position.z);
       const k = (t * 0.35 + r.userData.phase) % 1;
       r.scale.setScalar(0.6 + k * 0.9);
       (r.material as THREE.MeshBasicMaterial).opacity = 0.45 * (1 - k);

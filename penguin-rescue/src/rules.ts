@@ -146,3 +146,15 @@ export function farLaneBefore(path: OrcaPath, player: Cell) {
   }
   return (best - 1 + path.cells.length) % path.cells.length;
 }
+
+/**
+ * The tide, one notch per move: low for three, rising, high for three, falling. The level is how
+ * far the water reaches: 0 at low (the seabed is dry), 1 halfway (sandbars dry), 2 at high (both under).
+ */
+export const TIDE = ['low', 'low', 'low', 'rising', 'high', 'high', 'high', 'falling'] as const;
+export type TidePhase = (typeof TIDE)[number];
+export const tideAt = (turn: number): TidePhase => TIDE[((turn % TIDE.length) + TIDE.length) % TIDE.length];
+export const tideLevel = (turn: number) => ({ low: 0, rising: 1, high: 2, falling: 1 })[tideAt(turn)];
+/** What a tidal map cell is underneath: a sandbar (dry unless high) or the seabed (dry only at low). */
+export const TIDAL: Record<string, 'bar' | 'bed'> = { w: 'bar', l: 'bar', d: 'bar', u: 'bed', i: 'bed', p: 'bed', O: 'bed' };
+

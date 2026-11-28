@@ -3,7 +3,7 @@
 A living document. We add to it as we decide things, and keep a log of what was decided and why
 at the bottom. Nothing here is built yet unless it says so.
 
-**Status:** Book One (five chapters) is finished and live, with every section 2 improvement built (the playtest questions in 2.6 still need a real player). Book Two has started: the book choice, the seasons system and Spring (Chapter Six) are built as the trial chapter. Next: play Spring and adjust it, then Summer. Star unlocks (outfits) are planned in 3.6, not built.
+**Status:** Book One (five chapters) is finished and live, with every section 2 improvement built (the playtest questions in 2.6 still need a real player). Book Two has Spring (Chapter Six) and Summer (Chapter Seven). Next: Autumn. Star unlocks (outfits) are planned in 3.6, not built.
 
 ---
 
@@ -217,6 +217,18 @@ reuse an existing verb, and does it look like paper?
 - **Grimfin:** gives rides across the deep at high tide. The relaxed chapter: lots of
   exploring, little danger.
 
+- *As built:* map in `levels.ts` (`summer`), tide rules in `rules.ts` (`TIDE`: low ×3, rising,
+  high ×3, falling; `TIDAL` for which cells a sandbar or seabed is). The tide turns once per move
+  or wait, inside the move, so saves replay it and undo winds it back. The wheel is an HTML card in
+  the corner (bottom-left on an upright phone) with icons as well as colours. Sand is drawn as two
+  cut-paper layers that the tide sweeps over from the far edge inward. **Rule learned from testing:**
+  every trip onto the flats must start and end on dry sand: at most three sandbar steps between dry
+  islets, and seabed pools a quick in-and-out. Longer stretches can never be crossed in one tide.
+  Caught by the tide, a wave carries you back to the last dry spot (no penalty beyond the walk).
+  Grimfin's trouble is the sandcastle wave; forgiveness is asked in the opening scene, and he ends
+  as the castle guard. Not built from the plan: floating ice blocks at high tide, sailing the paper
+  boat, and sea mist (kept for later). Blender figure: the hermit crab. Five stars.
+
 #### Chapter Eight · Autumn · The Blustery Bluffs
 - **Look and weather:** falling paper leaves, orange and red tissue trees, geese overhead.
   Gusty: the leaves show which way the wind blows.
@@ -341,3 +353,5 @@ Paper stars will unlock outfits as well as stickers. The idea, to settle before 
 | 2026-11-27 | Grimfin is friendly in Book Two but keeps causing trouble, and each time he says sorry and is forgiven | Asked for: stories of forgiveness and reconciliation after doing something wrong |
 | 2026-11-27 | Stars will unlock outfits too, but not yet: planned in 3.6 | Asked to plan outfit unlocks without building them |
 | 2026-11-27 | Spring's dams can't be reset, and stuck-on-thin-ice offers to fold the ice back | Each block only fits its own stream, so a dam is never wrong; folding back means no trap, even after undo history is cleared |
+| 2026-11-27 | Summer's Grimfin trouble: his wave washes the sandcastle away; he says sorry and helps rebuild it | Agreed |
+| 2026-11-27 | Summer leaves out floating ice blocks, the boat and mist | Kept the relaxed chapter simple; the tide and waiting are its idea |

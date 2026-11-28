@@ -237,6 +237,16 @@
   #fs.on .exit { display: block; }
   #fs.on .enter { display: none; }
 
+  /* the tide wheel: a paper disc that turns one notch a move, under a fixed red pointer */
+  #tide { position: absolute; right: var(--right); top: 112px; width: 110px; text-align: center; pointer-events: none; }
+  #tide .wheel { position: relative; width: 88px; height: 88px; margin: 0 auto; }
+  #tide img { width: 100%; height: 100%; transition: transform .7s cubic-bezier(.3, 1.35, .5, 1); filter: drop-shadow(1px 3px 3px rgba(45,28,12,.35)); }
+  #tide .pointer { position: absolute; left: 50%; top: -9px; transform: translateX(-50%); border: 8px solid transparent; border-top: 14px solid #c8413b; border-bottom: 0; }
+  #tide span { display: inline-block; margin-top: 6px; padding: 3px 8px; border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); color: var(--ink); font-size: 12px; line-height: 1.3; }
+  @media (max-height: 500px), (max-width: 480px) { #tide { top: 96px; width: 84px; } #tide .wheel { width: 64px; height: 64px; } #tide span { font-size: 11px; } }
+  /* a phone held upright: the to-do card fills the top, so the wheel sits in the free bottom-left corner */
+  @media (max-width: 480px) { #tide { top: auto; right: auto; left: var(--left); bottom: var(--bottom); } }
+
   /* big thumb buttons for the turn-by-turn chapters */
   #actions {
     position: absolute; right: var(--right); bottom: var(--bottom); display: flex; gap: 10px;
@@ -428,8 +438,12 @@
     <div class="slot" data-id="bunting"><img alt=""><span data-i18n="bunting">bunting</span><b></b></div>
     <div class="slot" data-id="berries"><img alt=""><span data-i18n="berries">berries</span><b></b></div>
     <div class="slot" data-id="eggs"><img alt=""><span data-i18n="eggs">eggs</span><b></b></div>
+    <div class="slot" data-id="bucket"><img alt=""><span data-i18n="bucket">bucket</span></div>
+    <div class="slot" data-id="whelk"><img alt=""><span data-i18n="whelk">whelk shell</span></div>
+    <div class="slot" data-id="shells"><img alt=""><span data-i18n="shells">shells</span><b></b></div>
     <div class="slot" data-id="present"><img alt=""><span data-i18n="present">present</span></div>
   </div>
+  <div id="tide" hidden aria-live="polite"><div class="wheel"><img alt=""><i class="pointer" aria-hidden="true"></i></div><span></span></div>
   <div id="actions">
     <button id="fishBtn" class="act" data-i18n-label="a:fish" hidden><i aria-hidden="true">🐟</i><span data-i18n="fishAct">Fish</span><b></b></button>
     <button id="lanternBtn" class="act" data-i18n-label="a:lantern" aria-pressed="false" hidden><i aria-hidden="true">🏮</i><span data-i18n="lanternAct">Lantern</span></button>

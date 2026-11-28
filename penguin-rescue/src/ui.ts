@@ -470,7 +470,18 @@ export class UI {
     window.setTimeout(() => this.bannerEl.classList.remove('show'), 3200);
   }
 
-  setInventory(icons: Record<string, string>, have: Set<string>, counts: Record<string, number> = {}) {
+  /** The tide wheel in the corner: turned `turn` notches (null hides it). */
+  setTide(turn: number | null, art?: string, label = '') {
+    const el = $('tide');
+    el.hidden = turn === null;
+    if (turn === null) return;
+    const img = el.querySelector('img')!;
+    if (art && !img.getAttribute('src')) img.src = art;
+    img.style.transform = `rotate(${-turn * 45}deg)`;
+    el.querySelector('span')!.textContent = label;
+  }
+
+    setInventory(icons: Record<string, string>, have: Set<string>, counts: Record<string, number> = {}) {
     // the inventory card only shows what you're carrying, and hides when your mittens are empty
     $('inv').hidden = ![...have].some((id) => document.querySelector(`#inv .slot[data-id="${id}"]`));
     document.querySelectorAll<HTMLElement>('#inv .slot').forEach((s) => {
